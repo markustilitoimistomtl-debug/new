@@ -1,0 +1,337 @@
+﻿team_id;abbr;city;nickname;color_primary;color_secondary;color_number;slot;player;number;pos;height_in;speed;shooting;three;inside;passing;rebounding;defense;free_throw;traits;origin
+BAL;BAL;Baltimore;Shipwrights;#0e3a5c;#e8a33d;#ffffff;1;Cedric Swanigan;42;PG;76;93;89;86;76;99;74;89;80;;US
+BAL;BAL;Baltimore;Shipwrights;#0e3a5c;#e8a33d;#ffffff;2;Willie Redding;54;SG;76;92;90;91;88;87;77;89;72;D;US
+BAL;BAL;Baltimore;Shipwrights;#0e3a5c;#e8a33d;#ffffff;3;Emeka Nwosu;8;SF;80;92;91;91;97;90;79;84;77;SD;AF
+BAL;BAL;Baltimore;Shipwrights;#0e3a5c;#e8a33d;#ffffff;4;Dino Radić;26;PF;83;78;82;72;84;78;90;81;81;D;EU
+BAL;BAL;Baltimore;Shipwrights;#0e3a5c;#e8a33d;#ffffff;5;Todd Merriweather;39;C;86;83;83;59;93;78;91;82;70;S;US
+BAL;BAL;Baltimore;Shipwrights;#0e3a5c;#e8a33d;#ffffff;6;Kevin Oakes;24;PG;74;81;77;79;62;90;57;72;84;;US
+BAL;BAL;Baltimore;Shipwrights;#0e3a5c;#e8a33d;#ffffff;7;Travis Fairley;5;SG;76;87;84;97;86;83;72;80;86;PD;US
+BAL;BAL;Baltimore;Shipwrights;#0e3a5c;#e8a33d;#ffffff;8;Kenny Holloway;2;SF;80;83;81;80;80;81;72;77;68;;US
+BAL;BAL;Baltimore;Shipwrights;#0e3a5c;#e8a33d;#ffffff;9;Derrick Tillman;10;PF;81;68;74;62;79;64;94;83;77;E;US
+BAL;BAL;Baltimore;Shipwrights;#0e3a5c;#e8a33d;#ffffff;10;Otis Hollis;20;C;83;67;66;48;85;60;81;81;58;;US
+BAL;BAL;Baltimore;Shipwrights;#0e3a5c;#e8a33d;#ffffff;11;Rasheed Kimbrough;14;SF;80;78;71;73;77;78;68;80;69;;US
+BAL;BAL;Baltimore;Shipwrights;#0e3a5c;#e8a33d;#ffffff;12;Corey Broadnax;41;PF;81;70;76;66;80;73;89;79;62;;US
+PRO;PRO;Providence;Jewelers;#5b2a86;#d9c27a;#ffffff;1;Kevin Broadnax;19;PG;76;85;81;90;76;90;71;83;75;;US
+PRO;PRO;Providence;Jewelers;#5b2a86;#d9c27a;#ffffff;2;Corey Ivory;6;SG;77;99;99;99;89;86;75;77;76;SD;US
+PRO;PRO;Providence;Jewelers;#5b2a86;#d9c27a;#ffffff;3;Darnell Hollis;1;SF;81;81;83;82;85;86;75;77;68;PD;US
+PRO;PRO;Providence;Jewelers;#5b2a86;#d9c27a;#ffffff;4;Kai Lehmann;54;PF;81;75;76;61;85;75;84;78;75;D;EU
+PRO;PRO;Providence;Jewelers;#5b2a86;#d9c27a;#ffffff;5;Cedric Whitfield;20;C;84;73;67;48;94;73;93;89;63;;US
+PRO;PRO;Providence;Jewelers;#5b2a86;#d9c27a;#ffffff;6;Nenad Lazić;2;PG;74;79;73;72;66;80;56;75;77;P;EU
+PRO;PRO;Providence;Jewelers;#5b2a86;#d9c27a;#ffffff;7;Danny Livingston;45;SG;78;81;80;82;75;66;61;76;75;;AA
+PRO;PRO;Providence;Jewelers;#5b2a86;#d9c27a;#ffffff;8;Danny Davis;52;SF;79;64;67;69;65;68;73;71;76;;AN
+PRO;PRO;Providence;Jewelers;#5b2a86;#d9c27a;#ffffff;9;Mike Fennell;29;PF;81;69;69;62;73;63;75;71;63;;US
+PRO;PRO;Providence;Jewelers;#5b2a86;#d9c27a;#ffffff;10;Petar Knezevic;25;C;86;68;67;40;79;65;88;79;61;;EU
+PRO;PRO;Providence;Jewelers;#5b2a86;#d9c27a;#ffffff;11;Darnell Lattimore;36;SF;79;77;70;77;77;76;75;74;78;;US
+PRO;PRO;Providence;Jewelers;#5b2a86;#d9c27a;#ffffff;12;Rasheed Bledsoe;48;PF;82;66;76;64;78;60;82;75;60;E;AA
+HFD;HFD;Hartford;Underwriters;#1f4e3d;#cfd6d2;#ffffff;1;Tyrone Middleton;30;PG;73;88;81;89;82;96;68;87;89;P;AA
+HFD;HFD;Hartford;Underwriters;#1f4e3d;#cfd6d2;#ffffff;2;Brian Dorsey;20;SG;77;99;94;99;95;89;78;76;77;SD;US
+HFD;HFD;Hartford;Underwriters;#1f4e3d;#cfd6d2;#ffffff;3;Kenny Pruitt;15;SF;79;73;81;79;71;79;74;79;71;;US
+HFD;HFD;Hartford;Underwriters;#1f4e3d;#cfd6d2;#ffffff;4;Goran Perić;22;PF;83;77;73;70;88;78;85;84;76;D;EU
+HFD;HFD;Hartford;Underwriters;#1f4e3d;#cfd6d2;#ffffff;5;Rodney Raines;18;C;85;64;70;45;83;72;84;85;58;;US
+HFD;HFD;Hartford;Underwriters;#1f4e3d;#cfd6d2;#ffffff;6;Ike Adeyemi;17;PG;75;81;68;71;69;78;60;67;80;;AF
+HFD;HFD;Hartford;Underwriters;#1f4e3d;#cfd6d2;#ffffff;7;Tunde Ibekwe;51;SG;77;79;83;88;71;77;68;76;70;P;AF
+HFD;HFD;Hartford;Underwriters;#1f4e3d;#cfd6d2;#ffffff;8;Bo Gray;2;SF;81;71;74;69;65;66;66;74;67;;AN
+HFD;HFD;Hartford;Underwriters;#1f4e3d;#cfd6d2;#ffffff;9;Reggie Whitlock;40;PF;83;70;65;50;79;66;79;67;68;;US
+HFD;HFD;Hartford;Underwriters;#1f4e3d;#cfd6d2;#ffffff;10;Tunde Adebayo;21;C;85;68;66;44;79;61;86;82;62;;AF
+HFD;HFD;Hartford;Underwriters;#1f4e3d;#cfd6d2;#ffffff;11;Matt Hightower;35;SF;78;74;67;74;74;75;67;72;73;E;US
+HFD;HFD;Hartford;Underwriters;#1f4e3d;#cfd6d2;#ffffff;12;Tomislav Babić;3;PF;81;68;66;63;77;66;77;76;62;;EU
+BUF;BUF;Buffalo;Millers;#26408b;#f2d16b;#ffffff;1;Danny Moten;11;PG;73;92;81;88;76;98;69;86;83;;US
+BUF;BUF;Buffalo;Millers;#26408b;#f2d16b;#ffffff;2;Jerome Gaither;2;SG;77;90;91;89;80;77;69;77;78;;US
+BUF;BUF;Buffalo;Millers;#26408b;#f2d16b;#ffffff;3;Brett Kowalchuk;51;SF;79;82;78;82;73;73;75;80;61;;AN
+BUF;BUF;Buffalo;Millers;#26408b;#f2d16b;#ffffff;4;Dejan Zimmermann;30;PF;81;91;86;77;92;88;91;80;82;SD;EU
+BUF;BUF;Buffalo;Millers;#26408b;#f2d16b;#ffffff;5;Brett Tremblay;13;C;84;78;77;54;98;77;96;94;69;P;AN
+BUF;BUF;Buffalo;Millers;#26408b;#f2d16b;#ffffff;6;Zoran Stojković;54;PG;77;83;73;83;65;92;63;81;77;;EU
+BUF;BUF;Buffalo;Millers;#26408b;#f2d16b;#ffffff;7;Chidi Okonkwo;28;SG;79;77;78;82;74;77;70;71;64;;AF
+BUF;BUF;Buffalo;Millers;#26408b;#f2d16b;#ffffff;8;Mike Crenshaw;48;SF;80;83;86;80;80;77;73;77;68;P;US
+BUF;BUF;Buffalo;Millers;#26408b;#f2d16b;#ffffff;9;Jörg Krüger;55;PF;82;74;73;63;74;64;87;76;71;;EU
+BUF;BUF;Buffalo;Millers;#26408b;#f2d16b;#ffffff;10;Jan Hartmann;39;C;83;68;65;51;89;69;83;74;48;;EU
+BUF;BUF;Buffalo;Millers;#26408b;#f2d16b;#ffffff;11;Rex Thomas;29;SF;79;65;74;75;69;74;76;79;72;E;AN
+BUF;BUF;Buffalo;Millers;#26408b;#f2d16b;#ffffff;12;Rimas Stankevičius;9;PF;83;71;81;69;79;71;78;74;68;;EU
+MTL;MTL;Montreal;Beavers;#9e1b32;#f4f1ea;#f4f1ea;1;Shane White;20;PG;74;99;89;91;93;99;71;80;87;S;AN
+MTL;MTL;Montreal;Beavers;#9e1b32;#f4f1ea;#f4f1ea;2;Calvin O'Neal;46;SG;77;92;91;94;79;81;74;78;76;;AN
+MTL;MTL;Montreal;Beavers;#9e1b32;#f4f1ea;#f4f1ea;3;Jamie Cooper;35;SF;81;78;85;82;81;76;76;83;65;;AN
+MTL;MTL;Montreal;Beavers;#9e1b32;#f4f1ea;#f4f1ea;4;Jerome Bell;11;PF;83;89;93;83;93;81;97;90;85;SD;AN
+MTL;MTL;Montreal;Beavers;#9e1b32;#f4f1ea;#f4f1ea;5;Keith Ainsworth;55;C;83;74;78;56;99;76;98;92;55;;AA
+MTL;MTL;Montreal;Beavers;#9e1b32;#f4f1ea;#f4f1ea;6;Reggie Logan;26;PG;75;85;79;78;62;92;58;71;68;;AN
+MTL;MTL;Montreal;Beavers;#9e1b32;#f4f1ea;#f4f1ea;7;Cedric Dabney;47;SG;77;88;86;90;82;80;64;73;76;PD;US
+MTL;MTL;Montreal;Beavers;#9e1b32;#f4f1ea;#f4f1ea;8;Darnell Harris;45;SF;81;70;70;77;71;72;75;68;65;;AN
+MTL;MTL;Montreal;Beavers;#9e1b32;#f4f1ea;#f4f1ea;9;Petar Nikolic;38;PF;82;70;83;60;80;75;90;80;71;;EU
+MTL;MTL;Montreal;Beavers;#9e1b32;#f4f1ea;#f4f1ea;10;Rodney Easley;0;C;87;66;71;50;81;68;96;78;55;;US
+MTL;MTL;Montreal;Beavers;#9e1b32;#f4f1ea;#f4f1ea;11;Sven Vogt;34;SF;81;78;68;78;78;72;75;76;76;E;EU
+MTL;MTL;Montreal;Beavers;#9e1b32;#f4f1ea;#f4f1ea;12;Brett Dumont;2;PF;80;77;79;68;89;79;82;85;74;D;AN
+RIC;RIC;Richmond;Foxes;#c4561f;#1c2a3a;#ffffff;1;Petar Kaminski;55;PG;73;86;78;78;70;95;68;80;83;;EU
+RIC;RIC;Richmond;Foxes;#c4561f;#1c2a3a;#ffffff;2;Terrell Kearse;39;SG;78;92;88;98;89;76;71;87;77;D;US
+RIC;RIC;Richmond;Foxes;#c4561f;#1c2a3a;#ffffff;3;Greg Gadsden;12;SF;81;91;91;85;92;91;82;82;86;SD;US
+RIC;RIC;Richmond;Foxes;#c4561f;#1c2a3a;#ffffff;4;Jonathan Obi;47;PF;81;79;78;75;85;80;90;89;83;D;AF
+RIC;RIC;Richmond;Foxes;#c4561f;#1c2a3a;#ffffff;5;Greg Lumpkin;53;C;84;77;71;49;88;73;86;83;52;P;US
+RIC;RIC;Richmond;Foxes;#c4561f;#1c2a3a;#ffffff;6;Rafael Morales;27;PG;76;79;71;79;73;80;57;73;81;;LA
+RIC;RIC;Richmond;Foxes;#c4561f;#1c2a3a;#ffffff;7;Kenny Jarrett;45;SG;76;74;80;81;78;69;58;73;67;P;AA
+RIC;RIC;Richmond;Foxes;#c4561f;#1c2a3a;#ffffff;8;Lionel Lewis;41;SF;80;72;70;67;69;73;63;74;62;;AN
+RIC;RIC;Richmond;Foxes;#c4561f;#1c2a3a;#ffffff;9;Calvin Boatwright;7;PF;81;69;69;59;77;62;78;71;68;;AA
+RIC;RIC;Richmond;Foxes;#c4561f;#1c2a3a;#ffffff;10;Dwayne Hinton;51;C;84;59;67;43;78;63;87;72;45;;AA
+RIC;RIC;Richmond;Foxes;#c4561f;#1c2a3a;#ffffff;11;Pavel Hoffmann;37;SF;80;71;70;70;75;73;81;81;61;E;EU
+RIC;RIC;Richmond;Foxes;#c4561f;#1c2a3a;#ffffff;12;Brett MacLeod;43;PF;81;64;73;65;78;62;83;71;68;;AN
+RAL;RAL;Raleigh;Red Wolves;#a5282c;#2b2b2b;#ffffff;1;Andre Morris;52;PG;76;99;91;99;91;99;63;83;84;S;AN
+RAL;RAL;Raleigh;Red Wolves;#a5282c;#2b2b2b;#ffffff;2;Mike Torres;4;SG;76;91;95;90;84;78;67;81;85;PD;AN
+RAL;RAL;Raleigh;Red Wolves;#a5282c;#2b2b2b;#ffffff;3;Joost Bakker;45;SF;81;79;83;87;80;84;85;84;71;;EU
+RAL;RAL;Raleigh;Red Wolves;#a5282c;#2b2b2b;#ffffff;4;Vernon Battle;50;PF;81;83;81;68;85;76;92;81;67;D;US
+RAL;RAL;Raleigh;Red Wolves;#a5282c;#2b2b2b;#ffffff;5;Stefan Sabonis;16;C;83;75;73;55;97;76;99;95;59;;EU
+RAL;RAL;Raleigh;Red Wolves;#a5282c;#2b2b2b;#ffffff;6;Andres Ramirez;32;PG;77;84;77;82;68;85;66;81;73;;LA
+RAL;RAL;Raleigh;Red Wolves;#a5282c;#2b2b2b;#ffffff;7;Rimas Jankūnas;20;SG;77;76;79;74;70;63;66;67;74;;EU
+RAL;RAL;Raleigh;Red Wolves;#a5282c;#2b2b2b;#ffffff;8;Andrej Conti;34;SF;79;84;78;78;84;84;76;73;80;PD;EU
+RAL;RAL;Raleigh;Red Wolves;#a5282c;#2b2b2b;#ffffff;9;Luka Gagnon;46;PF;82;74;68;60;81;71;84;75;65;E;EU
+RAL;RAL;Raleigh;Red Wolves;#a5282c;#2b2b2b;#ffffff;10;Rodney Nelson;44;C;85;60;67;37;86;64;79;77;64;;AN
+RAL;RAL;Raleigh;Red Wolves;#a5282c;#2b2b2b;#ffffff;11;Miguel Castillo;25;SF;80;78;77;73;71;69;73;74;71;;LA
+RAL;RAL;Raleigh;Red Wolves;#a5282c;#2b2b2b;#ffffff;12;Dwayne Long;43;PF;82;65;71;64;76;66;80;77;64;;AN
+PIT;PIT;Pittsburgh;Ironworkers;#2b2b2b;#f2b51c;#f2b51c;1;Milan Jurić;51;PG;76;99;96;99;84;99;76;86;86;P;EU
+PIT;PIT;Pittsburgh;Ironworkers;#2b2b2b;#f2b51c;#f2b51c;2;Jerome Breckenridge;35;SG;78;99;99;99;95;91;83;86;81;SD;US
+PIT;PIT;Pittsburgh;Ironworkers;#2b2b2b;#f2b51c;#f2b51c;3;Marcus Tatum;5;SF;79;88;92;82;89;84;81;81;77;D;AA
+PIT;PIT;Pittsburgh;Ironworkers;#2b2b2b;#f2b51c;#f2b51c;4;Stefan Leblanc;1;PF;82;75;84;75;92;75;86;81;66;D;EU
+PIT;PIT;Pittsburgh;Ironworkers;#2b2b2b;#f2b51c;#f2b51c;5;Thon Kuminga;12;C;85;82;88;63;99;81;95;85;76;S;AF
+PIT;PIT;Pittsburgh;Ironworkers;#2b2b2b;#f2b51c;#f2b51c;6;Mario Popovic;34;PG;74;90;80;86;74;91;69;75;84;;EU
+PIT;PIT;Pittsburgh;Ironworkers;#2b2b2b;#f2b51c;#f2b51c;7;Shawn Sturdivant;14;SG;76;92;89;87;88;79;70;81;86;PD;US
+PIT;PIT;Pittsburgh;Ironworkers;#2b2b2b;#f2b51c;#f2b51c;8;Andrej Matic;11;SF;78;79;79;74;76;77;71;82;68;;EU
+PIT;PIT;Pittsburgh;Ironworkers;#2b2b2b;#f2b51c;#f2b51c;9;Willie Chambliss;18;PF;81;73;76;72;89;71;88;93;62;E;AA
+PIT;PIT;Pittsburgh;Ironworkers;#2b2b2b;#f2b51c;#f2b51c;10;Darnell Spearman;55;C;84;77;73;50;88;66;98;82;67;;US
+PIT;PIT;Pittsburgh;Ironworkers;#2b2b2b;#f2b51c;#f2b51c;11;Tomas Markovic;39;SF;80;73;75;72;72;79;71;78;65;;EU
+PIT;PIT;Pittsburgh;Ironworkers;#2b2b2b;#f2b51c;#f2b51c;12;Greg Garrison;32;PF;83;68;72;59;76;69;79;75;68;;US
+CIN;CIN;Cincinnati;Cleaners;#2f7fb5;#f4f1ea;#f4f1ea;1;Calvin McDavid;29;PG;75;88;74;82;74;84;60;72;81;;AN
+CIN;CIN;Cincinnati;Cleaners;#2f7fb5;#f4f1ea;#f4f1ea;2;Matt Pinkney;5;SG;77;83;77;90;72;70;73;82;78;;AA
+CIN;CIN;Cincinnati;Cleaners;#2f7fb5;#f4f1ea;#f4f1ea;3;Danny Anderson;28;SF;79;98;88;94;95;88;79;79;74;SD;AN
+CIN;CIN;Cincinnati;Cleaners;#2f7fb5;#f4f1ea;#f4f1ea;4;Todd West;42;PF;83;69;81;69;84;74;88;75;67;;AN
+CIN;CIN;Cincinnati;Cleaners;#2f7fb5;#f4f1ea;#f4f1ea;5;Rasheed Bryant;30;C;87;74;72;56;93;79;99;82;58;;AN
+CIN;CIN;Cincinnati;Cleaners;#2f7fb5;#f4f1ea;#f4f1ea;6;Vernon Forester;2;PG;74;79;70;73;71;86;62;74;82;;AN
+CIN;CIN;Cincinnati;Cleaners;#2f7fb5;#f4f1ea;#f4f1ea;7;Reggie Chatman;32;SG;77;82;77;83;77;72;61;66;76;P;US
+CIN;CIN;Cincinnati;Cleaners;#2f7fb5;#f4f1ea;#f4f1ea;8;Lamont Shealey;44;SF;78;64;63;66;65;72;60;69;66;;US
+CIN;CIN;Cincinnati;Cleaners;#2f7fb5;#f4f1ea;#f4f1ea;9;Jamal Ward;47;PF;80;74;77;59;79;64;76;79;65;;AN
+CIN;CIN;Cincinnati;Cleaners;#2f7fb5;#f4f1ea;#f4f1ea;10;Tomas Simic;12;C;86;63;65;47;80;63;90;80;55;E;EU
+CIN;CIN;Cincinnati;Cleaners;#2f7fb5;#f4f1ea;#f4f1ea;11;Cedric Grant;16;SF;80;71;66;73;72;69;69;69;73;;AN
+CIN;CIN;Cincinnati;Cleaners;#2f7fb5;#f4f1ea;#f4f1ea;12;Dwayne Bracey;40;PF;81;65;66;55;81;62;73;75;75;;AA
+COL;COL;Columbus;Inventors;#7a1f2b;#c7c9cc;#ffffff;1;Brian Atwater;11;PG;73;92;87;88;84;99;65;90;70;;AA
+COL;COL;Columbus;Inventors;#7a1f2b;#c7c9cc;#ffffff;2;Mike Hargrove;23;SG;76;93;84;90;88;86;81;82;86;D;US
+COL;COL;Columbus;Inventors;#7a1f2b;#c7c9cc;#ffffff;3;Jörg Petrovic;31;SF;79;84;83;82;80;83;88;83;67;;EU
+COL;COL;Columbus;Inventors;#7a1f2b;#c7c9cc;#ffffff;4;Marko Delic;5;PF;82;94;86;85;99;80;87;80;71;SD;EU
+COL;COL;Columbus;Inventors;#7a1f2b;#c7c9cc;#ffffff;5;Marcus Turner;4;C;83;67;75;50;89;76;97;79;63;;AN
+COL;COL;Columbus;Inventors;#7a1f2b;#c7c9cc;#ffffff;6;Tyrone Robinson;54;PG;76;82;79;80;68;89;59;81;75;;AN
+COL;COL;Columbus;Inventors;#7a1f2b;#c7c9cc;#ffffff;7;Dino Bogdanovic;38;SG;78;75;83;83;79;76;66;67;82;P;EU
+COL;COL;Columbus;Inventors;#7a1f2b;#c7c9cc;#ffffff;8;Travis Hudson;17;SF;78;78;77;70;77;74;68;74;60;;AN
+COL;COL;Columbus;Inventors;#7a1f2b;#c7c9cc;#ffffff;9;Sven Brandt;55;PF;80;71;73;57;78;69;79;77;70;;EU
+COL;COL;Columbus;Inventors;#7a1f2b;#c7c9cc;#ffffff;10;Andrej Bouchard;51;C;83;68;68;47;83;59;84;74;61;;EU
+COL;COL;Columbus;Inventors;#7a1f2b;#c7c9cc;#ffffff;11;Keith Hicks;19;SF;79;66;75;67;71;67;73;71;64;E;AN
+COL;COL;Columbus;Inventors;#7a1f2b;#c7c9cc;#ffffff;12;Rodney Wilkins;8;PF;81;67;78;64;75;68;76;75;68;;AN
+LOU;LOU;Louisville;Bourbons;#6b3a1f;#e3b866;#ffffff;1;Corey Jenkins;24;PG;72;99;90;94;93;99;75;88;83;S;AN
+LOU;LOU;Louisville;Bourbons;#6b3a1f;#e3b866;#ffffff;2;Andrej Kovac;29;SG;79;82;86;92;79;83;74;84;72;;EU
+LOU;LOU;Louisville;Bourbons;#6b3a1f;#e3b866;#ffffff;3;Petar Wojcik;52;SF;78;88;94;88;95;92;84;82;68;SD;EU
+LOU;LOU;Louisville;Bourbons;#6b3a1f;#e3b866;#ffffff;4;Eric Ross;18;PF;81;85;86;73;86;78;90;82;72;D;AN
+LOU;LOU;Louisville;Bourbons;#6b3a1f;#e3b866;#ffffff;5;Corey Kennedy;55;C;87;88;85;65;99;80;97;94;66;P;AN
+LOU;LOU;Louisville;Bourbons;#6b3a1f;#e3b866;#ffffff;6;Corey Covington;13;PG;74;84;75;78;65;80;52;73;74;;AA
+LOU;LOU;Louisville;Bourbons;#6b3a1f;#e3b866;#ffffff;7;Dejan Vukić;37;SG;79;85;84;86;84;79;63;70;72;PD;EU
+LOU;LOU;Louisville;Bourbons;#6b3a1f;#e3b866;#ffffff;8;Chris Powell;16;SF;80;76;73;74;77;76;65;77;74;;AN
+LOU;LOU;Louisville;Bourbons;#6b3a1f;#e3b866;#ffffff;9;Kenny Edwards;11;PF;81;75;75;68;81;73;89;75;78;;AN
+LOU;LOU;Louisville;Bourbons;#6b3a1f;#e3b866;#ffffff;10;Mindaugas Balčiūnas;27;C;86;68;62;45;86;72;88;84;52;;EU
+LOU;LOU;Louisville;Bourbons;#6b3a1f;#e3b866;#ffffff;11;Matt Burrell;36;SF;79;77;69;73;71;75;77;76;65;E;AA
+LOU;LOU;Louisville;Bourbons;#6b3a1f;#e3b866;#ffffff;12;Rasheed Toliver;4;PF;80;75;73;58;84;65;76;78;62;D;US
+NSH;NSH;Nashville;Pickers;#1d3f6e;#e05a47;#ffffff;1;Andre Harrell;27;PG;74;94;86;92;74;96;73;82;79;;AA
+NSH;NSH;Nashville;Pickers;#1d3f6e;#e05a47;#ffffff;2;Monty Kavanagh;40;SG;78;91;93;98;80;79;78;84;86;P;AN
+NSH;NSH;Nashville;Pickers;#1d3f6e;#e05a47;#ffffff;3;Darnell Brennan;39;SF;79;95;93;92;89;99;77;85;73;SD;AN
+NSH;NSH;Nashville;Pickers;#1d3f6e;#e05a47;#ffffff;4;Pavel Ilic;3;PF;81;80;86;67;95;79;92;90;68;D;EU
+NSH;NSH;Nashville;Pickers;#1d3f6e;#e05a47;#ffffff;5;Kofi Traore;1;C;85;75;68;47;91;75;95;80;59;;AF
+NSH;NSH;Nashville;Pickers;#1d3f6e;#e05a47;#ffffff;6;Rex Rogers;22;PG;76;90;84;84;72;94;67;78;84;P;AN
+NSH;NSH;Nashville;Pickers;#1d3f6e;#e05a47;#ffffff;7;Mateo Garcia;41;SG;78;79;84;78;69;65;61;67;76;;LA
+NSH;NSH;Nashville;Pickers;#1d3f6e;#e05a47;#ffffff;8;Duane Granger;48;SF;79;75;75;82;72;75;72;79;70;;US
+NSH;NSH;Nashville;Pickers;#1d3f6e;#e05a47;#ffffff;9;Greg Jeffcoat;28;PF;81;66;68;66;85;65;76;81;68;;US
+NSH;NSH;Nashville;Pickers;#1d3f6e;#e05a47;#ffffff;10;Rex Strother;17;C;83;67;68;45;88;63;94;82;53;;US
+NSH;NSH;Nashville;Pickers;#1d3f6e;#e05a47;#ffffff;11;Shawn Drayton;29;SF;78;76;71;73;73;68;71;73;58;E;AA
+NSH;NSH;Nashville;Pickers;#1d3f6e;#e05a47;#ffffff;12;Rex Moore;4;PF;81;67;68;63;81;61;77;77;74;;AN
+BHM;BHM;Birmingham;Ironmen;#5c5f66;#e07a2a;#ffffff;1;Jerome Lockett;29;PG;74;93;85;91;88;98;60;81;92;S;AA
+BHM;BHM;Birmingham;Ironmen;#5c5f66;#e07a2a;#ffffff;2;Jamal Ashby;14;SG;77;85;85;85;87;82;79;83;71;D;AA
+BHM;BHM;Birmingham;Ironmen;#5c5f66;#e07a2a;#ffffff;3;Kevin Pettaway;24;SF;79;77;86;79;82;80;77;88;66;D;US
+BHM;BHM;Birmingham;Ironmen;#5c5f66;#e07a2a;#ffffff;4;Sherman Ogletree;31;PF;80;71;82;71;87;74;87;86;65;;US
+BHM;BHM;Birmingham;Ironmen;#5c5f66;#e07a2a;#ffffff;5;Dwayne McNeal;21;C;84;72;79;52;92;74;87;86;65;P;AA
+BHM;BHM;Birmingham;Ironmen;#5c5f66;#e07a2a;#ffffff;6;Byron Pendergrass;52;PG;76;78;68;68;66;75;56;69;72;;US
+BHM;BHM;Birmingham;Ironmen;#5c5f66;#e07a2a;#ffffff;7;Rex Beckerman;12;SG;79;71;71;76;71;68;64;72;74;;AN
+BHM;BHM;Birmingham;Ironmen;#5c5f66;#e07a2a;#ffffff;8;Travis Perry;17;SF;78;68;75;78;73;69;67;73;69;P;AN
+BHM;BHM;Birmingham;Ironmen;#5c5f66;#e07a2a;#ffffff;9;Kofi Eze;10;PF;80;68;69;59;76;69;75;77;69;;AF
+BHM;BHM;Birmingham;Ironmen;#5c5f66;#e07a2a;#ffffff;10;Shane Goodwin;5;C;83;63;59;37;83;65;87;82;53;E;AA
+BHM;BHM;Birmingham;Ironmen;#5c5f66;#e07a2a;#ffffff;11;Brian Quarles;23;SF;80;72;74;76;72;66;62;67;60;;US
+BHM;BHM;Birmingham;Ironmen;#5c5f66;#e07a2a;#ffffff;12;Reggie Baskerville;25;PF;81;62;67;53;69;60;76;72;64;;AA
+JAX;JAX;Jacksonville;Manatees;#13757b;#f2c14e;#ffffff;1;Greg Cartwright;19;PG;73;99;95;98;92;99;70;83;82;S;AA
+JAX;JAX;Jacksonville;Manatees;#13757b;#f2c14e;#ffffff;2;Dwayne Adams;9;SG;77;81;80;88;79;80;72;74;64;;AN
+JAX;JAX;Jacksonville;Manatees;#13757b;#f2c14e;#ffffff;3;Kenny Baker;36;SF;79;76;80;81;81;73;70;79;62;;AN
+JAX;JAX;Jacksonville;Manatees;#13757b;#f2c14e;#ffffff;4;Corey Lane;17;PF;80;83;80;77;93;79;90;77;74;PD;AN
+JAX;JAX;Jacksonville;Manatees;#13757b;#f2c14e;#ffffff;5;Brent McCray;0;C;83;73;70;53;95;73;99;92;58;;US
+JAX;JAX;Jacksonville;Manatees;#13757b;#f2c14e;#ffffff;6;Ibrahim Kamara;34;PG;76;85;80;83;68;84;53;77;82;P;AF
+JAX;JAX;Jacksonville;Manatees;#13757b;#f2c14e;#ffffff;7;Shawn Strickland;37;SG;76;74;81;82;82;78;69;80;71;D;AA
+JAX;JAX;Jacksonville;Manatees;#13757b;#f2c14e;#ffffff;8;Reggie Peterson;45;SF;80;79;77;77;72;77;74;79;74;;AN
+JAX;JAX;Jacksonville;Manatees;#13757b;#f2c14e;#ffffff;9;Duane Bennett;46;PF;82;70;76;58;86;73;84;82;71;;AN
+JAX;JAX;Jacksonville;Manatees;#13757b;#f2c14e;#ffffff;10;Reggie Abernathy;22;C;87;69;62;46;79;60;93;84;62;E;AA
+JAX;JAX;Jacksonville;Manatees;#13757b;#f2c14e;#ffffff;11;Ruud Visser;13;SF;79;70;64;65;69;68;64;68;56;;EU
+JAX;JAX;Jacksonville;Manatees;#13757b;#f2c14e;#ffffff;12;Dong-hyun Kang;52;PF;83;73;70;60;77;72;79;71;65;;AS
+STL;STL;St. Louis;Barges;#1f3b73;#e6e1d3;#ffffff;1;Matt Lyles;24;PG;73;99;94;94;94;99;67;88;92;S;US
+STL;STL;St. Louis;Barges;#1f3b73;#e6e1d3;#ffffff;2;Marcus Fisher;42;SG;77;92;98;99;88;80;73;92;77;D;AN
+STL;STL;St. Louis;Barges;#1f3b73;#e6e1d3;#ffffff;3;Monty Martin;21;SF;79;86;82;87;83;86;84;78;64;D;AN
+STL;STL;St. Louis;Barges;#1f3b73;#e6e1d3;#ffffff;4;Antonio Satterfield;18;PF;80;91;90;81;99;87;99;95;73;SD;AA
+STL;STL;St. Louis;Barges;#1f3b73;#e6e1d3;#ffffff;5;Mario Zoric;47;C;87;77;81;57;99;76;99;86;56;P;EU
+STL;STL;St. Louis;Barges;#1f3b73;#e6e1d3;#ffffff;6;Greg Ellis;7;PG;73;86;71;73;73;82;60;81;72;;AN
+STL;STL;St. Louis;Barges;#1f3b73;#e6e1d3;#ffffff;7;Lionel Washington;31;SG;76;85;90;89;82;82;68;83;81;D;AN
+STL;STL;St. Louis;Barges;#1f3b73;#e6e1d3;#ffffff;8;Lamont Murphy;41;SF;81;83;76;82;79;82;74;73;82;P;AN
+STL;STL;St. Louis;Barges;#1f3b73;#e6e1d3;#ffffff;9;Matt Hunter;22;PF;80;76;76;71;87;72;82;76;72;D;AN
+STL;STL;St. Louis;Barges;#1f3b73;#e6e1d3;#ffffff;10;Jerome Morgan;46;C;85;60;71;45;86;69;97;81;57;E;AN
+STL;STL;St. Louis;Barges;#1f3b73;#e6e1d3;#ffffff;11;Chris Green;2;SF;80;71;69;69;77;76;66;71;74;;AN
+STL;STL;St. Louis;Barges;#1f3b73;#e6e1d3;#ffffff;12;Jan Lewandowski;25;PF;81;71;80;65;79;75;79;84;79;;EU
+KCK;KCK;Kansas City;Stockmen;#8b2b20;#e9dcc0;#ffffff;1;Jerome Isom;3;PG;75;84;75;84;70;94;61;81;84;;AA
+KCK;KCK;Kansas City;Stockmen;#8b2b20;#e9dcc0;#ffffff;2;Stefan Laurent;32;SG;78;94;98;98;99;92;78;78;81;SD;EU
+KCK;KCK;Kansas City;Stockmen;#8b2b20;#e9dcc0;#ffffff;3;Dirk Weber;25;SF;81;83;79;77;75;78;77;78;78;;EU
+KCK;KCK;Kansas City;Stockmen;#8b2b20;#e9dcc0;#ffffff;4;Javier Delgado;6;PF;83;72;85;65;92;76;86;78;79;;LA
+KCK;KCK;Kansas City;Stockmen;#8b2b20;#e9dcc0;#ffffff;5;Danny Butler;9;C;83;79;79;55;99;85;91;92;55;P;AN
+KCK;KCK;Kansas City;Stockmen;#8b2b20;#e9dcc0;#ffffff;6;Carlos Reyes;28;PG;77;81;68;71;65;83;59;78;65;;LA
+KCK;KCK;Kansas City;Stockmen;#8b2b20;#e9dcc0;#ffffff;7;Dwayne Overstreet;21;SG;77;73;85;86;78;73;67;74;79;;US
+KCK;KCK;Kansas City;Stockmen;#8b2b20;#e9dcc0;#ffffff;8;Duane Bolden;14;SF;80;77;75;69;79;71;67;70;66;P;AA
+KCK;KCK;Kansas City;Stockmen;#8b2b20;#e9dcc0;#ffffff;9;Eric Walker;36;PF;83;70;69;56;76;65;87;81;71;;AN
+KCK;KCK;Kansas City;Stockmen;#8b2b20;#e9dcc0;#ffffff;10;Marko Pavlovic;54;C;85;59;63;43;78;65;96;85;50;E;EU
+KCK;KCK;Kansas City;Stockmen;#8b2b20;#e9dcc0;#ffffff;11;Sung-min Yoon;52;SF;80;81;74;71;73;76;74;70;69;;AS
+KCK;KCK;Kansas City;Stockmen;#8b2b20;#e9dcc0;#ffffff;12;Shawn Odom;29;PF;80;66;78;58;77;64;85;80;72;;AA
+OMA;OMA;Omaha;Cranes;#3c5a7a;#d64c3b;#ffffff;1;Kevin Willis;39;PG;73;82;76;89;68;88;63;85;81;;AN
+OMA;OMA;Omaha;Cranes;#3c5a7a;#d64c3b;#ffffff;2;Matt Doyle;27;SG;79;89;93;88;82;82;67;69;89;SD;AN
+OMA;OMA;Omaha;Cranes;#3c5a7a;#d64c3b;#ffffff;3;Duane Marshall;12;SF;78;74;82;74;79;83;74;74;66;;AN
+OMA;OMA;Omaha;Cranes;#3c5a7a;#d64c3b;#ffffff;4;Eric Boswell;55;PF;81;65;73;65;85;64;80;80;65;;AA
+OMA;OMA;Omaha;Cranes;#3c5a7a;#d64c3b;#ffffff;5;Dwayne Wilson;13;C;83;81;79;61;93;79;89;91;65;P;AN
+OMA;OMA;Omaha;Cranes;#3c5a7a;#d64c3b;#ffffff;6;Todd Wright;35;PG;75;87;69;80;71;81;66;79;80;;AN
+OMA;OMA;Omaha;Cranes;#3c5a7a;#d64c3b;#ffffff;7;Kenny Bridgewater;5;SG;78;77;81;80;78;70;59;68;70;P;AA
+OMA;OMA;Omaha;Cranes;#3c5a7a;#d64c3b;#ffffff;8;Sherman Coleman;1;SF;78;74;71;69;68;70;69;71;61;;US
+OMA;OMA;Omaha;Cranes;#3c5a7a;#d64c3b;#ffffff;9;Sami Virtanen;30;PF;81;60;73;59;72;62;81;72;60;E;NO
+OMA;OMA;Omaha;Cranes;#3c5a7a;#d64c3b;#ffffff;10;Corey Hubbard;37;C;86;71;61;43;84;63;92;77;56;;AA
+OMA;OMA;Omaha;Cranes;#3c5a7a;#d64c3b;#ffffff;11;Tomas Jankovic;51;SF;81;65;64;69;70;67;63;68;65;;EU
+OMA;OMA;Omaha;Cranes;#3c5a7a;#d64c3b;#ffffff;12;Jan Schneider;31;PF;83;63;67;54;80;62;77;65;72;;EU
+TUL;TUL;Tulsa;Oilmen;#111111;#d9a52b;#d9a52b;1;Erik Larsson;45;PG;75;90;84;86;78;90;68;79;84;;NO
+TUL;TUL;Tulsa;Oilmen;#111111;#d9a52b;#d9a52b;2;Clarence Stephens;53;SG;78;87;86;92;84;81;76;86;72;D;AN
+TUL;TUL;Tulsa;Oilmen;#111111;#d9a52b;#d9a52b;3;Eduardo Lopez;47;SF;79;95;98;99;92;95;78;87;87;SD;LA
+TUL;TUL;Tulsa;Oilmen;#111111;#d9a52b;#d9a52b;4;Greg Miller;36;PF;81;80;81;75;92;81;97;86;64;D;AN
+TUL;TUL;Tulsa;Oilmen;#111111;#d9a52b;#d9a52b;5;Marko Moreau;21;C;83;75;76;50;90;76;91;89;50;;EU
+TUL;TUL;Tulsa;Oilmen;#111111;#d9a52b;#d9a52b;6;Petar Wagner;44;PG;76;78;80;85;69;90;58;82;69;;EU
+TUL;TUL;Tulsa;Oilmen;#111111;#d9a52b;#d9a52b;7;Terrell Watson;13;SG;77;78;79;89;74;76;66;66;75;P;AN
+TUL;TUL;Tulsa;Oilmen;#111111;#d9a52b;#d9a52b;8;Todd Payne;27;SF;78;75;71;78;82;73;73;74;67;D;AN
+TUL;TUL;Tulsa;Oilmen;#111111;#d9a52b;#d9a52b;9;Rodney Rucker;37;PF;81;75;78;70;85;77;90;73;65;D;AA
+TUL;TUL;Tulsa;Oilmen;#111111;#d9a52b;#d9a52b;10;Keith Whitaker;3;C;83;69;67;39;79;64;86;79;59;;AA
+TUL;TUL;Tulsa;Oilmen;#111111;#d9a52b;#d9a52b;11;Marko Schulz;15;SF;79;83;77;74;77;73;75;78;77;E;EU
+TUL;TUL;Tulsa;Oilmen;#111111;#d9a52b;#d9a52b;12;Joost de Vries;14;PF;82;73;67;59;73;64;82;74;76;;EU
+AUS;AUS;Austin;Bats;#3d2b56;#ff8a3d;#ffffff;1;Henrik Eriksson;27;PG;76;98;84;93;89;99;66;91;83;P;NO
+AUS;AUS;Austin;Bats;#3d2b56;#ff8a3d;#ffffff;2;Ryan Jackson;46;SG;77;93;95;98;94;87;77;78;75;SD;AN
+AUS;AUS;Austin;Bats;#3d2b56;#ff8a3d;#ffffff;3;Shawn Hoffs;15;SF;79;87;86;82;91;82;85;88;75;D;AN
+AUS;AUS;Austin;Bats;#3d2b56;#ff8a3d;#ffffff;4;Rex Mabry;49;PF;82;82;91;76;91;76;92;85;67;D;US
+AUS;AUS;Austin;Bats;#3d2b56;#ff8a3d;#ffffff;5;Predrag Russo;20;C;84;83;83;63;99;91;99;86;70;S;EU
+AUS;AUS;Austin;Bats;#3d2b56;#ff8a3d;#ffffff;6;Lamont Ford;19;PG;76;86;81;78;68;95;68;76;79;;AN
+AUS;AUS;Austin;Bats;#3d2b56;#ff8a3d;#ffffff;7;Andrej Pelletier;50;SG;78;87;87;95;78;87;74;74;71;P;EU
+AUS;AUS;Austin;Bats;#3d2b56;#ff8a3d;#ffffff;8;Rasheed Langford;43;SF;80;74;71;77;76;81;69;78;62;;AA
+AUS;AUS;Austin;Bats;#3d2b56;#ff8a3d;#ffffff;9;Corey Mayfield;14;PF;82;74;74;60;76;69;88;75;61;;AA
+AUS;AUS;Austin;Bats;#3d2b56;#ff8a3d;#ffffff;10;Tyrone Campbell;53;C;83;67;62;43;86;65;95;80;67;;AN
+AUS;AUS;Austin;Bats;#3d2b56;#ff8a3d;#ffffff;11;Pavel Esposito;3;SF;79;75;74;74;78;75;81;81;81;E;EU
+AUS;AUS;Austin;Bats;#3d2b56;#ff8a3d;#ffffff;12;Kenny Dixon;35;PF;81;75;72;59;82;64;75;78;76;D;AN
+ELP;ELP;El Paso;Scorpions;#b3471d;#f2e3b3;#ffffff;1;Antonio Graham;42;PG;75;86;85;91;75;96;66;81;82;P;AN
+ELP;ELP;El Paso;Scorpions;#b3471d;#f2e3b3;#ffffff;2;Tomas Bianchi;45;SG;79;89;83;95;82;74;78;81;68;D;EU
+ELP;ELP;El Paso;Scorpions;#b3471d;#f2e3b3;#ffffff;3;Henning Horvat;30;SF;78;76;76;78;77;78;72;78;72;;EU
+ELP;ELP;El Paso;Scorpions;#b3471d;#f2e3b3;#ffffff;4;Lamont Parker;17;PF;82;70;73;60;83;76;85;80;61;;AN
+ELP;ELP;El Paso;Scorpions;#b3471d;#f2e3b3;#ffffff;5;Duane Gibson;7;C;87;84;82;62;99;86;93;83;73;S;AN
+ELP;ELP;El Paso;Scorpions;#b3471d;#f2e3b3;#ffffff;6;Pascal Ndiaye;43;PG;77;80;74;76;71;94;56;80;83;P;AF
+ELP;ELP;El Paso;Scorpions;#b3471d;#f2e3b3;#ffffff;7;Jari Bergstrom;38;SG;78;79;76;81;71;62;65;69;76;;NO
+ELP;ELP;El Paso;Scorpions;#b3471d;#f2e3b3;#ffffff;8;Nenad Barić;27;SF;80;65;67;70;67;69;66;63;56;;EU
+ELP;ELP;El Paso;Scorpions;#b3471d;#f2e3b3;#ffffff;9;Kenny Wallace;32;PF;82;66;68;52;79;66;81;65;64;;AN
+ELP;ELP;El Paso;Scorpions;#b3471d;#f2e3b3;#ffffff;10;Reggie Jordan;52;C;84;65;61;42;78;66;85;69;61;;AN
+ELP;ELP;El Paso;Scorpions;#b3471d;#f2e3b3;#ffffff;11;Lionel Cromartie;41;SF;79;70;72;72;66;74;75;70;71;;AA
+ELP;ELP;El Paso;Scorpions;#b3471d;#f2e3b3;#ffffff;12;Jamal Russell;8;PF;83;68;75;62;77;68;85;81;75;E;AN
+MEX;MEX;Mexico City;Axolotls;#d6457a;#1b4d3e;#ffffff;1;Antonio Cook;40;PG;74;87;79;82;71;90;66;77;69;;AN
+MEX;MEX;Mexico City;Axolotls;#d6457a;#1b4d3e;#ffffff;2;Todd Johnson;45;SG;77;89;93;94;86;83;71;88;81;D;AN
+MEX;MEX;Mexico City;Axolotls;#d6457a;#1b4d3e;#ffffff;3;Monty Upshaw;47;SF;78;92;93;88;87;94;81;81;73;SD;US
+MEX;MEX;Mexico City;Axolotls;#d6457a;#1b4d3e;#ffffff;4;Sherman Dewberry;0;PF;81;92;94;74;98;82;92;86;71;SD;AA
+MEX;MEX;Mexico City;Axolotls;#d6457a;#1b4d3e;#ffffff;5;Marcus Dawkins;23;C;86;72;75;52;91;79;98;86;54;;AA
+MEX;MEX;Mexico City;Axolotls;#d6457a;#1b4d3e;#ffffff;6;Antonio Womack;1;PG;72;83;70;74;64;84;60;82;77;;AA
+MEX;MEX;Mexico City;Axolotls;#d6457a;#1b4d3e;#ffffff;7;Willie Brantley;19;SG;78;88;88;82;82;81;68;75;66;PD;AA
+MEX;MEX;Mexico City;Axolotls;#d6457a;#1b4d3e;#ffffff;8;Jan Nowak;55;SF;81;82;72;71;72;77;73;73;61;;EU
+MEX;MEX;Mexico City;Axolotls;#d6457a;#1b4d3e;#ffffff;9;Reggie Hatcher;34;PF;82;69;81;70;79;65;79;74;69;;AA
+MEX;MEX;Mexico City;Axolotls;#d6457a;#1b4d3e;#ffffff;10;Travis Thornton;52;C;86;68;69;54;88;73;99;94;58;E;AA
+MEX;MEX;Mexico City;Axolotls;#d6457a;#1b4d3e;#ffffff;11;Danny Reed;15;SF;79;74;71;71;75;76;77;79;75;;AN
+MEX;MEX;Mexico City;Axolotls;#d6457a;#1b4d3e;#ffffff;12;Serge Deng;39;PF;83;65;68;60;77;71;78;76;73;;AF
+SEA;SEA;Seattle;Ferries;#0f5257;#f2f2f2;#f2f2f2;1;Petteri Dahl;41;PG;75;99;93;91;82;99;68;85;89;;NO
+SEA;SEA;Seattle;Ferries;#0f5257;#f2f2f2;#f2f2f2;2;Tyrone Patterson;13;SG;76;91;90;91;89;87;80;86;83;D;AN
+SEA;SEA;Seattle;Ferries;#0f5257;#f2f2f2;#f2f2f2;3;Dwayne McKenzie;8;SF;78;84;95;93;85;96;82;84;77;D;AN
+SEA;SEA;Seattle;Ferries;#0f5257;#f2f2f2;#f2f2f2;4;Andrej Kostic;34;PF;83;95;99;90;99;88;99;96;77;SD;EU
+SEA;SEA;Seattle;Ferries;#0f5257;#f2f2f2;#f2f2f2;5;Bo Underwood;14;C;83;81;87;61;99;91;99;88;75;S;AA
+SEA;SEA;Seattle;Ferries;#0f5257;#f2f2f2;#f2f2f2;6;Reggie Hampton;37;PG;76;86;80;81;72;85;61;83;72;;AA
+SEA;SEA;Seattle;Ferries;#0f5257;#f2f2f2;#f2f2f2;7;Byron Hill;40;SG;76;84;88;94;86;78;70;77;86;PD;AN
+SEA;SEA;Seattle;Ferries;#0f5257;#f2f2f2;#f2f2f2;8;Nils Aalto;44;SF;80;78;79;81;80;81;74;73;77;;NO
+SEA;SEA;Seattle;Ferries;#0f5257;#f2f2f2;#f2f2f2;9;Rodney Ragland;0;PF;81;69;70;69;84;66;81;80;71;;AA
+SEA;SEA;Seattle;Ferries;#0f5257;#f2f2f2;#f2f2f2;10;Eric Rivers;38;C;84;70;73;48;88;71;96;81;65;;AN
+SEA;SEA;Seattle;Ferries;#0f5257;#f2f2f2;#f2f2f2;11;Rasheed Hayes;39;SF;80;82;74;79;75;82;85;91;80;E;AN
+SEA;SEA;Seattle;Ferries;#0f5257;#f2f2f2;#f2f2f2;12;Jari Lindqvist;26;PF;82;73;76;61;84;68;89;76;64;;NO
+VAN;VAN;Vancouver;Cedars;#2a5d3c;#c9a36a;#ffffff;1;Todd Reynolds;31;PG;76;92;77;89;73;97;65;78;80;;AN
+VAN;VAN;Vancouver;Cedars;#2a5d3c;#c9a36a;#ffffff;2;Sherman King;17;SG;77;86;94;93;85;82;78;82;79;PD;AN
+VAN;VAN;Vancouver;Cedars;#2a5d3c;#c9a36a;#ffffff;3;Matt Young;32;SF;80;79;81;84;77;83;81;84;76;;AN
+VAN;VAN;Vancouver;Cedars;#2a5d3c;#c9a36a;#ffffff;4;Teemu Halvorsen;36;PF;83;96;94;75;99;82;89;84;83;SD;NO
+VAN;VAN;Vancouver;Cedars;#2a5d3c;#c9a36a;#ffffff;5;Travis McGhee;33;C;85;70;70;50;96;70;90;90;69;;AA
+VAN;VAN;Vancouver;Cedars;#2a5d3c;#c9a36a;#ffffff;6;Mamadou Diallo;49;PG;74;85;71;82;73;87;64;73;71;;AF
+VAN;VAN;Vancouver;Cedars;#2a5d3c;#c9a36a;#ffffff;7;Greg Goins;2;SG;79;77;80;81;72;77;61;74;70;P;AA
+VAN;VAN;Vancouver;Cedars;#2a5d3c;#c9a36a;#ffffff;8;Corey Tucker;52;SF;80;74;71;73;67;75;62;64;59;;AN
+VAN;VAN;Vancouver;Cedars;#2a5d3c;#c9a36a;#ffffff;9;Chris Howard;35;PF;80;66;78;61;83;68;80;76;58;;AN
+VAN;VAN;Vancouver;Cedars;#2a5d3c;#c9a36a;#ffffff;10;Tomas Kazlauskas;16;C;87;62;66;41;82;71;89;83;47;;EU
+VAN;VAN;Vancouver;Cedars;#2a5d3c;#c9a36a;#ffffff;11;Tyrone Eason;5;SF;79;70;69;71;74;69;72;72;73;;AA
+VAN;VAN;Vancouver;Cedars;#2a5d3c;#c9a36a;#ffffff;12;Jerome Caudle;40;PF;80;68;72;59;80;68;90;75;69;E;AA
+ANC;ANC;Anchorage;Moose;#3b2f2a;#8fb8de;#ffffff;1;Vernon Wood;19;PG;76;86;75;88;79;88;69;82;73;;AN
+ANC;ANC;Anchorage;Moose;#3b2f2a;#8fb8de;#ffffff;2;Todd Alcorn;31;SG;78;78;80;91;78;81;71;73;67;;AA
+ANC;ANC;Anchorage;Moose;#3b2f2a;#8fb8de;#ffffff;3;Danny Purnell;54;SF;79;76;72;74;68;75;74;75;74;;AA
+ANC;ANC;Anchorage;Moose;#3b2f2a;#8fb8de;#ffffff;4;Rasheed Hamilton;49;PF;81;82;90;80;96;77;89;77;75;SD;AN
+ANC;ANC;Anchorage;Moose;#3b2f2a;#8fb8de;#ffffff;5;Scott Nance;41;C;87;72;70;41;91;66;89;85;65;;AA
+ANC;ANC;Anchorage;Moose;#3b2f2a;#8fb8de;#ffffff;6;Keith Barkley;51;PG;76;78;63;76;63;72;53;71;76;;AA
+ANC;ANC;Anchorage;Moose;#3b2f2a;#8fb8de;#ffffff;7;Rodney Matthews;25;SG;78;76;76;71;70;69;55;69;68;;AN
+ANC;ANC;Anchorage;Moose;#3b2f2a;#8fb8de;#ffffff;8;Ruud Romano;1;SF;79;76;76;77;79;84;75;71;66;P;EU
+ANC;ANC;Anchorage;Moose;#3b2f2a;#8fb8de;#ffffff;9;Brian Trotter;44;PF;83;71;65;52;71;62;75;71;72;;AA
+ANC;ANC;Anchorage;Moose;#3b2f2a;#8fb8de;#ffffff;10;Greg Kinard;4;C;84;57;58;38;80;55;79;71;63;;AA
+ANC;ANC;Anchorage;Moose;#3b2f2a;#8fb8de;#ffffff;11;Todd Murray;34;SF;80;68;70;74;70;71;69;66;66;;AN
+ANC;ANC;Anchorage;Moose;#3b2f2a;#8fb8de;#ffffff;12;Terrell Singletary;40;PF;83;73;74;60;73;70;90;81;73;E;AA
+HNL;HNL;Honolulu;Nene;#14897a;#f4b942;#ffffff;1;Jan Moretti;30;PG;74;84;81;77;69;85;60;77;81;;EU
+HNL;HNL;Honolulu;Nene;#14897a;#f4b942;#ffffff;2;Sherman Price;26;SG;76;97;94;99;92;88;67;83;90;SD;AN
+HNL;HNL;Honolulu;Nene;#14897a;#f4b942;#ffffff;3;Ramon Hernandez;39;SF;78;82;85;79;80;78;79;86;75;;LA
+HNL;HNL;Honolulu;Nene;#14897a;#f4b942;#ffffff;4;Jerome Simmons;15;PF;81;72;84;64;84;72;86;85;63;;AN
+HNL;HNL;Honolulu;Nene;#14897a;#f4b942;#ffffff;5;Kevin Thompson;49;C;87;71;67;51;85;70;93;81;64;;AN
+HNL;HNL;Honolulu;Nene;#14897a;#f4b942;#ffffff;6;Rex Nesbitt;34;PG;73;87;73;80;63;86;57;76;68;P;US
+HNL;HNL;Honolulu;Nene;#14897a;#f4b942;#ffffff;7;Clarence Beasley;1;SG;78;74;78;77;75;73;70;79;77;;AA
+HNL;HNL;Honolulu;Nene;#14897a;#f4b942;#ffffff;8;Rodney Mosley;20;SF;80;66;65;77;70;68;69;68;69;;AA
+HNL;HNL;Honolulu;Nene;#14897a;#f4b942;#ffffff;9;Luka Girard;51;PF;83;67;73;67;75;68;85;81;61;;EU
+HNL;HNL;Honolulu;Nene;#14897a;#f4b942;#ffffff;10;Todd Gentry;12;C;86;67;66;48;88;71;97;89;64;E;AA
+HNL;HNL;Honolulu;Nene;#14897a;#f4b942;#ffffff;11;Derrick Sanders;17;SF;79;78;77;80;72;74;70;69;77;;AN
+HNL;HNL;Honolulu;Nene;#14897a;#f4b942;#ffffff;12;Rasheed Maverick;28;PF;82;75;77;64;76;68;87;81;68;;AN
+SDG;SDG;San Diego;Sea Lions;#1c4f8c;#f0c75e;#ffffff;1;Andrej Petrauskas;34;PG;74;89;78;87;78;88;65;84;82;;EU
+SDG;SDG;San Diego;Sea Lions;#1c4f8c;#f0c75e;#ffffff;2;Matt Brooks;10;SG;78;93;92;99;85;86;76;84;76;SD;AN
+SDG;SDG;San Diego;Sea Lions;#1c4f8c;#f0c75e;#ffffff;3;Lionel Webb;41;SF;79;79;76;81;83;84;84;84;78;D;AN
+SDG;SDG;San Diego;Sea Lions;#1c4f8c;#f0c75e;#ffffff;4;Rex Kelly;48;PF;81;84;86;77;98;83;94;91;81;D;AN
+SDG;SDG;San Diego;Sea Lions;#1c4f8c;#f0c75e;#ffffff;5;Brian Williams;35;C;86;82;87;70;99;85;95;86;76;S;AN
+SDG;SDG;San Diego;Sea Lions;#1c4f8c;#f0c75e;#ffffff;6;Ivo Mandić;55;PG;74;87;78;87;67;88;65;78;82;;EU
+SDG;SDG;San Diego;Sea Lions;#1c4f8c;#f0c75e;#ffffff;7;Rodney Yancey;22;SG;77;82;88;84;81;75;71;74;70;;AA
+SDG;SDG;San Diego;Sea Lions;#1c4f8c;#f0c75e;#ffffff;8;Mamadou Mensah;49;SF;80;81;78;77;84;76;72;73;68;PD;AF
+SDG;SDG;San Diego;Sea Lions;#1c4f8c;#f0c75e;#ffffff;9;Keith Evans;4;PF;82;73;69;59;75;71;87;73;72;;AN
+SDG;SDG;San Diego;Sea Lions;#1c4f8c;#f0c75e;#ffffff;10;Duane O'Brien;32;C;83;68;70;51;87;64;83;87;57;;AN
+SDG;SDG;San Diego;Sea Lions;#1c4f8c;#f0c75e;#ffffff;11;Vernon Freeman;0;SF;80;78;85;85;76;80;87;80;65;E;AN
+SDG;SDG;San Diego;Sea Lions;#1c4f8c;#f0c75e;#ffffff;12;Marko Novak;16;PF;81;72;70;64;74;63;83;77;77;;EU
+LVS;LVS;Las Vegas;Jackrabbits;#c6a15b;#1a1a1a;#ffffff;1;Jamal Myers;17;PG;74;99;87;87;78;99;70;84;86;;AN
+LVS;LVS;Las Vegas;Jackrabbits;#c6a15b;#1a1a1a;#ffffff;2;Terrell Woods;50;SG;77;84;86;82;81;72;69;80;82;;AN
+LVS;LVS;Las Vegas;Jackrabbits;#c6a15b;#1a1a1a;#ffffff;3;Greg Clark;45;SF;79;95;88;92;92;85;79;77;86;SD;AN
+LVS;LVS;Las Vegas;Jackrabbits;#c6a15b;#1a1a1a;#ffffff;4;Shawn Witherspoon;16;PF;82;75;82;71;94;81;94;82;83;D;AA
+LVS;LVS;Las Vegas;Jackrabbits;#c6a15b;#1a1a1a;#ffffff;5;Marcus Spencer;20;C;86;79;87;67;99;85;99;88;76;S;AN
+LVS;LVS;Las Vegas;Jackrabbits;#c6a15b;#1a1a1a;#ffffff;6;Marko Gallo;7;PG;76;96;86;86;76;88;68;76;75;P;EU
+LVS;LVS;Las Vegas;Jackrabbits;#c6a15b;#1a1a1a;#ffffff;7;Corey Cox;11;SG;78;80;90;82;82;81;68;76;81;D;AN
+LVS;LVS;Las Vegas;Jackrabbits;#c6a15b;#1a1a1a;#ffffff;8;Luka Vukovic;1;SF;79;73;76;77;76;74;70;71;75;;EU
+LVS;LVS;Las Vegas;Jackrabbits;#c6a15b;#1a1a1a;#ffffff;9;Kenny Booker;52;PF;82;66;70;66;80;66;80;76;67;;AA
+LVS;LVS;Las Vegas;Jackrabbits;#c6a15b;#1a1a1a;#ffffff;10;Carlos Rodriguez;51;C;83;65;70;52;87;65;97;89;57;;LA
+LVS;LVS;Las Vegas;Jackrabbits;#c6a15b;#1a1a1a;#ffffff;11;Dong-hyun Choi;33;SF;80;78;75;71;80;71;74;82;71;E;AS
+LVS;LVS;Las Vegas;Jackrabbits;#c6a15b;#1a1a1a;#ffffff;12;Rafael Gonzalez;54;PF;82;67;72;66;76;61;77;71;73;;LA
+ABQ;ABQ;Albuquerque;Balloons;#e3632d;#2b6cb0;#ffffff;1;Travis Hairston;51;PG;75;96;85;89;80;93;64;74;90;S;AA
+ABQ;ABQ;Albuquerque;Balloons;#e3632d;#2b6cb0;#ffffff;2;Travis Daniels;3;SG;79;81;82;84;77;78;69;84;70;;AN
+ABQ;ABQ;Albuquerque;Balloons;#e3632d;#2b6cb0;#ffffff;3;Calvin Foster;30;SF;78;80;74;69;78;71;78;75;60;;AN
+ABQ;ABQ;Albuquerque;Balloons;#e3632d;#2b6cb0;#ffffff;4;Lionel Fletcher;22;PF;83;73;80;74;82;79;94;84;73;;AN
+ABQ;ABQ;Albuquerque;Balloons;#e3632d;#2b6cb0;#ffffff;5;Sherman Richardson;52;C;83;73;65;56;92;71;90;83;60;;AN
+ABQ;ABQ;Albuquerque;Balloons;#e3632d;#2b6cb0;#ffffff;6;Travis Elmore;45;PG;73;72;64;67;63;85;49;66;64;;AA
+ABQ;ABQ;Albuquerque;Balloons;#e3632d;#2b6cb0;#ffffff;7;Pavel Kowalski;10;SG;77;84;87;81;79;78;68;74;68;P;EU
+ABQ;ABQ;Albuquerque;Balloons;#e3632d;#2b6cb0;#ffffff;8;Marcus Wells;36;SF;78;72;65;69;74;70;68;64;67;;AN
+ABQ;ABQ;Albuquerque;Balloons;#e3632d;#2b6cb0;#ffffff;9;Nils Nyberg;27;PF;81;71;75;66;81;66;83;78;71;;NO
+ABQ;ABQ;Albuquerque;Balloons;#e3632d;#2b6cb0;#ffffff;10;Clarence Ledbetter;28;C;85;67;66;45;83;67;92;78;52;E;AA
+ABQ;ABQ;Albuquerque;Balloons;#e3632d;#2b6cb0;#ffffff;11;Dwayne Sykes;11;SF;81;67;74;69;67;65;64;69;67;;AA
+ABQ;ABQ;Albuquerque;Balloons;#e3632d;#2b6cb0;#ffffff;12;Matt Stone;55;PF;82;66;72;65;77;63;79;73;63;;AN
