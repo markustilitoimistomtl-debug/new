@@ -532,7 +532,7 @@ const PACE_SEC=48*60/(2*98);
 // patience at tip-off; long real-time quarters need more of it (measured with the headless sim)
 function paceStart(ratio){return clamp((2.7-ratio)*1.3,-0.5,2.2);}
 function newPoss(t,how){
-  const P=G.pace;G.possN++;
+  const P=G.pace;G.possN++;G.play=null;G.playTried=false;
   const err=G.possN-G.gameT/PACE_SEC-1;          // + = more possessions than the clock allows
   P.base=clamp(P.base+err*0.03,-1,3);P.v=clamp(P.base+err*0.15,-1,3.4);
   // walk it up after a make, a defensive board or a backcourt inbound; steals still run
@@ -629,7 +629,7 @@ function doShot(p,timing){
   b.mode='shot';b.owner=null;b.pass=null;
   const passer=G.lastPass&&G.lastPass.to===p&&G.time-G.lastPass.time<2.6*Math.max(1,2.4/G.ratio)?G.lastPass.from:null;
   b.shot={by:p,t,pts,made,kind,T,el:0,li:0,legs,x0:p.x+p.fx*0.8,y0:p.y+p.fy*0.8,z0:kind==='dunk'?9:7.6,x1,y1,foul,blocked,blockAt:rnd(0.08,0.22),ride,three,assist:passer,d,ft:false,oneT,buzzerOK:!G.buzz,duo:!!duoPartner(p),star:isStar(p),brk:wasBrk,cont};
-  b.last=p;p.hold=0;p.drive=false;
+  b.last=p;p.hold=0;p.drive=false;if(G.play&&G.play.t===t)G.play=null;
   const s=stat(p.id);s.fga++;if(three)s.tpa++;G.teams[t].fga++;
   if(passer)noteChance(passer,p);
   emit('shot',{kind,three});
@@ -969,6 +969,7 @@ function offTarget(p){
     if(B&&B.t===t&&B.f&&(G.walk&&G.walk.t===t?!G.walk.go:dep(t,owner.x)>62)){const r=teamPl(t).filter(q=>q!==owner).sort((a,c)=>a.s-c.s).indexOf(p),F=B.f[r];
       if(F){const dd=clamp(dep(t,owner.x)-F[0],6,90),y=F[2]?owner.y+(B.flip?-F[1]:F[1]):(B.flip?CH-F[1]:F[1]);return[xAt(t,dd),clamp(y,3,CH-3),0.9*advK()];}}
     const sp=spotOf(p);return[sp[0],sp[1],G.walk&&G.walk.t===t?0.95*advK():0.95];}
+  if(G.play&&G.play.t===t){const r=playOff(p);if(r)return r;}
   // duo partner cuts for alley-oop
   if(owner&&duoPartner(owner)===p&&front(t,owner.x)&&dep(t,owner.x)<32)return[xAt(t,5),HY+(p.y<HY?-2:2),1];
   p.spotT-=1/60;if(p.spotT<=0){p.spot=(p.spot+1+((Math.random()*2)|0))%3;p.spotT=rnd(2.5,5.5)/G.rk;if(Math.random()<0.18*G.rk&&p.s!==0)p.cutT=1.4;}
@@ -989,6 +990,121 @@ function choosePass(p,dx,dy){
     if(sc>bs){bs=sc;best=m;}}
   return best;
 }
+/* ---------- half-court sets: ten plays an AI offense can run once the ball is over half court ---------- */
+const PLAY_W={pnr:3,pindown:1.3,flare:1.1,stagger:1.1,backscreen:1.1,arc:1.4,arcback:1.1,arcfake:1.1,arcdeep:0.9,arcsneak:0.9};
+const PLAY_NAME={pnr:'PICK & ROLL',pindown:'PIN-DOWN',flare:'FLARE SCREEN',stagger:'STAGGER SCREEN',backscreen:'BACK SCREEN',arc:'SWING IT',arcback:'GIVE & GO BACK',arcfake:'PUMP FAKE SET',arcdeep:'HIGH-LOW',arcsneak:'BASELINE SNEAK'};
+const ARC=[[30,25],[26,9],[26,41],[3,2.4],[3,47.6]];   // top, wings, corners: [feet from the baseline, sideline position]
+const pP=(P,dp,y)=>[xAt(P.t,clamp(dp,1.5,46)),clamp(HY+P.sd*(y-HY),2,CH-2)];   // a spot, mirrored to the play side
+const defOf=u=>G.pl.find(q=>q.t!==u.t&&q.s===u.s);
+const near=(p,q,r)=>hyp(p.x-q[0],p.y-q[1])<r;
+function playStart(h){
+  const t=h.t,oth=teamPl(t).filter(q=>q!==h&&q.down<=0);if(oth.length<4)return;
+  let r=Math.random()*Object.values(PLAY_W).reduce((a,b)=>a+b,0),k='pnr';for(const[x,w]of Object.entries(PLAY_W)){r-=w;if(r<0){k=x;break;}}
+  const bigs=oth.slice().sort((a,b)=>(b.id.ht*2+b.id.reb/5)-(a.id.ht*2+a.id.reb/5)),shoot=oth.slice().sort((a,b)=>(b.id.thr+b.id.sht)-(a.id.thr+a.id.sht));
+  const P={t,k,ph:0,T:0,age:0,sd:Math.random()<0.5?1:-1,n:0,scr:[],h,spot:new Map(),holder:h,wait:G.time+rnd(0.4,0.9)};
+  const rest=(...ex)=>oth.filter(q=>!ex.includes(q));
+  P.pt=[h.x,h.y];P.dir=[dirOf(t),0,0,P.sd];P.wp=0;
+  if(k==='pnr'){P.s=bigs[0];P.roll=P.s.id.thr<72||Math.random()<0.6;const o=rest(P.s);P.spot.set(o[0],[3,47.6]);P.spot.set(o[1],[3,2.4]);P.spot.set(o[2],[26,9]);}
+  else if(k==='pindown'||k==='flare'||k==='stagger'){P.u=shoot[0]===bigs[0]?shoot[1]:shoot[0];P.s=bigs[0]===P.u?bigs[1]:bigs[0];P.s2=bigs.find(q=>q!==P.s&&q!==P.u);
+    for(const q of rest(P.u,P.s,P.s2))P.spot.set(q,[3,2.4]);if(k!=='stagger')P.spot.set(P.s2,[8,8]);}
+  else if(k==='backscreen'){P.u=oth.filter(q=>q!==bigs[0]).sort((a,b)=>(b.id.spd+b.id.ins)-(a.id.spd+a.id.ins))[0];P.s=bigs[0];
+    const o=rest(P.u,P.s);P.spot.set(o[0],[3,2.4]);P.spot.set(o[1],[3,47.6]);}
+  else{ // the arc sets: all five behind the three-point line, two in the corners, the ball handler in the middle
+    P.top=h;P.spot.set(h,ARC[0]);const o=shoot.slice();P.spot.set(o[0],ARC[3]);P.spot.set(o[1],ARC[4]);P.spot.set(o[2],ARC[1]);P.spot.set(o[3],ARC[2]);
+    P.need=k==='arc'?(Math.random()<0.25?5+((Math.random()*3)|0):2+((Math.random()*3)|0)):k==='arcfake'?2+((Math.random()*2)|0):k==='arcdeep'?2:k==='arcsneak'?1+((Math.random()*2)|0):0;
+    if(k==='arcdeep'){P.deep=o[3];P.spot.set(o[3],[36,25]);P.cut=o[2];}
+    if(k==='arcsneak')P.sneak=Math.random()<0.5?o[0]:o[1];
+    if(k==='arcback'){P.c=Math.random()<0.5?o[0]:o[1];P.seq=Math.random()<0.6?[P.c,h,'shoot']:[P.c,h,P.c,'shoot'];}}
+  G.play=P;if(Math.random()<0.5)pop(PLAY_NAME[k],h.x,h.y);}
+// phases and screens, once a frame
+function playTick(dt){const P=G.play;if(!P)return;const b=G.ball;
+  if(G.state!=='play'||G.poss!==P.t||G.shotClock<5||P.age>14||b.mode==='loose'){G.play=null;return;}
+  P.age+=dt;P.T+=dt;const go=n=>{P.ph=n;P.T=0;},at=(dp,y)=>pP(P,dp,y),scr=(s,u,T)=>{if(s&&u)P.scr.push({s,u,until:G.time+T});};
+  // a defender who runs into a set screen chasing his man is held up for a moment
+  for(const S of P.scr){if(S.until<G.time||S.hit)continue;const d=defOf(S.u);if(d&&d.down<=0&&hyp(d.x-S.s.x,d.y-S.s.y)<2.3){S.hit=1;d.scrT=0.55;if(Math.random()<0.25)pop('SCREEN',S.s.x,S.s.y);}}
+  const h=P.h;
+  switch(P.k){
+    case'pnr':if(P.ph===0){const tx=hoopX(P.t)-h.x,ty=HY-h.y,L=hyp(tx,ty)||1;let px=-ty/L,py=tx/L;if(py*P.sd<0){px=-px;py=-py;}
+        P.pt=[h.x+tx/L*2.6+px*1.2,h.y+ty/L*2.6+py*1.2];P.dir=[tx/L,ty/L,px,py];if(near(P.s,P.pt,1.5)||P.T>3.2){go(1);scr(P.s,h,1.6);}}
+      else if(P.ph===1){if(P.T>0.6)go(2);}else if(P.T>2.3)G.play=null;break;
+    case'pindown':if(P.ph===0){if(near(P.u,at(6,32),2.2)&&near(P.s,at(13,34),2.2)||P.T>3.2){go(1);scr(P.s,P.u,1.8);}}
+      else if(P.ph===1){if(near(P.u,at(25,41),2.5)||P.T>2.2)go(2);}else if(P.T>1.8)G.play=null;break;
+    case'flare':if(P.ph===0){if(near(P.u,at(21,31),2.2)&&near(P.s,at(21,27),2)||P.T>3.2){go(1);scr(P.s,P.u,1.6);}}
+      else if(P.ph===1){if(near(P.u,at(12,47.6),2.5)||P.T>2)go(2);}else if(P.T>1.8)G.play=null;break;
+    case'stagger':if(P.ph===0){if(near(P.u,at(3,25),2.5)&&near(P.s,at(9,33),2)||P.T>3.2){go(1);P.wp=0;scr(P.s,P.u,2.4);scr(P.s2,P.u,2.8);}}
+      else if(P.ph===1){const W=[[8,29],[15,33],[25,41]];if(near(P.u,at(...W[P.wp]),2))P.wp++;if(P.wp>=W.length||P.T>3.2)go(2);}else if(P.T>1.8)G.play=null;break;
+    case'backscreen':if(P.ph===0){if(near(P.u,at(25,31),2.5)&&near(P.s,at(17,30),2.5)||P.T>3){go(1);}}
+      else if(P.ph===1){if(P.T>0.5){go(2);scr(P.s,P.u,1.4);}}else if(P.T>2.6)G.play=null;break;
+    default:if(P.ph===0){let ok=0;for(const[q,sp]of P.spot)if(near(q,at(...sp),3))ok++;if(ok>=4||P.T>3.2){go(1);P.wait=G.time+rnd(0.3,0.7);}}
+      else if(P.k==='arcdeep'&&P.n>=P.need&&!P.cutPt){const D=G.pl.filter(q=>q.t!==P.t);   // the cutter finds the open pocket inside the arc
+        P.cutPt=[[14,15],[14,35],[16,25],[11,25],[17,18],[17,32]].map(c=>pP(P,...c)).sort((a,b)=>Math.min(...D.map(q=>hyp(q.x-b[0],q.y-b[1])))-Math.min(...D.map(q=>hyp(q.x-a[0],q.y-a[1]))))[0];}
+      else if(P.k==='arcsneak'&&P.n>=P.need&&!P.sneakGo){P.sneakGo=G.time;}
+      if(P.age>12)G.play=null;}}
+// where the players without the ball go
+function playOff(p){const P=G.play,at=(dp,y,k=0.95)=>{const q=pP(P,dp,y);return[q[0],q[1],k];},ph=P.ph;
+  switch(P.k){
+    case'pnr':if(p===P.s){if(ph===0)return[P.pt[0],P.pt[1],1];if(ph===1)return[p.x,p.y,0];return P.roll?[hoopX(P.t)-dirOf(P.t)*1.5,HY+P.sd*2.5,1]:at(26,40,1);}break;
+    case'pindown':if(p===P.u)return ph===0?at(6,32,1):at(25,41,1);if(p===P.s)return ph===0?at(13,34):ph===1?at(8,34,0.7):at(10,30);break;
+    case'flare':if(p===P.u)return ph===0?at(21,31):at(12,47.6,1);if(p===P.s)return ph===0?at(21,27,1):[p.x,p.y,0];break;
+    case'stagger':if(p===P.u){if(ph===0)return at(3,25);const W=[[8,29],[15,33],[25,41]];return at(...W[Math.min(P.wp,2)],1);}
+      if(p===P.s)return ph===0?at(9,33,1):at(9,33,0);if(p===P.s2)return ph===0?at(15,37,1):at(15,37,0);break;
+    case'backscreen':if(p===P.u)return ph<2?at(25,31):[hoopX(P.t)-dirOf(P.t)*2,HY+P.sd*1.5,1];
+      if(p===P.s){if(ph===0)return at(17,30);const d=defOf(P.u);if(d&&ph===1){const tx=hoopX(P.t)-d.x,ty=HY-d.y,L=hyp(tx,ty)||1;return[d.x+tx/L*1.4,d.y+ty/L*1.4,1];}return[p.x,p.y,0];}break;
+    default:
+      if(p===P.cut&&P.cutPt)return[P.cutPt[0],P.cutPt[1],1];
+      if(p===P.sneak&&P.sneakGo)return[hoopX(P.t)-dirOf(P.t)*2,HY+(p.y<HY?-3.5:3.5),1];}
+  const sp=P.spot.get(p);if(sp){const q=pP(P,...sp);return[q[0]+Math.sin(G.time*0.7+p.phase)*0.8,q[1]+Math.cos(G.time*0.6+p.phase)*0.8,0.9];}
+  return null;}
+// the man with the ball inside a set; undefined = the set is over, play on as usual
+function playCarrier(p,dt,c){const P=G.play,t=p.t,hx=hoopX(t);
+  if(p!==P.holder){P.holder=p;P.wait=G.time+(P.quick?rnd(0.08,0.2):rnd(0.45,1.0));P.quick=false;}
+  if(c.d<5.5&&c.cont>1){doShot(p,null);return null;}
+  const pass=(m,lob,cs)=>{if(!m||m.down>0||m===p)return false;
+    // a closed lane on a long pass becomes a skip pass over the top
+    if(!lob&&!laneOpen(p.x,p.y,m.x,m.y,t,2.1)){if(hyp(m.x-p.x,m.y-p.y)>18&&laneOpen(p.x,p.y,m.x,m.y,t,1.0))lob=true;else return false;}
+    else if(lob&&!laneOpen(p.x,p.y,m.x,m.y,t,1.4))return false;
+    if(cs)m.csT=G.time+1.3;doPass(p,m,!!lob);return true;};
+  const hold=(dp,y)=>{const q=dp==null?[p.x,p.y]:pP(P,dp,y);return[q[0]+Math.sin(G.time*1.1+p.phase)*0.5,q[1],0.35];};
+  const end=()=>{G.play=null;return undefined;};
+  switch(P.k){
+    case'pnr':{if(p!==P.h)return end();
+      if(P.ph===0)return[p.x,p.y,0.15];
+      const[tx,ty,px,py]=P.dir;if(P.ph===1)return[P.s.x+px*2.4+tx*5,P.s.y+py*2.4+ty*5,1];   // come off the screen
+      const s=P.s,open=nearestDef(s).d>4.5;
+      if(open&&Math.random()<3*dt&&pass(s,P.roll&&hdist(t,s.x,s.y)<8&&s.id.f.includes('D')&&Math.random()<0.4,!P.roll)){G.play=null;return null;}
+      if(c.cont>4.5&&c.d<24&&Math.random()<2*dt){doShot(p,null);return null;}
+      return[hx,HY,1];}
+    case'pindown':case'flare':case'stagger':case'backscreen':{
+      if(p!==P.h)return end();
+      const spot={pindown:[30,19],flare:[27,10],stagger:[30,17],backscreen:[26,9]}[P.k];
+      if(P.ph<2)return hold(...spot);
+      const u=P.u;if(P.k==='backscreen'?hdist(t,u.x,u.y)<10:true){
+        const lob=P.k==='flare'||(P.k==='backscreen'&&hdist(t,u.x,u.y)<8&&(u.id.f.includes('D')||u.id.ins>80)&&Math.random()<0.5);
+        if(Math.random()<4*dt&&pass(u,lob,P.k!=='backscreen')){G.play=null;return null;}}
+      return hold(...spot);}
+    default:{ // arc sets
+      if(P.ph===0){const sp=P.spot.get(p);return sp?hold(...sp):hold();}
+      if(G.time<P.wait){const sp=P.spot.get(p);return sp?hold(...sp):hold();}
+      const top=P.top,arcMates=[...P.spot.keys()].filter(q=>q!==p&&q!==P.deep),spotOf2=q=>P.spot.get(q);
+      const swing=()=>{let c2;if(p===top)c2=arcMates.filter(q=>q!==top);else c2=Math.random()<0.7?[top]:arcMates.filter(q=>q!==top&&Math.abs(spotOf2(q)[1]-spotOf2(p)[1])<25);
+        c2=c2.sort(()=>Math.random()-0.5);for(const m of c2)if(pass(m,false,P.n+1>=P.need&&P.k==='arc')){P.n++;return true;}return false;};
+      if(P.k==='arc'){if(P.n>=P.need&&c.cont>3.2){doShot(p,null);return null;}if(P.n>P.need+3)return end();if(swing())return null;break;}
+      if(P.k==='arcback'){const nx=P.seq[P.n];if(nx==='shoot'){if(c.cont>2.4){doShot(p,null);return null;}return end();}
+        P.quick=P.n>0;if(pass(nx,false,P.seq[P.n+1]==='shoot')){P.n++;return null;}break;}
+      if(P.k==='arcfake'){if(P.n<P.need){if(swing())return null;break;}
+        if(!P.faked){P.faked=G.time;p.pump=0.45;emit('fake');const n2=nearestDef(p);if(n2.p&&n2.d<4.5&&n2.p.z<=0&&Math.random()<0.5){n2.p.vz=11;p.fakeT=G.time+1.0;pop('BIT ON THE FAKE',n2.p.x,n2.p.y);}
+          P.opt=Math.random();if(P.opt>=0.66){const sp=pP(P,...(P.spot.get(p)||[24,25])),dy=p.y<HY?3:-3;P.step=[p.x,p.y+dy];}return[p.x,p.y,0];}
+        if(G.time-P.faked<0.5)return[p.x,p.y,0];
+        if(P.opt<0.33){p.drive=true;G.play=null;return[hx,HY,1];}
+        if(P.opt<0.66){if(swing()){G.play=null;return null;}return end();}
+        if(near(p,P.step,0.8)||G.time-P.faked>1.6){doShot(p,null);return null;}return[P.step[0],P.step[1],0.8];}   // side step, then the shot
+      if(P.k==='arcdeep'){if(P.n<P.need){const ms=p===P.deep?[top,...arcMates.filter(q=>q!==top&&spotOf2(q)[0]>20)]:[P.deep];for(const m of ms)if(pass(m,false,false)){P.n++;return null;}break;}
+        const cu=P.cut;if(P.cutPt&&near(cu,P.cutPt,2.5)&&nearestDef(cu).d>3.5&&pass(cu,false,true)){G.play=null;return null;}
+        if(P.age>11)return end();break;}
+      if(P.k==='arcsneak'){if(P.n<P.need){if(swing())return null;break;}
+        const s=P.sneak;if(s===p)return end();if(hdist(t,s.x,s.y)<6.5&&nearestDef(s).d>2.5&&pass(s,false,false)){G.play=null;return null;}
+        if(G.time-P.sneakGo>2.5)return end();break;}}}
+  const sp=P.spot.get(p);return sp?hold(...sp):hold();}
 function carrierAI(p,dt){
   const t=p.t,hx=hoopX(t),d=hdist(t,p.x,p.y),dp=dep(t,p.x),rk=G.rk;
   p.hold+=dt;
@@ -997,6 +1113,7 @@ function carrierAI(p,dt){
   const dp2=duoPartner(p);
   if(dp2&&front(t,p.x)&&hdist(t,dp2.x,dp2.y)<8&&laneOpen(p.x,p.y,dp2.x,dp2.y,t,1.6)&&Math.random()<2.5*rk*dt){doPass(p,dp2,true);return null;}
   if(G.time<(p.oneT||0)&&front(t,p.x)&&d<30){doShot(p,null);return null;}
+  if(G.time<(p.csT||0)&&front(t,p.x)&&G.human!==t){p.csT=0;if(cont>3.6&&d<27){doShot(p,null);return null;}}   // catch and shoot off a set
   // ball held over the head, then a two-hand pass
   if(p.ohHold>0){p.ohHold-=dt;if(p.ohHold<=0){p.ohHold=0;const m=p.ohTo;p.ohTo=null;if(m&&m.down<=0&&laneOpen(p.x,p.y,m.x,m.y,t,2.0)){p.ohOut=true;doPass(p,m);return null;}}else return[p.x,p.y,0];}
   if(!p.ohDone&&G.time-(p.rebAt||-9)<0.4&&G.human!==t){p.ohDone=true;if(Math.random()<0.7){const m=choosePass(p,0,0);if(m){p.ohHold=rnd(0.55,1.0);p.ohTo=m;return[p.x,p.y,0];}}}
@@ -1014,14 +1131,15 @@ function carrierAI(p,dt){
   if(p.post){const P=p.post;P.t+=dt;if(P.t>=P.T||d<4.2||G.shotClock<2){p.post=null;if(d<9&&G.shotClock>=2&&Math.random()<0.6){p.spinT=0.6;emit('spinmove',p);return[hx,HY,0.6];}if(d>=5)p.hookNext=true;doShot(p,null);return null;}
     if(P.t>0.5&&Math.random()<0.35*dt){const m=choosePass(p,0,0);if(m&&passValue(p,m)>1.15){p.post=null;doPass(p,m);return null;}}
     return[hx,HY,0.35];}
-  if(front(t,p.x)&&!p.postDone&&(p.id.pos==='C'||p.id.pos==='PF')&&d>6&&d<15&&cont<5&&G.shotClock>5){p.postDone=true;if(Math.random()<0.4){p.post={t:0,T:rnd(1.6,2.5)};return[hx,HY,0.35];}}
+  const inSet=!!(G.play&&G.play.t===t);
+  if(front(t,p.x)&&!inSet&&!p.postDone&&(p.id.pos==='C'||p.id.pos==='PF')&&d>6&&d<15&&cont<5&&G.shotClock>5){p.postDone=true;if(Math.random()<0.4){p.post={t:0,T:rnd(1.6,2.5)};return[hx,HY,0.35];}}
   if(cont<3.5&&G.human!==t&&Math.random()<0.0018*dt*(85/Math.max(50,p.id.pas))*G.rk){p.pickT=0.85;return[p.x,p.y,0];}
   if(!(p.btl>0)&&(cont<5)&&Math.random()<0.35*dt){p.btl=0.7;emit('handle',p);}
   if(p.iso){const I=p.iso;I.t+=dt;
     for(const f of I.fk)if(!f.done&&I.t>=f.at){f.done=true;p.pump=0.45;emit('fake');const n2=nearestDef(p);if(n2.p&&n2.d<4.5&&n2.p.z<=0&&Math.random()<0.45){n2.p.vz=11;p.fakeT=G.time+1.0;pop('BIT ON THE FAKE',n2.p.x,n2.p.y);}}
     if(I.t<I.T&&G.shotClock>3)return[p.x+Math.sin(I.t*4)*0.4,p.y,0.2];
     p.iso=null;}
-  if(p.s===0&&!p.isoDone&&front(t,p.x)&&dep(t,p.x)>17){p.isoDone=true;if(Math.random()<0.22){emit('handle',p);p.iso={t:0,T:rnd(1.4,2.6),fk:Math.random()<0.5?[{at:0.9}]:[{at:0.7},{at:1.4}]};return[p.x,p.y,0.2];}}
+  if(p.s===0&&!inSet&&!p.isoDone&&front(t,p.x)&&dep(t,p.x)>17){p.isoDone=true;if(Math.random()<0.22){emit('handle',p);p.iso={t:0,T:rnd(1.4,2.6),fk:Math.random()<0.5?[{at:0.9}]:[{at:0.7},{at:1.4}]};return[p.x,p.y,0.2];}}
   // sizing it up near half court: crouched, dribbling in place, crossing it over between the hands
   if(p.ponder){p.ponder.t+=dt;if(p.ponder.t<p.ponder.T&&G.shotClock>6)return[p.x,p.y,0];p.ponder=null;}
   if(!p.ponderDone&&G.human!==t&&dp>39&&dp<46.5&&(p.id.pos==='PG'||p.s===0)){p.ponderDone=true;
@@ -1047,6 +1165,9 @@ function carrierAI(p,dt){
   const B=G.bring;if(B&&B.t===t&&B.f&&G.human!==t){const ready=teamPl(t).filter(q=>q!==p&&dep(t,q.x)<33).length;
     if(ready<3&&G.shotClock>7&&d>14)return[xAt(t,clamp(dp,25,38)),p.y+(HY-p.y)*0.15,0.45];B.f=null;p.lookT=G.time+1.6;}
   const look=G.time<(p.lookT||0);   // set up: the first look is a pass
+  // run a set play on most half-court possessions
+  if(!G.playTried&&G.human!==t&&G.shotClock>=11&&d>14){G.playTried=true;if(Math.random()<clamp(0.4+0.2*G.pace.v,0.1,0.7))playStart(p);}   // fewer sets when the game runs behind NBA pace
+  if(G.play&&G.play.t===t){const r=playCarrier(p,dt,{d,cont,three});if(r!==undefined)return r;}
   if(G.mom[t]>0&&d<24&&cont>2&&Math.random()<3*rk*dt){doShot(p,null);return null;}
   if(d<5.5&&cont>1.0&&Math.random()<6*dt){doShot(p,null);return null;}
   const sc=G.shotClock;let pm=shotBonus(p,expFG(p,d,cont,three));const val=pm*(three?2.45:2);
@@ -1133,7 +1254,7 @@ function movePlayers(dt,mode){
     if(p.riseT>0){p.riseT-=dt;p.vx=p.vy=0;continue;}
     if(p.stumble>0)p.stumble-=dt;
     let maxS=(14+p.id.spd*0.12)*(0.82+0.18*enF(p))*boostF(p),acc=55+p.id.spd*0.3;
-    if(b.owner===p)maxS*=p.brk?1.12:p.post?0.3:0.9;if(p.stumble>0)maxS*=0.5;
+    if(b.owner===p)maxS*=p.brk?1.12:p.post?0.3:0.9;if(p.stumble>0)maxS*=0.5;if(p.scrT>0){p.scrT-=dt;maxS*=0.5;}
     let tx=null,ty=null,k=1,vx=0,vy=0,human=false;
     if(p.down>0){p.down-=dt;const f=Math.exp(-4*dt);p.vx*=f;p.vy*=f;}
     else{
@@ -1269,6 +1390,7 @@ function playStep(dt,gd){
   for(const T of G.teams){const on=new Set(T.lineup);for(let i=0;i<T.R.P.length;i++)if(!on.has(i))T.en[i]=Math.min(1,T.en[i]+gd/(60*5));}
   const pd=dt*G.pr;
   if(G.poss!=null&&b.mode!=='shot'&&!G.buzz)G.shotClock-=pd;
+  if(G.play)playTick(dt);
   if(b.owner&&!front(b.owner.t,b.owner.x)&&!G.inFront){G.bcT+=pd;if(G.bcT>10){turnover(b.owner.t,'10 SECONDS');return;}}
   if(!G.half[G.q]&&G.clock<=G.qLen0/2){G.half[G.q]=1;emit('midStat');}
   if(!G.half['L'+G.q]&&G.clock<=G.qLen0*0.2){G.half['L'+G.q]=1;emit('lateStat');}
