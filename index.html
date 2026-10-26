@@ -2054,7 +2054,8 @@ function voxPick(cat){const n=(VOX_DATA[cat]||[]).length;if(!n)return null;retur
 // how the commentator names a player: surname, full name, "number" + number + name, position + number + surname,
 // and the first name once he has 30+ points or a double-double (still only now and then)
 function whoParts(id){if(!id)return null;const nm=id.n,k='pn_'+nm,rec=!!VOX.buf[k],off=NAMEOFF[nm],s=G.stats[nm]||{};
-  const big=s.pts>30||[s.pts,s.reb,s.ast,s.stl,s.blk].filter(v=>v>=10).length>=2,whole=!!VOX.buf['pbn_'+id.no],num=whole||!!(VOX.buf.pb_num&&VOX.buf['pnum_'+id.no]),pos=!!VOX.buf['ppos_'+id.pos];
+  const big=s.pts>30||[s.pts,s.reb,s.ast,s.stl,s.blk].filter(v=>v>=10).length>=2,whole=!!VOX.buf['pbn_'+id.no],num=id.no!==0&&(whole||!!(VOX.buf.pb_num&&VOX.buf['pnum_'+id.no])),   // number 0 is never read out
+  pos=!!VOX.buf['ppos_'+id.pos];
   const fn=nm.split(' ')[0],ln=nm.slice(fn.length+1)||nm,ch=['last','last','last','full','full'];
   if(num)ch.push('numlast','numlast','numfull');if(num&&pos)ch.push('posnumlast');if(big)ch.push('first','first','first','first');
   let o=ch[(Math.random()*ch.length)|0];
@@ -2114,12 +2115,12 @@ function voxChant(cat){if(attract||!AC||!sound)return;if(AC.currentTime<(VOX.cha
 // commentator: one line at a time, with a cool-down so he doesn't talk too much
 function nameParts(id,mode){const nm=id.n,k='pn_'+nm;const seen=VOX.st.seen||(VOX.st.seen={});
   // imported players have no recorded name: the browser voice reads it
-  if(!VOX.buf[k]){if(!canTTS())return null;if(mode==='intro')return[{k:'pnum_'+id.no},{k:'ppos_'+id.pos}].filter(x=>VOX.buf[x.k]).concat([{tts:nm}]);
+  if(!VOX.buf[k]){if(!canTTS())return null;if(mode==='intro')return[{k:'pnum_'+id.no},{k:'ppos_'+id.pos}].filter(x=>VOX.buf[x.k]&&!(id.no===0&&x.k==='pnum_0')).concat([{tts:nm}]);
     const first=!seen[nm];seen[nm]=1;return[{tts:first?nm:last(id)}];}
-  if(mode==='intro')return[{k:'pnum_'+id.no},{k:'ppos_'+id.pos},{k}].filter(x=>VOX.buf[x.k]);
+  if(mode==='intro')return[{k:'pnum_'+id.no},{k:'ppos_'+id.pos},{k}].filter(x=>VOX.buf[x.k]&&!(id.no===0&&x.k==='pnum_0'));
   if(!seen[nm]){seen[nm]=1;return[{k}];}
   const sur={k,off:NAMEOFF[nm]||0},r=Math.random();
-  if(r<0.33&&VOX.buf['ppos_'+id.pos])return[{k:'ppos_'+id.pos},sur];if(r<0.66&&VOX.buf['pnum_'+id.no])return[{k:'pnum_'+id.no},sur];return[sur];}
+  if(r<0.33&&VOX.buf['ppos_'+id.pos])return[{k:'ppos_'+id.pos},sur];if(r<0.66&&id.no!==0&&VOX.buf['pnum_'+id.no])return[{k:'pnum_'+id.no},sur];return[sur];}
 function voxSay(cat,{team=null,pre='city',prio=0,key=null,pid=null}={}){
   if(attract||!AC||!sound||!G)return false;const now=AC.currentTime;
   if(now<VOX.busyUntil)return false;if(!prio&&now-VOX.lastLine<20)return false;if(prio===1&&now-VOX.lastLine<6)return false;
