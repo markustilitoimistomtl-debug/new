@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l201",
+   "id": "l205",
    "type": "clip",
    "name": "Miner",
    "x": 480,
@@ -66,6 +66,7 @@
     "lineC": "#0a1020",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l202",
+   "id": "l206",
    "type": "clip",
    "name": "Miner helmet",
    "x": 480,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -138,7 +140,7 @@
    }
   },
   {
-   "id": "l203",
+   "id": "l207",
    "type": "clip",
    "name": "Pickaxe",
    "x": 720,
@@ -192,6 +194,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -201,7 +204,7 @@
    }
   },
   {
-   "id": "l204",
+   "id": "l208",
    "type": "clip",
    "name": "Basketball",
    "x": 330,
@@ -255,6 +258,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

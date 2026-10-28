@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l57",
+   "id": "l61",
    "type": "clip",
    "name": "Ape / Bigfoot",
    "x": 470,
@@ -66,6 +66,7 @@
     "lineC": "#160f22",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l58",
+   "id": "l62",
    "type": "clip",
    "name": "Basketball",
    "x": 660,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -138,7 +140,7 @@
    }
   },
   {
-   "id": "l59",
+   "id": "l63",
    "type": "text",
    "name": "BIGFEET",
    "x": 500,
@@ -197,6 +199,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -206,7 +209,7 @@
    }
   },
   {
-   "id": "l60",
+   "id": "l64",
    "type": "text",
    "name": "BALTIMORE",
    "x": 500,
@@ -265,6 +268,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

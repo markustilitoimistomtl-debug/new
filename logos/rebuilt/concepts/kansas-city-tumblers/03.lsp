@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l128",
+   "id": "l132",
    "type": "text",
    "name": "K",
    "x": 460,
@@ -71,6 +71,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -80,7 +81,7 @@
    }
   },
   {
-   "id": "l129",
+   "id": "l133",
    "type": "clip",
    "name": "Basketball",
    "x": 630,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

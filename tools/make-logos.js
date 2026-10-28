@@ -22,6 +22,12 @@ const ball = (x, y, k, s = {}) => art('ball', { fill: 'radial', c1: '#ffa04d', c
 /* ---------- Vintage Basket League (pixel style) ---------- */
 const INK = '#0d0b14';
 const px = (s = {}) => ({ o1c: INK, o1w: 5, bevel: 2, ...s });
+// Austin Ramparts: rampart shield with the crossed white and red flags
+function ramparts(dy = 0, k = 1) {
+  return [shape('rampart', px({ fill: 'linear', c1: '#264a72', c2: '#132841', o1c: '#cfd3da', o1w: 6, o2c: INK, o2w: 4, bevel: 1.5 }), at(500, 500 + dy, 3.4 * k)),
+    art('flags', { fill: 'linear', c1: '#c08a4a', c2: '#7a4f24', angle: 0, detC: '#f3f3f1', det2C: '#c8102e', lineC: '#d6d6d6', detW: 2.5, o1c: INK, o1w: 3,
+      shOn: true, shX: 3, shY: 5, shB: 3, shO: 0.45 }, at(500, 478 + dy * k, 2.45 * k))];
+}
 const VBL = [
   ['Baltimore Shipwrights', [art('hull', px({ fill: 'linear', c1: '#f2c14e', c2: '#b9831f' }), at(500, 620, 3.3)),
     art('hammers', px({ fill: 'linear', c1: '#4a74a8', c2: '#22406a', detC: '#8a5a2b' }), at(500, 430, 2.6))]],
@@ -50,8 +56,10 @@ const VBL = [
   ['Omaha Express', [lines({ n: 6, len: 360, th: 10, gap: 12 }, { fill: 'solid', c1: '#9aa3b5' }, at(250, 520)),
     art('train', px({ fill: 'gloss', c1: '#f4f6fa', c2: '#b8c0cc', det2C: '#1f2a44', detC: '#c8102e' }), at(560, 500, 3.2))]],
   ['Tulsa Oilmen', [art('derrick', px({ fill: 'solid', c1: '#2a1d10', o1c: '#e8b04a', detC: '#e8b04a', bevel: 0 }), at(500, 520, 3.5))]],
-  ['Austin Ramparts', [shape('heater', px({ fill: 'linear', c1: '#2a4a70', c2: '#14263f', o1c: '#e8e8ee' }), at(500, 500, 3.3)),
-    art('flags', { fill: 'solid', c1: '#a07850', detC: '#f4f4f4', det2C: '#c8102e', o1c: INK, o1w: 3 }, at(500, 500, 2.6))]],
+  ['Austin Ramparts', ramparts()],
+  ['Austin Ramparts wordmark', [...ramparts(-90, 0.8),
+    text('AUSTIN', 'Graduate', 70, { fill: 'solid', c1: '#ffffff', o1c: INK, o1w: 6 }, { x: 500, y: 735 }, { ls: 10 }),
+    text('RAMPARTS', 'Graduate', 130, { fill: 'linear', c1: '#ffb067', c2: '#e8641e', o1c: INK, o1w: 7, o2c: '#ffffff', o2w: 4, exD: 6, exC: '#3a1a08' }, { x: 500, y: 840 })]],
   ['El Paso Scorpions', [art('scorpion', px({ fill: 'linear', c1: '#e3a94a', c2: '#6b4210', lineC: '#4a2a08' }), at(500, 520, 3.4))]],
   ['Mexico City Cardones', [art('cactus', px({ fill: 'linear', c1: '#4caf50', c2: '#1f6b2b', lineC: '#145220' }), at(500, 500, 3.8))]],
   ['Seattle Ferries', [art('ship', px({ fill: 'linear', c1: '#a3adb9', c2: '#56606c', detC: '#c8102e', det2C: '#1d2733', lineC: '#3a7bd5' }), at(500, 500, 3.6))]],

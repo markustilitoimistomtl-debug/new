@@ -73,6 +73,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -136,6 +137,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

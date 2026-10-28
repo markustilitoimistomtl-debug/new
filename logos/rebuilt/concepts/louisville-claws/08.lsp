@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l115",
+   "id": "l119",
    "type": "clip",
    "name": "Eagle",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "#111111",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

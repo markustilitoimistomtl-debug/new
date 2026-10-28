@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l116",
+   "id": "l120",
    "type": "shape",
    "name": "Sports shield",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l117",
+   "id": "l121",
    "type": "text",
    "name": "L",
    "x": 410,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -143,7 +145,7 @@
    }
   },
   {
-   "id": "l118",
+   "id": "l122",
    "type": "text",
    "name": "C",
    "x": 590,
@@ -202,6 +204,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

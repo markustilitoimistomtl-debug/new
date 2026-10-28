@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l163",
+   "id": "l167",
    "type": "clip",
    "name": "Snowy peaks",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l164",
+   "id": "l168",
    "type": "clip",
    "name": "Cactus",
    "x": 500,
@@ -129,6 +130,7 @@
     "lineC": "#14421f",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -138,7 +140,7 @@
    }
   },
   {
-   "id": "l165",
+   "id": "l169",
    "type": "text",
    "name": "CARDONES",
    "x": 500,
@@ -197,6 +199,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -206,7 +209,7 @@
    }
   },
   {
-   "id": "l166",
+   "id": "l170",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -260,6 +263,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

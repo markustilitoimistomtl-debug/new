@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l221",
+   "id": "l225",
    "type": "shape",
    "name": "Circle",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l222",
+   "id": "l226",
    "type": "ring",
    "name": "Ring text",
    "x": 500,
@@ -140,6 +141,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -149,7 +151,7 @@
    }
   },
   {
-   "id": "l223",
+   "id": "l227",
    "type": "clip",
    "name": "Pickaxe",
    "x": 500,
@@ -203,6 +205,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

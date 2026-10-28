@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l93",
+   "id": "l97",
    "type": "clip",
    "name": "Suspension bridge",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l94",
+   "id": "l98",
    "type": "text",
    "name": "CONNECTORS",
    "x": 500,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

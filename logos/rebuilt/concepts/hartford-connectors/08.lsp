@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l90",
+   "id": "l94",
    "type": "shape",
    "name": "Sports shield",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l91",
+   "id": "l95",
    "type": "clip",
    "name": "Suspension bridge",
    "x": 500,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -138,7 +140,7 @@
    }
   },
   {
-   "id": "l92",
+   "id": "l96",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -192,6 +194,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l148",
+   "id": "l152",
    "type": "shape",
    "name": "Circle",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l149",
+   "id": "l153",
    "type": "clip",
    "name": "Tumbler cup",
    "x": 500,
@@ -129,6 +130,7 @@
     "lineC": "#1d3f7a",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

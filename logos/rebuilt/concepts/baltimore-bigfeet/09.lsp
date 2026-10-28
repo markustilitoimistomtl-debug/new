@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l66",
+   "id": "l70",
    "type": "clip",
    "name": "Footprint",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l67",
+   "id": "l71",
    "type": "clip",
    "name": "Pine tree",
    "x": 495,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -138,7 +140,7 @@
    }
   },
   {
-   "id": "l68",
+   "id": "l72",
    "type": "clip",
    "name": "Pine tree",
    "x": 420,
@@ -192,6 +194,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -201,7 +204,7 @@
    }
   },
   {
-   "id": "l69",
+   "id": "l73",
    "type": "clip",
    "name": "Pine tree",
    "x": 570,
@@ -255,6 +258,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

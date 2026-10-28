@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l63",
+   "id": "l67",
    "type": "shape",
    "name": "Sports shield",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l64",
+   "id": "l68",
    "type": "clip",
    "name": "Ape / Bigfoot",
    "x": 500,
@@ -129,6 +130,7 @@
     "lineC": "#160f22",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -138,7 +140,7 @@
    }
   },
   {
-   "id": "l65",
+   "id": "l69",
    "type": "text",
    "name": "BIGFEET",
    "x": 500,
@@ -197,6 +199,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l36",
+   "id": "l40",
    "type": "clip",
    "name": "Scorpion",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "#4a2a08",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l41",
+   "id": "l45",
    "type": "clip",
    "name": "Goose (nene)",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "#0f3324",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

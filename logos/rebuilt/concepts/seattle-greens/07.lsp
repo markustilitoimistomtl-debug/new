@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l192",
+   "id": "l196",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

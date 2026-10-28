@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l61",
+   "id": "l65",
    "type": "text",
    "name": "B",
    "x": 380,
@@ -71,6 +71,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -80,7 +81,7 @@
    }
   },
   {
-   "id": "l62",
+   "id": "l66",
    "type": "text",
    "name": "B",
    "x": 620,
@@ -139,6 +140,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

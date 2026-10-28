@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l215",
+   "id": "l219",
    "type": "shape",
    "name": "Heater shield",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l216",
+   "id": "l220",
    "type": "clip",
    "name": "Basketball",
    "x": 460,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -138,7 +140,7 @@
    }
   },
   {
-   "id": "l217",
+   "id": "l221",
    "type": "clip",
    "name": "Shovel",
    "x": 600,
@@ -192,6 +194,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

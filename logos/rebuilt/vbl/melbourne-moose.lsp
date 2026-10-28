@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l40",
+   "id": "l44",
    "type": "clip",
    "name": "Moose",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

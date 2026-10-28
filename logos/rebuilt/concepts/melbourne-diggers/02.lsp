@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l205",
+   "id": "l209",
    "type": "shape",
    "name": "Sports shield",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l206",
+   "id": "l210",
    "type": "text",
    "name": "MELBOURNE",
    "x": 500,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -143,7 +145,7 @@
    }
   },
   {
-   "id": "l207",
+   "id": "l211",
    "type": "text",
    "name": "DIGGERS",
    "x": 500,
@@ -202,6 +204,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -211,7 +214,7 @@
    }
   },
   {
-   "id": "l208",
+   "id": "l212",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -265,6 +268,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

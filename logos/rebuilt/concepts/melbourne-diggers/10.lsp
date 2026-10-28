@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l228",
+   "id": "l232",
    "type": "shape",
    "name": "Circle",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l229",
+   "id": "l233",
    "type": "clip",
    "name": "Crossed pickaxes",
    "x": 500,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -138,7 +140,7 @@
    }
   },
   {
-   "id": "l230",
+   "id": "l234",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -192,6 +194,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

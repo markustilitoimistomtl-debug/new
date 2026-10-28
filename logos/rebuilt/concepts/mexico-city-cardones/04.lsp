@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l157",
+   "id": "l161",
    "type": "shape",
    "name": "Classic shield",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l158",
+   "id": "l162",
    "type": "text",
    "name": "CARDONES",
    "x": 500,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -143,7 +145,7 @@
    }
   },
   {
-   "id": "l159",
+   "id": "l163",
    "type": "clip",
    "name": "Cactus",
    "x": 500,
@@ -197,6 +199,7 @@
     "lineC": "#14421f",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -206,7 +209,7 @@
    }
   },
   {
-   "id": "l160",
+   "id": "l164",
    "type": "clip",
    "name": "Basketball",
    "x": 560,
@@ -260,6 +263,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

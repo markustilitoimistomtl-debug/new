@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l146",
+   "id": "l150",
    "type": "text",
    "name": "T",
    "x": 520,
@@ -71,6 +71,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -80,7 +81,7 @@
    }
   },
   {
-   "id": "l147",
+   "id": "l151",
    "type": "shape",
    "name": "Swoosh",
    "x": 430,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

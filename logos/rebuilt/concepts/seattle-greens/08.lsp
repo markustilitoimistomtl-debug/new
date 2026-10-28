@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l193",
+   "id": "l197",
    "type": "shape",
    "name": "Sports shield",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l194",
+   "id": "l198",
    "type": "text",
    "name": "SEATTLE",
    "x": 500,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -143,7 +145,7 @@
    }
   },
   {
-   "id": "l195",
+   "id": "l199",
    "type": "clip",
    "name": "Snowy peaks",
    "x": 500,
@@ -197,6 +199,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -206,7 +209,7 @@
    }
   },
   {
-   "id": "l196",
+   "id": "l200",
    "type": "text",
    "name": "GREENS",
    "x": 500,
@@ -265,6 +268,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

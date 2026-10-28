@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l212",
+   "id": "l216",
    "type": "text",
    "name": "M",
    "x": 480,
@@ -71,6 +71,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -80,7 +81,7 @@
    }
   },
   {
-   "id": "l213",
+   "id": "l217",
    "type": "clip",
    "name": "Shovel",
    "x": 600,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -143,7 +145,7 @@
    }
   },
   {
-   "id": "l214",
+   "id": "l218",
    "type": "clip",
    "name": "Basketball",
    "x": 410,
@@ -197,6 +199,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

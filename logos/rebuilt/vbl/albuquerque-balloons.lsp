@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l44",
+   "id": "l48",
    "type": "clip",
    "name": "Hot air balloon",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

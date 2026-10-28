@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l98",
+   "id": "l102",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -66,16 +66,17 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
-    "t": "l99",
+    "t": "l103",
     "m": "out",
     "gap": 6
    }
   },
   {
-   "id": "l99",
+   "id": "l103",
    "type": "clip",
    "name": "Claw marks",
    "x": 520,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -138,7 +140,7 @@
    }
   },
   {
-   "id": "l100",
+   "id": "l104",
    "type": "lines",
    "name": "Speed lines",
    "x": 170,
@@ -199,6 +201,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

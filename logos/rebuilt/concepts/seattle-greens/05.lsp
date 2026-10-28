@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l186",
+   "id": "l190",
    "type": "shape",
    "name": "Classic shield",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l187",
+   "id": "l191",
    "type": "text",
    "name": "GREENS",
    "x": 500,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -143,7 +145,7 @@
    }
   },
   {
-   "id": "l188",
+   "id": "l192",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -197,6 +199,7 @@
     "lineC": "",
     "detW": 8,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

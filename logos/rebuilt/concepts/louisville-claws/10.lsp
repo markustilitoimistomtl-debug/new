@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l119",
+   "id": "l123",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -66,16 +66,17 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
-    "t": "l120",
+    "t": "l124",
     "m": "out",
     "gap": 6
    }
   },
   {
-   "id": "l120",
+   "id": "l124",
    "type": "clip",
    "name": "Claw marks",
    "x": 520,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l106",
+   "id": "l110",
    "type": "clip",
    "name": "Claw marks",
    "x": 470,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l107",
+   "id": "l111",
    "type": "clip",
    "name": "Claw marks",
    "x": 560,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

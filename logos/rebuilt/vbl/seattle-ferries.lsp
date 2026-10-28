@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l38",
+   "id": "l42",
    "type": "clip",
    "name": "Ferry ship",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "#3a7bd5",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

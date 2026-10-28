@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l224",
+   "id": "l228",
    "type": "text",
    "name": "D",
    "x": 540,
@@ -71,6 +71,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -80,7 +81,7 @@
    }
   },
   {
-   "id": "l225",
+   "id": "l229",
    "type": "clip",
    "name": "Pickaxe",
    "x": 400,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

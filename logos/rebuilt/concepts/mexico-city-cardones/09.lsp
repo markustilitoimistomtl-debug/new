@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l171",
+   "id": "l175",
    "type": "shape",
    "name": "Circle",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l172",
+   "id": "l176",
    "type": "ring",
    "name": "Ring text",
    "x": 500,
@@ -140,6 +141,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -149,7 +151,7 @@
    }
   },
   {
-   "id": "l173",
+   "id": "l177",
    "type": "clip",
    "name": "Cactus",
    "x": 500,
@@ -203,6 +205,7 @@
     "lineC": "#14421f",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -212,7 +215,7 @@
    }
   },
   {
-   "id": "l174",
+   "id": "l178",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -266,6 +269,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

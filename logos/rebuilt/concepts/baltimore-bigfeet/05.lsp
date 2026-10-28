@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l55",
+   "id": "l59",
    "type": "text",
    "name": "B",
    "x": 500,
@@ -71,16 +71,17 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
-    "t": "l56",
+    "t": "l60",
     "m": "out",
     "gap": 0
    }
   },
   {
-   "id": "l56",
+   "id": "l60",
    "type": "clip",
    "name": "Footprint",
    "x": 470,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

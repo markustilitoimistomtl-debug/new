@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l82",
+   "id": "l86",
    "type": "clip",
    "name": "Suspension bridge",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l83",
+   "id": "l87",
    "type": "text",
    "name": "HARTFORD",
    "x": 500,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -143,7 +145,7 @@
    }
   },
   {
-   "id": "l84",
+   "id": "l88",
    "type": "text",
    "name": "CONNECTORS",
    "x": 500,
@@ -202,6 +204,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

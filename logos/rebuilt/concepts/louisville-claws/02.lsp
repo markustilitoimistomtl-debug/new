@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l101",
+   "id": "l105",
    "type": "clip",
    "name": "Talon",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l102",
+   "id": "l106",
    "type": "text",
    "name": "CLAWS",
    "x": 500,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

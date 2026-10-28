@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l39",
+   "id": "l43",
    "type": "clip",
    "name": "Pine tree",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

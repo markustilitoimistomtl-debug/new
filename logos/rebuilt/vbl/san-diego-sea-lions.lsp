@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l42",
+   "id": "l46",
    "type": "clip",
    "name": "Sea lion",
    "x": 470,
@@ -66,6 +66,7 @@
     "lineC": "#0d0b14",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l43",
+   "id": "l47",
    "type": "clip",
    "name": "Basketball",
    "x": 735,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

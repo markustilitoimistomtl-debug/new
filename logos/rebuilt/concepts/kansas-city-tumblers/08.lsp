@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l142",
+   "id": "l146",
    "type": "shape",
    "name": "Badge",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l143",
+   "id": "l147",
    "type": "text",
    "name": "KANSAS CITY",
    "x": 500,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -143,7 +145,7 @@
    }
   },
   {
-   "id": "l144",
+   "id": "l148",
    "type": "text",
    "name": "TUMBLERS",
    "x": 500,
@@ -202,6 +204,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -211,7 +214,7 @@
    }
   },
   {
-   "id": "l145",
+   "id": "l149",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -265,6 +268,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l218",
+   "id": "l222",
    "type": "clip",
    "name": "Snowy peaks",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l219",
+   "id": "l223",
    "type": "text",
    "name": "DIGGERS",
    "x": 500,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -143,7 +145,7 @@
    }
   },
   {
-   "id": "l220",
+   "id": "l224",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -197,6 +199,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

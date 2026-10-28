@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l110",
+   "id": "l114",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l111",
+   "id": "l115",
    "type": "clip",
    "name": "Talon",
    "x": 500,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

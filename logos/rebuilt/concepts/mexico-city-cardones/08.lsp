@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l168",
+   "id": "l172",
    "type": "shape",
    "name": "Heater shield",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l169",
+   "id": "l173",
    "type": "clip",
    "name": "Cactus",
    "x": 500,
@@ -129,6 +130,7 @@
     "lineC": "#2d6a3e",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -138,7 +140,7 @@
    }
   },
   {
-   "id": "l170",
+   "id": "l174",
    "type": "clip",
    "name": "Basketball",
    "x": 500,
@@ -192,6 +194,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l47",
+   "id": "l51",
    "type": "clip",
    "name": "Ape / Bigfoot",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "#160f22",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l48",
+   "id": "l52",
    "type": "text",
    "name": "BIGFEET",
    "x": 500,
@@ -134,6 +135,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

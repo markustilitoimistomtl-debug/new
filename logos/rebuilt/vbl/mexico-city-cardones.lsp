@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l37",
+   "id": "l41",
    "type": "clip",
    "name": "Cactus",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "#145220",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

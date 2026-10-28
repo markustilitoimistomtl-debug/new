@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l150",
+   "id": "l154",
    "type": "clip",
    "name": "Cactus",
    "x": 480,
@@ -66,6 +66,7 @@
     "lineC": "#14421f",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l151",
+   "id": "l155",
    "type": "clip",
    "name": "Basketball",
    "x": 600,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l135",
+   "id": "l139",
    "type": "clip",
    "name": "Tumbler cup",
    "x": 470,
@@ -66,6 +66,7 @@
     "lineC": "#9fc3e8",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l136",
+   "id": "l140",
    "type": "clip",
    "name": "Basketball",
    "x": 600,
@@ -129,6 +130,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -138,7 +140,7 @@
    }
   },
   {
-   "id": "l137",
+   "id": "l141",
    "type": "lines",
    "name": "Speed lines",
    "x": 700,
@@ -199,6 +201,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -208,7 +211,7 @@
    }
   },
   {
-   "id": "l138",
+   "id": "l142",
    "type": "text",
    "name": "TUMBLERS",
    "x": 500,
@@ -267,6 +270,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

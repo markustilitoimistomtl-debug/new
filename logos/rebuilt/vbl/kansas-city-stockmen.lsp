@@ -66,6 +66,7 @@
     "lineC": "#6b3a1e",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

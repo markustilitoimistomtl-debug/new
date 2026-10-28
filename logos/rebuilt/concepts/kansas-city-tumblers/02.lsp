@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l124",
+   "id": "l128",
    "type": "shape",
    "name": "Circle",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -75,7 +76,7 @@
    }
   },
   {
-   "id": "l125",
+   "id": "l129",
    "type": "ring",
    "name": "Ring text",
    "x": 500,
@@ -140,6 +141,7 @@
     "lineC": "",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -149,7 +151,7 @@
    }
   },
   {
-   "id": "l126",
+   "id": "l130",
    "type": "clip",
    "name": "Tumbler cup",
    "x": 480,
@@ -203,6 +205,7 @@
     "lineC": "#9fc3e8",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
@@ -212,7 +215,7 @@
    }
   },
   {
-   "id": "l127",
+   "id": "l131",
    "type": "clip",
    "name": "Basketball",
    "x": 560,
@@ -266,6 +269,7 @@
     "lineC": "",
     "detW": 6,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {

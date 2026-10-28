@@ -12,7 +12,7 @@
  },
  "layers": [
   {
-   "id": "l167",
+   "id": "l171",
    "type": "clip",
    "name": "Sugar skull",
    "x": 500,
@@ -66,6 +66,7 @@
     "lineC": "#14281a",
     "detW": 5,
     "artMode": "orig",
+    "imgMode": "orig",
     "opacity": 1
    },
    "clip": {
