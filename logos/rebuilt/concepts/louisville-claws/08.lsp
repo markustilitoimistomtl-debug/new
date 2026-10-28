@@ -1,0 +1,78 @@
+{
+ "format": "LSP",
+ "version": 1,
+ "app": "Logo Styler Picture",
+ "name": "Louisville Claws 8",
+ "canvas": {
+  "bg": "none",
+  "bgC": "#1b1530",
+  "pixel": 0,
+  "crop": true,
+  "size": 1024
+ },
+ "layers": [
+  {
+   "id": "l115",
+   "type": "clip",
+   "name": "Eagle",
+   "x": 500,
+   "y": 500,
+   "rot": 0,
+   "sx": 3.6,
+   "sy": 3.6,
+   "skew": 0,
+   "visible": true,
+   "locked": false,
+   "p": {
+    "k": "eagle"
+   },
+   "s": {
+    "fill": "linear",
+    "c1": "#e0473b",
+    "c2": "#7d1416",
+    "c3": "#ffffff",
+    "angle": 90,
+    "pat": 14,
+    "o1c": "#111111",
+    "o1w": 5,
+    "o2c": "#ffffff",
+    "o2w": 0,
+    "o3c": "#14111f",
+    "o3w": 0,
+    "thick": 0,
+    "join": "round",
+    "exD": 0,
+    "exA": 135,
+    "exC": "#4a1a08",
+    "shOn": false,
+    "shC": "#000000",
+    "shX": 6,
+    "shY": 8,
+    "shB": 6,
+    "shO": 0.55,
+    "glow": 0,
+    "glowC": "#ffd166",
+    "bevel": 0,
+    "spray": 0,
+    "sprayC": "#ff3cac",
+    "rough": 0,
+    "distress": 0,
+    "pixel": 0,
+    "cutN": 0,
+    "cutStart": 0.55,
+    "cutW": 0.45,
+    "detC": "#111111",
+    "det2C": "#f2b134",
+    "lineC": "#111111",
+    "detW": 5,
+    "artMode": "orig",
+    "opacity": 1
+   },
+   "clip": {
+    "t": "",
+    "m": "in",
+    "gap": 0
+   }
+  }
+ ]
+}
