@@ -173,6 +173,7 @@ details[open] summary::after{content:"−"}
 <input type="file" id="fileJson" accept=".lsp,.json,.svg,.png,application/json,image/svg+xml,image/png" hidden>
 
 <script src="lsp-library.js"></script>
+<script src="lsp-new-logos.js"></script>
 <script>
 (()=>{
 'use strict';
@@ -757,7 +758,9 @@ function buildAdd(){const P=$('#addPane');let h='';
       <button class="btn" data-add="lpara">Tapered speed lines</button><button class="btn" data-add="lflat">Straight stripes</button><button class="btn" data-add="lburst">Burst rays</button><button class="btn" data-add="lswoosh">Swooshes</button><button class="btn" data-add="lswish">Swoosh wedge</button></div>
       <p class="hint">Effects → Cut lines slices stripes straight through any object.</p></div>`;
   }else{
-    h=`<div class="pane"><h2>Templates</h2><p class="hint">A template replaces the canvas. Undo brings the previous one back.</p><div class="list">${TEMPLATES.map((t,i)=>`<button class="btn" data-tpl="${i}">${esc(t[0])}</button>`).join('')}</div></div>`;
+    const NEW=Array.isArray(window.LSP_NEW_LOGOS)?window.LSP_NEW_LOGOS:[];
+    h=`<div class="pane"><h2>New logos</h2>${NEW.length?`<div class="list">${NEW.map((o,i)=>`<button class="btn" data-newlogo="${i}">${esc(o&&o.name||'Logo '+(i+1))}</button>`).join('')}</div>`:'<p class="hint">No new logos yet. They are read from lsp-new-logos.js next to lsp.html.</p>'}
+      <h2>Templates</h2><p class="hint">A logo or template replaces the canvas. Undo brings the previous one back.</p><div class="list">${TEMPLATES.map((t,i)=>`<button class="btn" data-tpl="${i}">${esc(t[0])}</button>`).join('')}</div></div>`;
   }
   P.innerHTML=h;
   P.querySelectorAll('[data-shape]').forEach(b=>b.onclick=()=>addLayer(mk('shape',{k:b.dataset.shape},{fill:'linear',c1:'#33367e',c2:'#1c1d50',o1w:6,o1c:'#f5a524'},{sx:2.6,sy:2.6})));
@@ -768,6 +771,7 @@ function buildAdd(){const P=$('#addPane');let h='';
     grid.querySelectorAll('[data-lib]').forEach(b=>b.onclick=()=>addArt(LIB[b.dataset.lib]));}));
   const bt=P.querySelector('#bTrace');if(bt)bt.onclick=()=>$('#fileTrace').click();
   if(tab==='clip')wireImageLibrary(P);
+  P.querySelectorAll('[data-newlogo]').forEach(b=>b.onclick=()=>{try{loadLSP(window.LSP_NEW_LOGOS[+b.dataset.newlogo]);}catch(e){toast('That logo could not be opened.');}});
   P.querySelectorAll('[data-tpl]').forEach(b=>b.onclick=()=>{S.layers=TEMPLATES[+b.dataset.tpl][1]();sel=null;full();commit();});
   P.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addPreset(b.dataset.add));
   const bi=P.querySelector('#bImg');if(bi)bi.onclick=()=>$('#fileImg').click();
