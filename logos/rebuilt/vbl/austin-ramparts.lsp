@@ -127,8 +127,8 @@
     "cutW": 0.45,
     "detC": "#f3f3f1",
     "det2C": "#c8102e",
-    "lineC": "#d6d6d6",
-    "detW": 2.5,
+    "lineC": "",
+    "detW": 5,
     "artMode": "orig",
     "imgMode": "orig",
     "opacity": 1

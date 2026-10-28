@@ -25,7 +25,7 @@ const px = (s = {}) => ({ o1c: INK, o1w: 5, bevel: 2, ...s });
 // Austin Ramparts: rampart shield with the crossed white and red flags
 function ramparts(dy = 0, k = 1) {
   return [shape('rampart', px({ fill: 'linear', c1: '#264a72', c2: '#132841', o1c: '#cfd3da', o1w: 6, o2c: INK, o2w: 4, bevel: 1.5 }), at(500, 500 + dy, 3.4 * k)),
-    art('flags', { fill: 'linear', c1: '#c08a4a', c2: '#7a4f24', angle: 0, detC: '#f3f3f1', det2C: '#c8102e', lineC: '#d6d6d6', detW: 2.5, o1c: INK, o1w: 3,
+    art('flags', { fill: 'linear', c1: '#c08a4a', c2: '#7a4f24', angle: 0, detC: '#f3f3f1', det2C: '#c8102e', o1c: INK, o1w: 3,
       shOn: true, shX: 3, shY: 5, shB: 3, shO: 0.45 }, at(500, 478 + dy * k, 2.45 * k))];
 }
 const VBL = [
