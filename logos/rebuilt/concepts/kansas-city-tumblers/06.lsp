@@ -67,6 +67,9 @@
     "detW": 6,
     "artMode": "orig",
     "imgMode": "orig",
+    "fop": 1,
+    "ov": "none",
+    "ovO": 0.6,
     "opacity": 1
    },
    "clip": {
@@ -131,6 +134,9 @@
     "detW": 6,
     "artMode": "orig",
     "imgMode": "orig",
+    "fop": 1,
+    "ov": "none",
+    "ovO": 0.6,
     "opacity": 1
    },
    "clip": {
@@ -202,6 +208,9 @@
     "detW": 5,
     "artMode": "orig",
     "imgMode": "orig",
+    "fop": 1,
+    "ov": "none",
+    "ovO": 0.6,
     "opacity": 1
    },
    "clip": {
@@ -271,6 +280,9 @@
     "detW": 5,
     "artMode": "orig",
     "imgMode": "orig",
+    "fop": 1,
+    "ov": "none",
+    "ovO": 0.6,
     "opacity": 1
    },
    "clip": {

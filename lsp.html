@@ -74,6 +74,32 @@ details.libgrp{border-top:0}details.libgrp summary{padding:6px 0;font-size:12px;
 .imgtile .mini{position:absolute;top:2px;width:20px;height:20px;border-radius:4px;border:0;background:var(--panel);color:var(--fg);font-size:11px;cursor:pointer;line-height:20px;padding:0}
 .imgtile .mini.del{right:2px}.imgtile .mini.src{left:2px}
 .imgtile .mini.armed{background:var(--hot);color:#fff;width:auto;padding:0 5px}
+.wizbtn{border-color:var(--accent);color:var(--accent);font-weight:600}
+.wiz .wbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:min(1120px,100%);height:min(780px,100%);display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden}
+.wiz header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:var(--panel)}
+.wsteps{display:flex;gap:4px;flex-wrap:wrap}
+.wstep{font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mute);background:none;cursor:pointer}
+.wstep.on{border-color:var(--accent);color:var(--accent-ink);background:var(--accent)}
+.wstep.done{color:var(--fg)}
+.wbody{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);min-height:0}
+.wleft{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.wright{padding:16px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:8px;min-width:0}
+.wright svg{width:100%;aspect-ratio:1;border-radius:8px;background:repeating-conic-gradient(var(--check1) 0 25%,var(--check2) 0 50%) 0 0/20px 20px}
+.wiz footer{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);justify-content:flex-end;flex-wrap:wrap}
+.wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.wtile{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--fg);font-size:11.5px;line-height:1.2;text-align:center}
+.wtile svg{width:100%;aspect-ratio:1}
+.wtile:hover{border-color:var(--mute)}
+.wtile.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.witem{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
+.witem .nm{flex:1;min-width:120px}
+.witem select,.witem input[type=text]{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:3px 6px}
+.witem input[type=color]{width:40px;height:26px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px}
+.wform{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px;align-items:center}
+.wform label{color:var(--mute);font-size:12.5px}
+.wform input[type=text],.wform select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:5px 7px}
+.wform input[type=color]{width:60px;height:28px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px}
+@media (max-width:900px){.wbody{grid-template-columns:minmax(0,1fr);overflow-y:auto}.wleft{overflow:visible}.wright{border-left:0;border-top:1px solid var(--line);order:-1}.wright svg{max-width:340px;margin:auto}.wiz .wbox{height:100%}}
 summary{cursor:pointer;padding:10px 12px;font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:var(--fg);list-style:none;display:flex;justify-content:space-between}
 summary::after{content:"+";color:var(--mute)}
 details[open] summary::after{content:"−"}
@@ -139,6 +165,7 @@ details[open] summary::after{content:"−"}
       <button class="btn" id="bNew">New</button>
       <button class="btn" id="bOpen">Open .lsp</button>
       <button class="btn" id="bSaveJ">Save .lsp</button>
+      <button class="btn wizbtn" id="bWizard">✦ Logo wizard</button>
       <button class="btn pri" id="bExport">Export image</button>
     </div>
   </header>
@@ -437,7 +464,7 @@ const DEF_STYLE={fill:'solid',c1:'#f5a524',c2:'#c2410c',c3:'#ffffff',angle:90,pa
   exD:0,exA:135,exC:'#4a1a08',
   shOn:false,shC:'#000000',shX:6,shY:8,shB:6,shO:.55,
   glow:0,glowC:'#ffd166',bevel:0,spray:0,sprayC:'#ff3cac',rough:0,distress:0,pixel:0,
-  cutN:0,cutStart:.55,cutW:.45,detC:'#14111f',det2C:'#ffffff',lineC:'',detW:5,artMode:'orig',imgMode:'orig',opacity:1};
+  cutN:0,cutStart:.55,cutW:.45,detC:'#14111f',det2C:'#ffffff',lineC:'',detW:5,artMode:'orig',imgMode:'orig',fop:1,ov:'none',ovO:.6,opacity:1};
 const TYPE_NAMES={shape:'Shape',clip:'Art',text:'Text',ring:'Ring',lines:'Lines',image:'Image',svg:'SVG'};
 function mk(type,p,s={},t={}){
   const base={id:uid(),type,name:'',x:500,y:500,rot:0,sx:1,sy:1,skew:0,visible:true,locked:false,p:Object.assign({},p),s:Object.assign({},DEF_STYLE,s),clip:{t:'',m:'in',gap:0}};
@@ -526,6 +553,7 @@ function fillPaint(l,defs){const s=l.s,id='pf-'+l.id;
     case 'linear':return lin([[0,s.c1],[1,s.c2]]);
     case 'tri':return lin([[0,s.c1],[.5,s.c2],[1,s.c3]]);
     case 'chrome':return lin([[0,'#ffffff'],[.38,s.c1],[.5,s.c2],[.53,mix(s.c2,'#000000',.35)],[.62,mix(s.c1,s.c2,.4)],[.85,s.c1],[1,'#ffffff']]);
+    case 'mirror':return lin([[0,mix(s.c1,'#ffffff',.7)],[.4,s.c1],[.47,mix(s.c1,s.c2,.45)],[.72,s.c2],[1,mix(s.c2,s.c1,.45)]]);
     case 'gloss':return lin([[0,mix(s.c1,'#ffffff',.55)],[.48,s.c1],[.52,s.c2],[1,mix(s.c2,'#ffffff',.12)]]);
     case 'radial':defs.push(`<radialGradient id="${id}" cx="50%" cy="40%" r="65%">${stops([[0,s.c1],[1,s.c2]])}</radialGradient>`);return `url(#${id})`;
     case 'stripes':case 'dots':case 'check':{const k=s.pat;let inner=`<rect width="${k}" height="${k}" fill="${s.c1}"/>`;
@@ -559,6 +587,33 @@ function buildFilter(l,defs){const s=l.s,id='fx-'+l.id;let f='';const isImg=l.ty
   defs.push(`<filter id="${id}" ${reg} color-interpolation-filters="sRGB">${f}</filter>`);
   return `filter="url(#${id})"`;
 }
+// rough local half-size of a layer, used to size surface overlays
+function lbox(l){const p=l.p;switch(l.type){case 'text':return[Math.max(60,p.size*.33*String(p.text).length),p.size*.62];
+  case 'ring':return[p.r,p.r];case 'lines':return[p.len/2+20,Math.max(40,p.n*(p.th+p.gap))];case 'image':case 'svg':return[p.w/2,p.h/2];default:return[100,100];}}
+const OVERLAYS=[['none','None'],['shine','Gloss reflection'],['brushed','Brushed metal'],['facets','Faceted'],['carbon','Carbon fiber'],['mesh','Fabric mesh'],['marble','Ice / marble veins'],['frost','Frosted'],['split','Two-tone split']];
+function overlayMarkup(l,defs){const id=l.id,[hx,hy]=lbox(l),X=-hx*1.3,Y=-hy*1.3,W=hx*2.6,H=hy*2.6,R=Math.hypot(hx,hy)*1.4;
+  const rect=a=>`<rect x="${f1(X)}" y="${f1(Y)}" width="${f1(W)}" height="${f1(H)}" ${a}/>`;
+  const filt=(fid,prims)=>{defs.push(`<filter id="${fid}" filterUnits="userSpaceOnUse" x="${f1(X)}" y="${f1(Y)}" width="${f1(W)}" height="${f1(H)}" color-interpolation-filters="sRGB">${prims}</filter>`);return `filter="url(#${fid})"`;};
+  const k=100/Math.max(hx,hy);  // keeps texture density similar on small and large layers
+  switch(l.s.ov){
+    case 'shine':defs.push(`<linearGradient id="og-${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset=".46" stop-color="#fff" stop-opacity=".25"/><stop offset=".47" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient>`);
+      return rect(`fill="url(#og-${id})"`);
+    case 'brushed':return rect(filt('ob-'+id,`<feTurbulence type="fractalNoise" baseFrequency="${f1(.006*k)} ${f1(.9*k)}" numOctaves="2" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 2.4 0 0 0 -1.05"/>`))
+      +rect(filt('ob2-'+id,`<feTurbulence type="fractalNoise" baseFrequency="${f1(.004*k)} ${f1(.7*k)}" numOctaves="2" seed="11"/><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2.4 0 0 0 -1.15"/>`));
+    case 'frost':return rect(filt('of-'+id,`<feTurbulence type="fractalNoise" baseFrequency="${f1(.5*k)}" numOctaves="2" seed="5"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1.6 0 0 0 -.45"/>`));
+    case 'marble':return rect(filt('om-'+id,`<feTurbulence type="turbulence" baseFrequency="${f1(.022*k)}" numOctaves="4" seed="7"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -9 0 0 0 1.25"/>`));
+    case 'carbon':{const t=6/k;defs.push(`<pattern id="op-${id}" patternUnits="userSpaceOnUse" width="${f1(2*t)}" height="${f1(2*t)}"><rect width="${f1(2*t)}" height="${f1(2*t)}" fill="#111"/>`+
+        `<rect width="${f1(t)}" height="${f1(t)}" fill="#3b3b3d"/><rect x="${f1(t)}" y="${f1(t)}" width="${f1(t)}" height="${f1(t)}" fill="#3b3b3d"/><rect y="${f1(t*.1)}" width="${f1(t)}" height="${f1(t*.25)}" fill="#5a5a5e"/><rect x="${f1(t*1.1)}" y="${f1(t)}" width="${f1(t*.25)}" height="${f1(t)}" fill="#55555a"/></pattern>`);
+      return rect(`fill="url(#op-${id})"`);}
+    case 'mesh':{const t=5/k;defs.push(`<pattern id="op-${id}" patternUnits="userSpaceOnUse" width="${f1(t)}" height="${f1(t*.87)}"><circle cx="${f1(t/2)}" cy="${f1(t*.43)}" r="${f1(t*.3)}" fill="#000" fill-opacity=".35"/><circle cx="${f1(t/2-t*.06)}" cy="${f1(t*.37)}" r="${f1(t*.14)}" fill="#fff" fill-opacity=".8"/></pattern>`);
+      return rect(`fill="url(#op-${id})"`);}
+    case 'facets':{const cx=0,cy=-hy*.12,n=12;let o='';
+      for(let i=0;i<n;i++){const a0=(i/n*360-90)*RAD,a1=((i+1)/n*360-90)*RAD,sh=[.0,.22,.08,.3,.04,.18,.12,.26,.02,.2,.1,.28][i];
+        o+=`<path d="M${f1(cx)},${f1(cy)} L${f1(cx+R*Math.cos(a0))},${f1(cy+R*Math.sin(a0))} L${f1(cx+R*Math.cos(a1))},${f1(cy+R*Math.sin(a1))}Z" fill="${i%2?'#000':'#fff'}" fill-opacity="${sh}"/>`;}
+      return o;}
+    case 'split':return `<rect x="0" y="${f1(Y)}" width="${f1(W/2)}" height="${f1(H)}" fill="#fff" fill-opacity=".35"/>`;
+  }
+  return '';}
 function layerSVG(l,defs,byId){
   const s=l.s,p=l.p,id=l.id;
   if(l.type==='text'&&p.arc)defs.push(`<path id="tp-${id}" d="${textPathD(p)}"/>`);
@@ -576,14 +631,16 @@ function layerSVG(l,defs,byId){
     inner=`<svg id="f-${id}" x="${-p.w/2}" y="${-p.h/2}" width="${p.w}" height="${p.h}" viewBox="${p.vb}" preserveAspectRatio="none" overflow="visible">${p.inner}</svg>`;}
   else{
     const tot=s.o1w+s.o2w+s.o3w+s.thick;
-    const outl=(c,w)=>geom(l,`fill="${noFill?'none':c}" stroke="${c}" stroke-width="${f1(w)}" ${join}`);
+    // with a see-through fill the outline copies are drawn as rings only, so they do not show through
+    const outl=(c,w)=>geom(l,`fill="${noFill||s.fop<1?'none':c}" stroke="${c}" stroke-width="${f1(w)}" ${join}`);
     if(s.exD>0){const n=Math.min(70,Math.max(1,Math.round(s.exD)));const [dx,dy]=localDir(l,s.exA),st=s.exD/n;
       for(let i=n;i>=1;i--)inner+=geom(l,`transform="translate(${f1(dx*st*i)} ${f1(dy*st*i)})" fill="${i===n?mix(s.exC,'#000000',.3):s.exC}" stroke="${s.exC}" stroke-width="${f1(2*tot)}" ${join}`);}
     if(s.o3w>0)inner+=outl(s.o3c,2*(s.o1w+s.o2w+s.o3w+s.thick));
     if(s.o2w>0)inner+=outl(s.o2c,2*(s.o1w+s.o2w+s.thick));
     if(s.o1w>0)inner+=outl(s.o1c,2*(s.o1w+s.thick));
-    if(s.thick>0&&!noFill)inner+=geom(l,`fill="${paint}" stroke="${paint}" stroke-width="${2*s.thick}" ${join}`);
-    inner+=geom(l,`id="f-${id}" fill="${paint}"${noFill?' pointer-events="all"':''}`);
+    const fo=s.fop<1?` fill-opacity="${f1(s.fop)}"`:'';
+    if(s.thick>0&&!noFill)inner+=geom(l,`fill="${paint}" stroke="${paint}" stroke-width="${2*s.thick}" ${join}${fo}`);
+    inner+=geom(l,`id="f-${id}" fill="${paint}"${fo}${noFill||s.fop<.5?' pointer-events="all"':''}`);
     if(l.type==='clip'){const c=artOf(l);
       if(c.parts&&s.artMode!=='fill'){const fr=c.e?' fill-rule="evenodd"':'',tint=s.artMode==='tint',L0=c.parts.reduce((t,q)=>t+lum(q[0]),0)/c.parts.length;
         inner+=c.parts.map(([col,d],i)=>{if(!tint)return `<path d="${d}"${fr} fill="${col}"/>`;if(!i)return '';
@@ -591,6 +648,8 @@ function layerSVG(l,defs,byId){
       if(c.dd)inner+=`<path d="${c.dd}" fill="${s.detC}"/>`;
       if(c.d2)inner+=`<path d="${c.d2}" fill="${s.det2C}"/>`;
       if(c.ds)inner+=`<path d="${c.ds}" fill="none" stroke="${s.lineC||s.detC}" stroke-width="${s.detW}" stroke-linecap="round" stroke-linejoin="round"/>`;}
+    if(s.ov!=='none'&&s.ovO>0){defs.push(`<clipPath id="oc-${id}">${geom(l,'').replace('fill-rule','clip-rule')}</clipPath>`);
+      inner+=`<g clip-path="url(#oc-${id})" opacity="${f1(s.ovO)}" pointer-events="none">${overlayMarkup(l,defs)}</g>`;}
     if(l.type==='ring'){const fa=fontAttrs(p.font,p.fs,p.ls),st=p.tsw>0?` stroke="${p.tsc}" stroke-width="${p.tsw*2}" paint-order="stroke" stroke-linejoin="round"`:'';
       const rm=p.r-p.w/2;
       inner+=`<g fill="${p.tc}" ${fa}${st}><text text-anchor="middle" dominant-baseline="central"><textPath href="#rt-${id}" startOffset="50%">${esc(p.top)}</textPath></text><text text-anchor="middle" dominant-baseline="central"><textPath href="#rb-${id}" startOffset="50%">${esc(p.bot)}</textPath></text>`;
@@ -759,7 +818,7 @@ function buildAdd(){const P=$('#addPane');let h='';
       <p class="hint">Effects → Cut lines slices stripes straight through any object.</p></div>`;
   }else{
     const NEW=Array.isArray(window.LSP_NEW_LOGOS)?window.LSP_NEW_LOGOS:[];
-    h=`<div class="pane"><h2>New logos</h2>${NEW.length?`<div class="list">${NEW.map((o,i)=>`<button class="btn" data-newlogo="${i}">${esc(o&&o.name||'Logo '+(i+1))}</button>`).join('')}</div>`:'<p class="hint">No new logos yet. They are read from lsp-new-logos.js next to lsp.html.</p>'}
+    h=`<div class="pane"><button class="btn wizbtn" id="bWiz2">✦ Start the logo wizard</button><h2>New logos</h2>${NEW.length?`<div class="list">${NEW.map((o,i)=>`<button class="btn" data-newlogo="${i}">${esc(o&&o.name||'Logo '+(i+1))}</button>`).join('')}</div>`:'<p class="hint">No new logos yet. They are read from lsp-new-logos.js next to lsp.html.</p>'}
       <h2>Templates</h2><p class="hint">A logo or template replaces the canvas. Undo brings the previous one back.</p><div class="list">${TEMPLATES.map((t,i)=>`<button class="btn" data-tpl="${i}">${esc(t[0])}</button>`).join('')}</div></div>`;
   }
   P.innerHTML=h;
@@ -771,6 +830,7 @@ function buildAdd(){const P=$('#addPane');let h='';
     grid.querySelectorAll('[data-lib]').forEach(b=>b.onclick=()=>addArt(LIB[b.dataset.lib]));}));
   const bt=P.querySelector('#bTrace');if(bt)bt.onclick=()=>$('#fileTrace').click();
   if(tab==='clip')wireImageLibrary(P);
+  const bw=P.querySelector('#bWiz2');if(bw)bw.onclick=()=>openWizard();
   P.querySelectorAll('[data-newlogo]').forEach(b=>b.onclick=()=>{try{loadLSP(window.LSP_NEW_LOGOS[+b.dataset.newlogo]);}catch(e){toast('That logo could not be opened.');}});
   P.querySelectorAll('[data-tpl]').forEach(b=>b.onclick=()=>{S.layers=TEMPLATES[+b.dataset.tpl][1]();sel=null;full();commit();});
   P.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addPreset(b.dataset.add));
@@ -823,7 +883,7 @@ function ctlRow(label,key,type,o={}){const id='c_'+key.replace(/\./g,'_');let in
   else if(type==='select')inp=`<select id="${id}" data-k="${key}"${o.rebuild?' data-rebuild':''}>${o.opts.map(([v,n])=>`<option value="${esc(v)}">${esc(n)}</option>`).join('')}</select>`;
   return `<div class="row"><label for="${id}">${label}</label>${inp}</div>`;}
 function sec(title,html){return `<details data-sec="${title}"${openSecs.has(title)?' open':''}><summary>${title}</summary><div class="props">${html}</div></details>`;}
-const FILLS=[['solid','Solid'],['linear','Gradient'],['tri','Three-color gradient'],['radial','Radial'],['chrome','Chrome / metal'],['gloss','Glossy glass'],['stripes','Stripes'],['dots','Halftone dots'],['check','Checker'],['none','No fill (outline only)']];
+const FILLS=[['solid','Solid'],['linear','Gradient'],['tri','Three-color gradient'],['radial','Radial'],['chrome','Chrome / metal'],['gloss','Glossy glass'],['mirror','Mirror chrome'],['stripes','Stripes'],['dots','Halftone dots'],['check','Checker'],['none','No fill (outline only)']];
 const PALETTES=[['Gold','chrome','#ffd166','#8a3b0c'],['Silver','chrome','#e5e7eb','#4b5563'],['Bronze','chrome','#e0a370','#5b2a0c'],['Neon','tri','#ffe14d','#ff3cac'],['Ice','linear','#e0f2fe','#38bdf8'],['Lava','linear','#ffd166','#c2410c'],['Night','gloss','#3b3f9a','#14163f'],['Forest','gloss','#2f7d4f','#123d25'],['Blood','gloss','#e11d48','#7f1028']];
 function buildProps(){const P=$('#props'),l=cur();
   if(!l){P.innerHTML='<p class="empty">Select an object on the canvas or in the layer list to edit it.</p>';return;}
@@ -859,6 +919,7 @@ function buildProps(){const P=$('#props'),l=cur();
     if(['linear','tri','chrome','gloss','stripes','dots','check'].includes(s.fill))f+=ctlRow('Angle °','s.angle','range',{min:0,max:360});
     if(['stripes','dots','check'].includes(s.fill))f+=ctlRow('Pattern size','s.pat','range',{min:3,max:80});
     f+=`<div class="swatches">${PALETTES.map((q,i)=>`<button class="sw" data-pal="${i}" title="${q[0]}" style="background:linear-gradient(${q[2]},${q[3]})"></button>`).join('')}</div>`;
+    f+=ctlRow('Surface','s.ov','select',{opts:OVERLAYS,rebuild:1})+(s.ov!=='none'?ctlRow('Surface strength','s.ovO','range',{min:0,max:1,step:.05}):'')+ctlRow('Fill opacity','s.fop','range',{min:0,max:1,step:.05});
     h+=sec('Fill',f);}
   let o=ctlRow('Outline 1','s.o1c','color')+ctlRow('Width','s.o1w','range',{min:0,max:40,step:.5});
   if(l.type==='image'||l.type==='svg')o+=ctlRow('Outline 2','s.o2c','color')+ctlRow('Width','s.o2w','range',{min:0,max:40,step:.5});
@@ -966,7 +1027,7 @@ function normalize(o){
       n.p={href:lp.href,w:num(lp.w,300),h:num(lp.h,300)};}
     if(l.type==='svg'){const vb=String(lp.vb||'0 0 100 100');n.p={inner:cleanSvgInner(String(lp.inner||'')),vb:/^[-\d.eE\s,]+$/.test(vb)?vb:'0 0 100 100',w:num(lp.w,300),h:num(lp.h,300),recolor:!!lp.recolor};}
     n.s=cleanObj(l.s,DEF_STYLE);
-    if(!FILLS.some(f=>f[0]===n.s.fill))n.s.fill='solid';if(!['orig','tint','fill'].includes(n.s.artMode))n.s.artMode='orig';if(!['round','miter','bevel'].includes(n.s.join))n.s.join='round';
+    if(!FILLS.some(f=>f[0]===n.s.fill))n.s.fill='solid';if(!['orig','tint','fill'].includes(n.s.artMode))n.s.artMode='orig';if(!OVERLAYS.some(o=>o[0]===n.s.ov))n.s.ov='none';if(!['round','miter','bevel'].includes(n.s.join))n.s.join='round';
     const c=l.clip||{};n.clip={t:IDRE.test(c.t||'')?c.t:'',m:c.m==='out'?'out':'in',gap:num(c.gap,0)};
     n.name=l.name?String(l.name).slice(0,80):l.type==='text'?(n.p.text||'Text'):l.type==='shape'?SHAPES[n.p.k].n:l.type==='clip'?artOf(n).n:l.type==='ring'?'Ring text':l.type==='lines'?'Speed lines':'Image';
     layers.push(n);}
@@ -1179,6 +1240,136 @@ $('#fileLibJson').addEventListener('change',async e=>{const f=e.target.files[0];
   catch(err){toast(f.name+' is not an LSP image library file.');}});
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='bLibSel'){const l=cur();if(l)saveToLibrary(selectedWithTargets(l),l.name);}});
 
+/* ---------- logo wizard ---------- */
+const SH={shOn:true,shX:6,shY:10,shB:10,shO:.45};
+// the 30 ready-made background styles; t tilts the background, plate adds a square plate behind it, ink is the default color for printed symbols and text
+const STYLES=[
+ {n:'White matte',s:{fill:'linear',c1:'#ffffff',c2:'#e4e5e9',bevel:1.5,...SH},ink:'#14111f'},
+ {n:'Black matte',s:{fill:'linear',c1:'#2b2b30',c2:'#0e0e11',bevel:1,...SH},ink:'#f2f2f2'},
+ {n:'Brushed aluminum',s:{fill:'linear',c1:'#dfe2e7',c2:'#9aa0a8',ov:'brushed',ovO:.55,o1c:'#c8ccd2',o1w:3,...SH},ink:'#2b2f36'},
+ {n:'Polished gold',s:{fill:'linear',c1:'#f8d978',c2:'#c48f25',ov:'brushed',ovO:.25,o1c:'#fff1b0',o1w:3,o2c:'#a8781d',o2w:2,bevel:2,...SH},ink:'#5a3d06'},
+ {n:'Mirror chrome',s:{fill:'mirror',c1:'#f1f2f5',c2:'#34353b',angle:60,ov:'shine',ovO:.35,o1c:'#e5e7eb',o1w:4,o2c:'#6b7280',o2w:2,...SH},ink:'#14111f'},
+ {n:'Brushed copper',s:{fill:'linear',c1:'#eba783',c2:'#ae6248',ov:'brushed',ovO:.4,o1c:'#f3bc9c',o1w:2,...SH},ink:'#4a1f10'},
+ {n:'White, black border',s:{fill:'solid',c1:'#f5f5f7',o1c:'#141414',o1w:8,o2c:'#ffffff',o2w:4,...SH},ink:'#141414'},
+ {n:'White, double border',s:{fill:'solid',c1:'#f2f2f4',o1c:'#9ca3af',o1w:3,o2c:'#1a1a1a',o2w:7,o3c:'#e5e7eb',o3w:3,...SH},ink:'#1a1a1a'},
+ {n:'Embossed white',s:{fill:'linear',c1:'#f6f6f8',c2:'#e3e4e8',o1c:'#ebebee',o1w:8,o2c:'#c6c8cd',o2w:1.5,bevel:3,...SH},ink:'#9ca3af'},
+ {n:'Glossy white, silver rim',s:{fill:'linear',c1:'#ffffff',c2:'#e0e2e7',ov:'shine',ovO:.8,o1c:'#c9ccd2',o1w:5,bevel:2,...SH},ink:'#1f2937'},
+ {n:'Silver metal',s:{fill:'linear',c1:'#e8e9ec',c2:'#9b9fa6',angle:120,o1c:'#f5f5f7',o1w:4,o2c:'#7a7f87',o2w:2,bevel:2,...SH},ink:'#1f2937'},
+ {n:'Faceted white',s:{fill:'solid',c1:'#ededf0',ov:'facets',ovO:.5,...SH},ink:'#1f2937'},
+ {n:'Clear glass',s:{fill:'solid',c1:'#cfefff',fop:.18,o1c:'#d7f6ff',o1w:3,o2c:'#7fd6f0',o2w:1,ov:'shine',ovO:.3},ink:'#e6fbff',glow:1},
+ {n:'Frosted glass',s:{fill:'solid',c1:'#eef2f4',fop:.6,ov:'frost',ovO:.45,o1c:'#f7ffff',o1w:3,...SH,shO:.25},ink:'#ffffff'},
+ {n:'Neon blue',s:{fill:'linear',c1:'#10204a',c2:'#070f26',o1c:'#3aa0ff',o1w:5,o2c:'#0b3d8f',o2w:2,glow:22,glowC:'#2f7dff'},ink:'#5fb4ff',glow:1},
+ {n:'Neon orange',s:{fill:'linear',c1:'#2a1208',c2:'#110703',o1c:'#ff8a1f',o1w:5,o2c:'#8a3a05',o2w:2,glow:22,glowC:'#ff6a00'},ink:'#ff9a3d',glow:1},
+ {n:'Ice crackle',s:{fill:'linear',c1:'#d4ebff',c2:'#7fb2e6',ov:'marble',ovO:.85,o1c:'#eaf6ff',o1w:3,glow:10,glowC:'#bfe3ff'},ink:'#ffffff',glow:1},
+ {n:'Carbon fiber',s:{fill:'solid',c1:'#1a1a1a',ov:'carbon',ovO:1,o1c:'#2c2c2c',o1w:3,bevel:1.5,...SH},ink:'#e5e7eb'},
+ {n:'Black, gold rim',s:{fill:'linear',c1:'#26262a',c2:'#0b0b0d',o1c:'#e3b04b',o1w:4,o2c:'#7a5414',o2w:1.5,...SH},ink:'#e3b04b'},
+ {n:'Navy, red and white rim',s:{fill:'linear',c1:'#26386a',c2:'#131d38',o1c:'#ffffff',o1w:4,o2c:'#b3202a',o2w:5,o3c:'#f2f2f2',o3w:2,...SH},ink:'#ffffff'},
+ {n:'Black, bronze rim',s:{fill:'linear',c1:'#3a3026',c2:'#0d0b09',ov:'shine',ovO:.25,o1c:'#c9a25a',o1w:3,...SH},ink:'#c9a25a'},
+ {n:'Blue metallic',s:{fill:'linear',c1:'#5a98ec',c2:'#123f88',angle:120,ov:'brushed',ovO:.25,o1c:'#2a63c2',o1w:4,o2c:'#9cc3ff',o2w:1.5,bevel:2,...SH},ink:'#ffffff'},
+ {n:'Holographic',s:{fill:'tri',c1:'#ff9de2',c2:'#9b7bff',c3:'#4ff0d0',angle:45,ov:'shine',ovO:.4,o1c:'#e6e0ff',o1w:3,glow:8,glowC:'#c9a7ff'},ink:'#ffffff'},
+ {n:'Black, green neon',s:{fill:'solid',c1:'#121614',o1c:'#39e05a',o1w:3,o2c:'#0d0f0e',o2w:3,glow:14,glowC:'#39e05a'},ink:'#39e05a',glow:1},
+ {n:'White 3D',s:{fill:'linear',c1:'#ffffff',c2:'#ececef',exD:18,exA:120,exC:'#c9cbd0',...SH},ink:'#1f2937'},
+ {n:'White 3D, tilted',s:{fill:'linear',c1:'#ffffff',c2:'#ececef',exD:16,exA:160,exC:'#c4c6cc',...SH},t:{sx:.78,sy:1,rot:10,skew:-6},ink:'#1f2937'},
+ {n:'White 3D, lying',s:{fill:'linear',c1:'#ffffff',c2:'#ececef',exD:18,exA:100,exC:'#c4c6cc',...SH},t:{sx:.95,sy:.58,rot:-14,skew:26},ink:'#1f2937'},
+ {n:'White on a plate',s:{fill:'solid',c1:'#f0f0f2',o1c:'#ffffff',o1w:4,bevel:2,...SH},plate:1,ink:'#1f2937'},
+ {n:'Fabric',s:{fill:'solid',c1:'#e6e6ea',ov:'mesh',ovO:.6,o1c:'#f7f7f8',o1w:4,bevel:1.5,...SH},ink:'#1f2937'},
+ {n:'Black and gold split',s:{fill:'linear',c1:'#202022',c2:'#060607',angle:0,ov:'split',ovO:.25,o1c:'#e3b04b',o1w:5,o2c:'#6b4a12',o2w:1.5,...SH},ink:'#e3b04b'}];
+const BLEND=[['separate','Separate (own colors)'],['emboss','Embossed into the background'],['engrave','Engraved into the background'],['print','Printed on the background']];
+const TEXT_POS=[['arctop','Arched along the top'],['top','Top'],['center','Center'],['bottom','Bottom'],['arcbottom','Arched along the bottom'],['above','Above the background'],['below','Below the background']];
+const WSTEPS=['Background','Style','Symbols','Blend','Text','Finish'];
+const contrast=c=>lum(c)>.55?'#14111f':'#ffffff';
+function blendStyle(mode,color,st,traced){const b={...DEF_STYLE,...st.s};
+  if(mode==='emboss')return{fill:b.fill==='none'?'solid':b.fill,c1:b.c1,c2:b.c2,c3:b.c3,angle:b.angle,fop:Math.max(b.fop,.6),ov:b.ov,ovO:b.ovO,
+    bevel:Math.max(2.5,b.bevel+1),shOn:true,shC:'#000000',shX:2,shY:3,shB:2,shO:.55,artMode:'fill'};
+  if(mode==='engrave')return{fill:'solid',c1:mix(b.c1,'#000000',lum(b.c1)>.5?.32:.55),ov:b.ov,ovO:b.ovO*.6,shOn:true,shC:'#ffffff',shX:-1,shY:-2,shB:1,shO:.5,artMode:'fill'};
+  if(mode==='print')return{fill:'solid',c1:color,ov:['shine','brushed'].includes(b.ov)?b.ov:'none',ovO:b.ovO,glow:st.glow?14:0,glowC:color,artMode:'fill'};
+  return traced?{artMode:'orig',...SH,shO:.35}:{fill:'solid',c1:color,o1c:contrast(color),o1w:4,...SH,shO:.35};}
+let W=null;
+function wizBuild(){const L=[],st=STYLES[W.style]||STYLES[0];let bg=null;const t=st.t||{};
+  if(W.bg){if(st.plate)L.push(mk('shape',{k:'rsq'},{fill:'linear',c1:'#ececef',c2:'#cfd1d6',bevel:2,o1c:'#ffffff',o1w:3,...SH},{sx:3.2*1.15,sy:3.2*1.12,name:'Plate'}));
+    bg=mk('shape',{k:W.bg},{...st.s},{sx:f1(3.2*(t.sx||1)),sy:f1(3.2*(t.sy||1)),rot:t.rot||0,skew:t.skew||0,name:SHAPES[W.bg].n});L.push(bg);}
+  // ox, oy and k are in the background's own units (it spans -100…100), so integrated parts follow its tilt
+  const place=(lay,ox,oy,k,inside)=>{if(bg&&inside){const q=layerMatrix(bg).transformPoint(new DOMPoint(ox,oy));
+      Object.assign(lay,{x:f1(q.x),y:f1(q.y),rot:bg.rot,skew:bg.skew,sx:f1(bg.sx*k),sy:f1(bg.sy*k)});}
+    else Object.assign(lay,{x:f1(500+ox*3.2),y:f1(500+oy*3.2),sx:f1(3.2*k),sy:f1(3.2*k)});};
+  const n=W.symbols.length;
+  W.symbols.forEach((sy,i)=>{const traced=!!sy.art;const mode=bg?sy.mode:'separate';
+    const lay=mk('clip',traced?{k:'',art:sy.art}:{k:sy.k},blendStyle(mode,sy.color,st,traced),{name:sy.name});
+    const ps=W.texts.map(t=>t.pos),hasTop=ps.some(p=>p==='arctop'||p==='top'),hasBot=ps.some(p=>p==='arcbottom'||p==='bottom');
+    place(lay,(i-(n-1)/2)*(n>1?64:0),(hasTop?8:0)-(hasBot?10:0)-4,n>1?.3:(hasTop||hasBot)?(hasTop&&hasBot?.3:.36):.46,true);
+    if(bg&&mode!=='separate')lay.clip={t:bg.id,m:'in',gap:0};L.push(lay);});
+  W.texts.forEach(tx=>{const P={arctop:[0,-55,44],top:[0,-60,0],center:[0,0,0],bottom:[0,60,0],arcbottom:[0,58,-44],above:[0,-128,0],below:[0,128,0]}[tx.pos]||[0,0,0];
+    const inside=!['above','below'].includes(tx.pos),mode=bg&&inside&&tx.blend?tx.mode:'separate';
+    const k=Math.min(.24,150/(String(tx.text).length*62||1));
+    const lay=mk('text',{...TEXT_DEF,text:tx.text,font:tx.font,size:100,ls:2,arc:P[2]},mode==='separate'?{fill:'solid',c1:tx.color,o1c:contrast(tx.color),o1w:5,...SH,shO:.35}:blendStyle(mode,tx.color,st,false),{name:tx.text});
+    place(lay,P[0],P[1],k,inside);if(mode!=='separate')lay.clip={t:bg.id,m:'in',gap:0};L.push(lay);});
+  return L;}
+function renderInto(svg,layers){const keep=S;S={...S,canvas:{...S.canvas,bg:'none'},layers};try{svg.innerHTML=buildArt(false);}finally{S=keep;}}
+function openWizard(){W={step:0,bg:'notch',style:0,symbols:[],texts:[],name:S.name&&S.name!=='Untitled logo'?S.name:'',cat:0};
+  const m=document.createElement('div');m.className='modal wiz';m.innerHTML=`<div class="wbox" role="dialog" aria-label="Logo wizard">
+    <header><h2>Logo wizard</h2><div class="wsteps" id="wzSteps"></div></header>
+    <div class="wbody"><div class="wleft" id="wzStep"></div><div class="wright"><svg id="wzPrev" viewBox="0 0 1000 1000" aria-label="Preview"></svg><p class="hint">Live preview. Everything stays editable after you create the logo.</p></div></div>
+    <footer><button class="btn" id="wzCancel">Cancel</button><span class="spacer"></span><button class="btn" id="wzBack">Back</button><button class="btn" id="wzSkip">Skip</button><button class="btn pri" id="wzNext">Next</button></footer></div>`;
+  document.body.appendChild(m);
+  m.querySelector('#wzCancel').onclick=()=>m.remove();
+  m.querySelector('#wzBack').onclick=()=>go(-1);m.querySelector('#wzNext').onclick=()=>W.step===5?finish():go(1);
+  m.querySelector('#wzSkip').onclick=()=>{if(W.step===0)W.bg=null;if(W.step===2)W.symbols=[];if(W.step===4)W.texts=[];go(1);};
+  const skipped=i=>!W.bg&&(i===1||i===3);
+  function go(d){let i=W.step+d;while(i>0&&i<5&&skipped(i))i+=d;W.step=Math.max(0,Math.min(5,i));draw();}
+  function finish(){const L=wizBuild();if(!L.length){toast('Pick a background, a symbol or a text first.');return;}
+    S.layers=L;S.name=W.name.trim()||'Untitled logo';sel=null;full();commit();m.remove();toast('Logo created. Every part is a layer you can keep editing.');}
+  const prev=()=>renderInto(m.querySelector('#wzPrev'),wizBuild());
+  function draw(){const st=m.querySelector('#wzStep');
+    m.querySelector('#wzSteps').innerHTML=WSTEPS.map((n,i)=>`<button class="wstep${i===W.step?' on':i<W.step?' done':''}" data-i="${i}"${skipped(i)?' disabled':''}>${i+1}. ${n}</button>`).join('');
+    m.querySelectorAll('.wstep').forEach(b=>b.onclick=()=>{if(!b.disabled){W.step=+b.dataset.i;draw();}});
+    m.querySelector('#wzBack').disabled=W.step===0;m.querySelector('#wzSkip').hidden=W.step===5||W.step===3;
+    m.querySelector('#wzNext').textContent=W.step===5?'Create logo':'Next';
+    let h='';
+    if(W.step===0){h=`<h2>1. Background</h2><p class="hint">Pick the background shape, or skip if the logo has none.</p><div class="wgrid">
+      <button class="wtile${!W.bg?' on':''}" data-bg=""><svg viewBox="-112 -112 224 224"><path d="M-80,-80 L80,80 M80,-80 L-80,80" stroke="currentColor" stroke-width="10" fill="none"/></svg>No background</button>
+      ${Object.entries(SHAPES).filter(([k])=>!['drips','swoosh','banner','pennant'].includes(k)).map(([k,v])=>`<button class="wtile${W.bg===k?' on':''}" data-bg="${k}">${thumb(v.d)}${esc(v.n)}</button>`).join('')}</div>`;}
+    else if(W.step===1){h=`<h2>2. Style</h2><p class="hint">Pick a finish for the background. You can fine-tune colors and effects later.</p><div class="wgrid" id="wzStyles">${STYLES.map((x,i)=>`<button class="wtile${W.style===i?' on':''}" data-st="${i}"><svg viewBox="110 90 780 820"></svg>${i+1}. ${esc(x.n)}</button>`).join('')}</div>`;}
+    else if(W.step===2){const cats=[...CLIP_CATS.map(c=>({name:c[0],keys:c[1],lib:0})),...LIB_GROUPS.map(g=>({name:g.name,keys:g.keys,lib:1}))];const c=cats[W.cat]||cats[0];
+      h=`<h2>3. Symbols</h2><p class="hint">Add one or more symbols: animals, nature, sports gear and more. Click a symbol to add it.</p>
+      <div class="wform"><label for="wzCat">Category</label><select id="wzCat">${cats.map((x,i)=>`<option value="${i}"${i===W.cat?' selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
+      ${W.symbols.length?`<div class="list">${W.symbols.map((x,i)=>`<div class="witem"><span class="nm">${esc(x.name)}</span><button class="btn" data-rm="${i}">Remove</button></div>`).join('')}</div>`:''}
+      <div class="wgrid">${c.keys.map(k=>{const a=c.lib?LIB[k]:CLIP[k];return `<button class="wtile" data-sym="${esc(k)}" data-lib="${c.lib}">${c.lib?thumbArt(a):thumb(a.d,a.dd,a.ds)}${esc(a.n)}</button>`;}).join('')}</div>`;}
+    else if(W.step===3){h=`<h2>4. Blend symbols into the background</h2><p class="hint">Embossed and engraved symbols take the background's material, and printed ones its gloss. All three follow the background's tilt and stay inside it.</p>
+      ${W.symbols.length?W.symbols.map((x,i)=>`<div class="witem"><span class="nm">${esc(x.name)}</span><select data-mode="${i}" aria-label="How ${esc(x.name)} sits on the background">${BLEND.map(([v,n])=>`<option value="${v}"${x.mode===v?' selected':''}>${n}</option>`).join('')}</select>
+        <input type="color" data-col="${i}" value="${x.color}" aria-label="Color" title="Color for separate and printed symbols"></div>`).join(''):'<p class="hint">No symbols added. Go back to add some, or continue to the text.</p>'}`;}
+    else if(W.step===4){const ink=(STYLES[W.style]||STYLES[0]).ink;
+      h=`<h2>5. Text</h2><p class="hint">Add as many texts as you like. Tick "Part of the background" to emboss, engrave or print the text onto the background.</p>
+      <div class="wform"><label for="wzTxt">Text</label><input type="text" id="wzTxt" placeholder="e.g. RAMPARTS">
+      <label for="wzFont">Font</label><select id="wzFont">${FONTS.map(f=>`<option style="font-family:'${f[0]}'"${f[0]==='Graduate'?' selected':''}>${esc(f[0])}</option>`).join('')}</select>
+      <label for="wzPos">Placement</label><select id="wzPos">${TEXT_POS.map(([v,n])=>`<option value="${v}"${v==='arcbottom'?' selected':''}>${n}</option>`).join('')}</select>
+      <label for="wzCol">Color</label><input type="color" id="wzCol" value="${W.bg?ink:'#ffffff'}">
+      <label for="wzBl">Part of the background</label><div class="btnrow"><input type="checkbox" id="wzBl"${W.bg?'':' disabled'}><select id="wzMode"${W.bg?'':' disabled'}>${BLEND.slice(1).map(([v,n])=>`<option value="${v}"${v==='print'?' selected':''}>${n}</option>`).join('')}</select></div></div>
+      <div class="btnrow"><button class="btn pri" id="wzAddTxt">Add text</button></div>
+      ${W.texts.length?`<div class="list">${W.texts.map((x,i)=>`<div class="witem"><span class="nm" style="font-family:'${esc(x.font)}'">${esc(x.text)}</span><span class="hint">${TEXT_POS.find(p=>p[0]===x.pos)[1]}${x.blend&&W.bg?', '+BLEND.find(b=>b[0]===x.mode)[1].toLowerCase():''}</span><button class="btn" data-rmt="${i}">Remove</button></div>`).join('')}</div>`:''}`;}
+    else{h=`<h2>6. Finish</h2><div class="wform"><label for="wzName">Logo name</label><input type="text" id="wzName" value="${esc(W.name)}" placeholder="e.g. Austin Ramparts"></div>
+      <p class="hint">${W.bg?'Background: '+esc(SHAPES[W.bg].n)+', '+esc(STYLES[W.style].n.toLowerCase())+'.':'No background.'} ${W.symbols.length} symbol${W.symbols.length===1?'':'s'}, ${W.texts.length} text${W.texts.length===1?'':'s'}.</p>
+      <p class="hint">Create logo replaces the current canvas; Undo brings it back. The name becomes the file name when you save.</p>`;}
+    st.innerHTML=h;
+    st.querySelectorAll('[data-bg]').forEach(b=>b.onclick=()=>{W.bg=b.dataset.bg||null;draw();});
+    if(W.step===1)st.querySelectorAll('[data-st]').forEach(b=>{const i=+b.dataset.st,keep=W.style;W.style=i;const L=wizBuild().filter(l=>l.type==='shape');W.style=keep;
+      renderInto(b.querySelector('svg'),L);b.onclick=()=>{W.style=i;st.querySelectorAll('[data-st]').forEach(x=>x.classList.toggle('on',x===b));
+        W.symbols.forEach(x=>{if(x.mode!=='separate')x.color=STYLES[i].ink;});prev();};});
+    const cs=st.querySelector('#wzCat');if(cs)cs.onchange=()=>{W.cat=+cs.value;draw();};
+    st.querySelectorAll('[data-sym]').forEach(b=>b.onclick=()=>{if(W.symbols.length>=6)return toast('Six symbols is the most the wizard places. Add more in the editor.');
+      const lib=b.dataset.lib==='1',k=b.dataset.sym,a=lib?LIB[k]:CLIP[k];
+      W.symbols.push({k:lib?'':k,art:lib?{n:a.n,d:a.d,e:a.e?1:0,parts:a.parts}:null,name:a.n,mode:W.bg?'emboss':'separate',color:(STYLES[W.style]||STYLES[0]).ink});draw();});
+    st.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{W.symbols.splice(+b.dataset.rm,1);draw();});
+    st.querySelectorAll('[data-mode]').forEach(sl=>sl.onchange=()=>{W.symbols[+sl.dataset.mode].mode=sl.value;prev();});
+    st.querySelectorAll('[data-col]').forEach(c=>c.oninput=()=>{W.symbols[+c.dataset.col].color=c.value;prev();});
+    const at=st.querySelector('#wzAddTxt');if(at)at.onclick=()=>{const v=st.querySelector('#wzTxt').value.trim();if(!v){st.querySelector('#wzTxt').focus();return;}
+      W.texts.push({text:v,font:st.querySelector('#wzFont').value,pos:st.querySelector('#wzPos').value,color:st.querySelector('#wzCol').value,blend:st.querySelector('#wzBl').checked,mode:st.querySelector('#wzMode').value});draw();};
+    const tx=st.querySelector('#wzTxt');if(tx)tx.addEventListener('keydown',e=>{if(e.key==='Enter')at.click();});
+    st.querySelectorAll('[data-rmt]').forEach(b=>b.onclick=()=>{W.texts.splice(+b.dataset.rmt,1);draw();});
+    const nm=st.querySelector('#wzName');if(nm)nm.oninput=()=>{W.name=nm.value;};
+    prev();}
+  draw();}
+$('#bWizard').onclick=openWizard;
+
 /* ---------- boot ---------- */
 try{const saved=localStorage.getItem('lsp.v1')||localStorage.getItem('logopaja.v1');if(saved)S=normalize(JSON.parse(saved));}catch(e){}
 if(!S.layers.length)S.layers=TEMPLATES[0][1]();
@@ -1187,7 +1378,7 @@ snap=takeSnap();
 buildTabs();buildAdd();full();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>render());
 window.addEventListener('resize',()=>drawOverlay());
-window.LSP={lib:LIB,addArt,libAll,saveToLibrary,load:o=>{S=normalize(o);sel=null;full();snap=takeSnap();},toLSP,exportPNG,exportSVG,normalize};
+window.LSP={styles:STYLES,openWizard,lib:LIB,addArt,libAll,saveToLibrary,load:o=>{S=normalize(o);sel=null;full();snap=takeSnap();},toLSP,exportPNG,exportSVG,normalize};
 })();
 </script>
 
