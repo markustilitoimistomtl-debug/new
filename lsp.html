@@ -193,6 +193,7 @@ details[open] summary::after{content:"−"}
   </aside>
 </div>
 <input type="file" id="fileImg" accept="image/*,.svg" hidden>
+<input type="file" id="fileSplit" accept="image/png,image/jpeg,image/webp" hidden>
 <input type="file" id="fileLibImg" accept="image/png,image/jpeg,image/webp" multiple hidden>
 <input type="file" id="fileLibJson" accept=".json,application/json" hidden>
 <input type="file" id="fileTrace" accept="image/png,image/jpeg,image/webp" hidden>
@@ -464,7 +465,7 @@ const DEF_STYLE={fill:'solid',c1:'#f5a524',c2:'#c2410c',c3:'#ffffff',angle:90,pa
   exD:0,exA:135,exC:'#4a1a08',
   shOn:false,shC:'#000000',shX:6,shY:8,shB:6,shO:.55,
   glow:0,glowC:'#ffd166',bevel:0,spray:0,sprayC:'#ff3cac',rough:0,distress:0,pixel:0,
-  cutN:0,cutStart:.55,cutW:.45,detC:'#14111f',det2C:'#ffffff',lineC:'',detW:5,artMode:'orig',imgMode:'orig',fop:1,ov:'none',ovO:.6,opacity:1};
+  cutN:0,cutStart:.55,cutW:.45,detC:'#14111f',det2C:'#ffffff',lineC:'',detW:5,artMode:'orig',imgMode:'orig',hue:0,sat:1,bri:1,con:1,gmA:'#14111f',gmB:'#ffffff',blend:'normal',fop:1,ov:'none',ovO:.6,opacity:1};
 const TYPE_NAMES={shape:'Shape',clip:'Art',text:'Text',ring:'Ring',lines:'Lines',image:'Image',svg:'SVG'};
 function mk(type,p,s={},t={}){
   const base={id:uid(),type,name:'',x:500,y:500,rot:0,sx:1,sy:1,skew:0,visible:true,locked:false,p:Object.assign({},p),s:Object.assign({},DEF_STYLE,s),clip:{t:'',m:'in',gap:0}};
@@ -569,7 +570,14 @@ function pixelPrims(ps,x0,y0){const h=Math.floor(ps/2);
 function buildFilter(l,defs){const s=l.s,id='fx-'+l.id;let f='';const isImg=l.type==='image'||l.type==='svg';
   f+=`<feOffset in="SourceGraphic" dx="0" dy="0" result="cur"/>`;
   if(isImg){
-    if(l.type==='image'&&s.imgMode==='tint')f+=`<feFlood flood-color="${s.c1}" result="tf"/><feBlend in="SourceGraphic" in2="tf" mode="multiply" result="tb"/><feComposite in="tb" in2="SourceAlpha" operator="in" result="cur"/>`;
+    if(l.type==='image'){
+      if(s.hue)f+=`<feColorMatrix in="cur" type="hueRotate" values="${f1(s.hue)}" result="cur"/>`;
+      if(s.sat!==1)f+=`<feColorMatrix in="cur" type="saturate" values="${f1(s.sat)}" result="cur"/>`;
+      if(s.bri!==1||s.con!==1){const sl=f1(s.bri*s.con),ic=f1(s.bri*(.5-.5*s.con)),fn=c=>`<feFunc${c} type="linear" slope="${sl}" intercept="${ic}"/>`;f+=`<feComponentTransfer in="cur" result="cur">${fn('R')+fn('G')+fn('B')}</feComponentTransfer>`;}
+      // recolor keeps the picture's light and shade: its brightness is mapped from the shadow color to the highlight color
+      if(s.imgMode==='gmap'){const A=hex2rgb(s.gmA),B=hex2rgb(s.gmB),fn=(c,i)=>`<feFunc${c} type="table" tableValues="${f1(A[i]/255)} ${f1(B[i]/255)}"/>`;
+        f+=`<feColorMatrix in="cur" type="matrix" values=".2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 0 0 0 1 0" result="lum"/><feComponentTransfer in="lum" result="cur">${fn('R',0)+fn('G',1)+fn('B',2)}</feComponentTransfer>`;}}
+    if(l.type==='image'&&s.imgMode==='tint')f+=`<feFlood flood-color="${s.c1}" result="tf"/><feBlend in="cur" in2="tf" mode="multiply" result="tb"/><feComposite in="tb" in2="SourceAlpha" operator="in" result="cur"/>`;
     else if(l.type==='image'&&s.imgMode==='mono')f+=`<feFlood flood-color="${s.c1}"/><feComposite in2="SourceAlpha" operator="in" result="cur"/>`;
     let m='';
     if(s.o2w>0){f+=`<feMorphology in="SourceAlpha" operator="dilate" radius="${s.o1w+s.o2w}" result="ol2"/><feFlood flood-color="${s.o2c}"/><feComposite in2="ol2" operator="in" result="olc2"/>`;m+='<feMergeNode in="olc2"/>';}
@@ -590,6 +598,7 @@ function buildFilter(l,defs){const s=l.s,id='fx-'+l.id;let f='';const isImg=l.ty
 // rough local half-size of a layer, used to size surface overlays
 function lbox(l){const p=l.p;switch(l.type){case 'text':return[Math.max(60,p.size*.33*String(p.text).length),p.size*.62];
   case 'ring':return[p.r,p.r];case 'lines':return[p.len/2+20,Math.max(40,p.n*(p.th+p.gap))];case 'image':case 'svg':return[p.w/2,p.h/2];default:return[100,100];}}
+const BLENDS=[['normal','Normal'],['multiply','Multiply (darken with the layer below)'],['screen','Screen (lighten)'],['overlay','Overlay (keeps the shading below)'],['soft-light','Soft light'],['hard-light','Hard light'],['color','Color only'],['luminosity','Brightness only'],['darken','Darken'],['lighten','Lighten']];
 const OVERLAYS=[['none','None'],['shine','Gloss reflection'],['brushed','Brushed metal'],['facets','Faceted'],['carbon','Carbon fiber'],['mesh','Fabric mesh'],['marble','Ice / marble veins'],['frost','Frosted'],['split','Two-tone split']];
 function overlayMarkup(l,defs){const id=l.id,[hx,hy]=lbox(l),X=-hx*1.3,Y=-hy*1.3,W=hx*2.6,H=hy*2.6,R=Math.hypot(hx,hy)*1.4;
   const rect=a=>`<rect x="${f1(X)}" y="${f1(Y)}" width="${f1(W)}" height="${f1(H)}" ${a}/>`;
@@ -667,7 +676,8 @@ function layerSVG(l,defs,byId){
     defs.push(`<mask id="cm-${id}" maskUnits="userSpaceOnUse" x="-2000" y="-2000" width="5000" height="5000">${l.clip.m==='in'?'':'<rect x="-2000" y="-2000" width="5000" height="5000" fill="#fff"/>'}<g transform="${trf(t)}">${g}</g></mask>`);
     clipA=` mask="url(#cm-${id})"`;}
   const filt=buildFilter(l,defs);
-  return `<g data-lid="${id}"${clipA} opacity="${s.opacity}"><g ${filt}><g transform="${trf(l)}"${cut}>${inner}</g></g></g>`;
+  const bl=s.blend&&s.blend!=='normal'?` style="mix-blend-mode:${s.blend}"`:'';
+  return `<g data-lid="${id}"${clipA}${bl} opacity="${s.opacity}"><g ${filt}><g transform="${trf(l)}"${cut}>${inner}</g></g></g>`;
 }
 function buildArt(forExport){
   const defs=[],byId={};S.layers.forEach(l=>byId[l.id]=l);
@@ -808,10 +818,11 @@ function buildAdd(){const P=$('#addPane');let h='';
     h=`<div class="pane">${CLIP_CATS.map(([cn,ks])=>`<h2>${cn}</h2><div class="grid">${ks.map(k=>{const v=CLIP[k];return `<button class="tile" title="${v.n}" aria-label="${v.n}" data-clip="${k}">${thumb(v.d,v.dd,v.ds)}</button>`;}).join('')}</div>`).join('')}
       <h2>My image library</h2>
       <div class="grid" id="myLib"><p class="hint" style="grid-column:1/-1">Loading…</p></div>
-      <div class="list"><button class="btn" id="bLibAll">Save whole logo to library</button><button class="btn" id="bLibAdd">Add image files to library (JPG, PNG, WebP)</button></div>
+      <div class="list"><button class="btn" id="bLibAll">Save whole logo to library</button><button class="btn" id="bLibAdd">Add image files to library (JPG, PNG, WebP)</button><button class="btn" id="bLibSplit">Split an image sheet into objects</button></div>
+      <div class="row"><label for="optRmTol">Background tolerance</label><div class="rng"><input type="range" id="optRmTol" min="6" max="90" value="${rmTol}"><span class="hint" id="optRmTolV">${rmTol}</span></div></div>
       <div class="row"><label for="optRmBg">Remove plain background</label><input type="checkbox" id="optRmBg"${rmBgPref?' checked':''}></div>
       <div class="btnrow"><button class="btn" id="bLibExp">Export library</button><button class="btn" id="bLibImp">Import library</button></div>
-      <p class="hint">The image library keeps finished objects and photos as images in this browser. Click one to add it as an image layer; ✎ brings back the editable vector version. Export the library to move it to another browser.</p>
+      <p class="hint">Split an image sheet cuts a picture with many objects, like a sheet of 30 shields, into separate images with the background removed. Raise the tolerance if background is left over, lower it if parts of the objects disappear. The image library keeps finished objects and photos as images in this browser. Click one to add it as an image layer; ✎ brings back the editable vector version. Export the library to move it to another browser.</p>
       <h2>Traced league logos</h2>
       ${LIB_GROUPS.map((g,i)=>`<details class="libgrp" data-grp="${i}"><summary>${esc(g.name)} (${g.keys.length})</summary><div class="grid" data-grid="${i}"></div></details>`).join('')}
       ${LIB_GROUPS.length?'':'<p class="hint">The traced logo library (lsp-library.js) is not loaded. Keep it in the same folder as lsp.html to see the league logos here.</p>'}
@@ -920,9 +931,13 @@ function buildProps(){const P=$('#props'),l=cur();
   if(c)h+=sec('Content',c);
   h+=sec('Transform',ctlRow('X','x','range',{min:-200,max:1200})+ctlRow('Y','y','range',{min:-200,max:1200})+ctlRow('Rotation °','rot','range',{min:-180,max:180})+
     ctlRow('Width ×','sx','range',{min:-8,max:8,step:.01})+ctlRow('Height ×','sy','range',{min:-8,max:8,step:.01})+ctlRow('Skew °','skew','range',{min:-60,max:60})+
-    ctlRow('Opacity','s.opacity','range',{min:0,max:1,step:.01}));
-  if(l.type==='image')h+=sec('Image colors',ctlRow('Colors','s.imgMode','select',{opts:[['orig','Original colors'],['tint','Tinted with color'],['mono','One color (silhouette)']],rebuild:1})+
-    (s.imgMode!=='orig'?ctlRow('Color','s.c1','color'):'')+'<p class="hint">Outlines, shadow, glow and the other effects work on images too. Clipping can use an image as the target.</p>');
+    ctlRow('Opacity','s.opacity','range',{min:0,max:1,step:.01})+ctlRow('Blend mode','s.blend','select',{opts:BLENDS}));
+  if(l.type==='image')h+=sec('Image colors',ctlRow('Colors','s.imgMode','select',{opts:[['orig','Original colors'],['gmap','Recolor, keep the shading'],['tint','Tinted with color'],['mono','One color (silhouette)']],rebuild:1})+
+    (s.imgMode==='gmap'?ctlRow('Shadows','s.gmA','color')+ctlRow('Highlights','s.gmB','color')+`<div class="swatches">${RECOLORS.slice(1).map((q,i)=>`<button class="sw" data-rc="${i+1}" title="${q[0]}" style="background:linear-gradient(135deg,${q[1][1]},${q[1][0]})"></button>`).join('')}</div>`:'')+
+    (s.imgMode==='tint'||s.imgMode==='mono'?ctlRow('Color','s.c1','color'):'')+
+    ctlRow('Hue °','s.hue','range',{min:-180,max:180})+ctlRow('Saturation','s.sat','range',{min:0,max:3,step:.05})+ctlRow('Brightness','s.bri','range',{min:.2,max:2,step:.05})+ctlRow('Contrast','s.con','range',{min:.2,max:2.5,step:.05})+
+    `<div class="row"><label for="pRmTol">Background tolerance</label><div class="rng"><input type="range" id="pRmTol" min="6" max="90" value="${rmTol}"><span class="hint" id="pRmTolV">${rmTol}</span></div></div>
+     <div class="btnrow"><button class="btn" id="pRmBg">Remove background</button>${p.nw?`<span class="hint">${p.nw} × ${p.nh} px</span>`:''}</div>`+'<p class="hint">Outlines, shadow, glow and the other effects work on images too. Clipping can use an image as the target.</p>');
   if(l.type!=='image'){
     let f=ctlRow('Fill','s.fill','select',{opts:FILLS,rebuild:1});
     if(s.fill!=='none')f+=ctlRow('Color 1','s.c1','color');
@@ -948,6 +963,7 @@ function buildProps(){const P=$('#props'),l=cur();
   const others=S.layers.filter(x=>x!==l);
   h+=sec('Clipping',`<p class="hint">Show this object only inside another object (art inside a letter), or cut another object out of it. The cutting object can be hidden.</p>`+
     ctlRow('Target','clip.t','select',{opts:[['','No clipping'],...others.map(x=>[x.id,x.name])]})+ctlRow('Mode','clip.m','select',{opts:[['in','Show only inside target'],['out','Cut target out']]})+
+    `<div class="btnrow"><button class="btn" id="pBlendBelow">Blend into the layer below</button></div><p class="hint">Clips this layer to the one below and sets Overlay, so it takes that layer's shading and texture.</p>`+
     ctlRow('Gap','clip.gap','range',{min:0,max:40}));
   P.innerHTML=h;
   P.querySelectorAll('details').forEach(d=>d.addEventListener('toggle',()=>{d.open?openSecs.add(d.dataset.sec):openSecs.delete(d.dataset.sec);}));
@@ -958,6 +974,15 @@ function buildProps(){const P=$('#props'),l=cur();
     pg.oninput=upd;P.querySelector('#pgFont').onchange=upd;P.querySelector('#pgFill').onchange=upd;}
   P.querySelectorAll('[data-font]').forEach(b=>b.onclick=()=>{l.p.font=b.dataset.font;l.name=l.p.text;render();buildProps();commit();});
   P.querySelectorAll('[data-rfont]').forEach(b=>b.onclick=()=>{l.p.font=b.dataset.rfont;render();buildProps();commit();});
+  const pb=P.querySelector('#pBlendBelow');if(pb)pb.onclick=()=>{const i=S.layers.indexOf(l);if(i<1)return toast('There is no layer below this one.');
+    l.clip={t:S.layers[i-1].id,m:'in',gap:0};l.s.blend='overlay';render();buildProps();commit();toast('Blended into '+S.layers[i-1].name+'.');};
+  P.querySelectorAll('[data-rc]').forEach(b=>b.onclick=()=>{const q=RECOLORS[+b.dataset.rc][1];l.s.gmA=q[0];l.s.gmB=q[1];render();buildProps();commit();});
+  const rt=P.querySelector('#pRmTol');if(rt)rt.oninput=()=>{rmTol=+rt.value;P.querySelector('#pRmTolV').textContent=rmTol;try{localStorage.setItem('lsp.rmtol',rmTol);}catch(e){}};
+  const rb=P.querySelector('#pRmBg');if(rb)rb.onclick=async()=>{try{const img=new Image();await new Promise((r,j)=>{img.onload=r;img.onerror=j;img.src=l.p.href;});
+      const cv=document.createElement('canvas');cv.width=img.naturalWidth;cv.height=img.naturalHeight;const cx=cv.getContext('2d');cx.drawImage(img,0,0);
+      const id=cx.getImageData(0,0,cv.width,cv.height);if(!removePlainBg(id,rmTol))return toast('No plain background found at the edges. The image may already be transparent; try a higher tolerance.');
+      cx.putImageData(id,0,0);l.p.href=cv.toDataURL('image/png');render();commit();toast('Background removed. Undo brings it back.');}
+    catch(e){toast('Could not process this image.');}};
   P.querySelectorAll('[data-pal]').forEach(b=>b.onclick=()=>{const q=PALETTES[+b.dataset.pal];Object.assign(l.s,{fill:q[1],c1:q[2],c2:q[3],c3:'#ffffff'});render();buildProps();commit();});
 }
 function bindInputs(P,getObj,onLive){
@@ -1011,7 +1036,7 @@ const slug=n=>(String(n||'logo').toLowerCase().normalize('NFD').replace(/[̀-ͯ]
 function toLSP(){return{format:'LSP',version:LSP_VERSION,app:'Logo Styler Picture',name:S.name||'Untitled logo',saved:new Date().toISOString(),canvas:S.canvas,layers:S.layers};}
 // Files may come from other tools or AIs, so every value is checked before it reaches the SVG markup.
 const HEX=/^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i,PATHD=/^[MmLlHhVvCcSsQqTtAaZz0-9eE.,\s+-]*$/,IDRE=/^[\w-]{1,40}$/;
-const COLOR_KEYS=['c1','c2','c3','o1c','o2c','o3c','exC','shC','glowC','sprayC','detC','det2C','lineC','tc','tsc','bgC'];
+const COLOR_KEYS=['gmA','gmB','c1','c2','c3','o1c','o2c','o3c','exC','shC','glowC','sprayC','detC','det2C','lineC','tc','tsc','bgC'];
 const num=(v,d)=>{v=Number(v);return Number.isFinite(v)?v:d;};
 function cleanObj(src,defs){const o={};src=src||{};for(const k in defs){const d=defs[k],v=src[k];
   if(v===undefined||v===null){o[k]=d;continue;}
@@ -1041,10 +1066,10 @@ function normalize(o){
         if(!CLIP[n.p.k])n.p.k='';}
       else if(!CLIP[n.p.k])n.p.k='star5';}
     if(l.type==='image'){if(!/^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(lp.href||''))continue;
-      n.p={href:lp.href,w:num(lp.w,300),h:num(lp.h,300)};}
+      n.p={href:lp.href,w:num(lp.w,300),h:num(lp.h,300),nw:num(lp.nw,0),nh:num(lp.nh,0)};}
     if(l.type==='svg'){const vb=String(lp.vb||'0 0 100 100');n.p={inner:cleanSvgInner(String(lp.inner||'')),vb:/^[-\d.eE\s,]+$/.test(vb)?vb:'0 0 100 100',w:num(lp.w,300),h:num(lp.h,300),recolor:!!lp.recolor};}
     n.s=cleanObj(l.s,DEF_STYLE);
-    if(!FILLS.some(f=>f[0]===n.s.fill))n.s.fill='solid';if(!['orig','tint','fill'].includes(n.s.artMode))n.s.artMode='orig';if(!OVERLAYS.some(o=>o[0]===n.s.ov))n.s.ov='none';if(!['round','miter','bevel'].includes(n.s.join))n.s.join='round';
+    if(!FILLS.some(f=>f[0]===n.s.fill))n.s.fill='solid';if(!['orig','tint','fill'].includes(n.s.artMode))n.s.artMode='orig';if(!OVERLAYS.some(o=>o[0]===n.s.ov))n.s.ov='none';if(!BLENDS.some(o=>o[0]===n.s.blend))n.s.blend='normal';if(!['orig','tint','mono','gmap'].includes(n.s.imgMode))n.s.imgMode='orig';if(!['round','miter','bevel'].includes(n.s.join))n.s.join='round';
     const c=l.clip||{};n.clip={t:IDRE.test(c.t||'')?c.t:'',m:c.m==='out'?'out':'in',gap:num(c.gap,0)};
     n.name=l.name?String(l.name).slice(0,80):l.type==='text'?(n.p.text||'Text'):l.type==='shape'?SHAPES[n.p.k].n:l.type==='clip'?artOf(n).n:l.type==='ring'?'Ring text':l.type==='lines'?'Speed lines':'Image';
     layers.push(n);}
@@ -1119,6 +1144,9 @@ async function exportSVG(){await ensureFonts();const {css,failed}=await fontCSS(
   const vb=`${f1(b.x)} ${f1(b.y)} ${f1(b.width)} ${f1(b.height)}`;
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${vb}" width="${f1(b.width)}" height="${f1(b.height)}"><metadata id="lsp-data"><![CDATA[${JSON.stringify(toLSP()).split(']]>').join(']]]]><![CDATA[>')}]]></metadata><style>${css}</style>${buildArt(true)}</svg>`;
   return{svg,failed,w:b.width,h:b.height};}
+// the PNG size at which every imported image keeps all its pixels
+function nativeSize(){let ppu=0;S.layers.forEach(l=>{if(l.visible&&l.type==='image'&&l.p.nw)ppu=Math.max(ppu,l.p.nw/(l.p.w*Math.max(Math.abs(l.sx),Math.abs(l.sy))||1));});
+  if(!ppu)return 0;render();const b=S.canvas.crop?contentBox():{width:1000,height:1000};drawOverlay();return Math.min(4096,Math.max(512,Math.round(Math.max(b.width,b.height)*ppu)));}
 async function exportPNG(size){const {svg,failed,w,h}=await exportSVG();const k=size/Math.max(w,h);
   const img=new Image();const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
   await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url;});
@@ -1126,7 +1154,7 @@ async function exportPNG(size){const {svg,failed,w,h}=await exportSVG();const k=
   const raw=await new Promise(r=>c.toBlob(r,'image/png'));const blob=await pngWithLSP(raw,JSON.stringify(toLSP()));return{blob,failed,url:c.toDataURL('image/png')};}
 $('#bExport').onclick=()=>{
   const m=document.createElement('div');m.className='modal';m.innerHTML=`<div class="box" role="dialog" aria-label="Export image"><h2>Export image</h2>
-    <div class="row"><label for="exSize">PNG size</label><select id="exSize"><option>512</option><option selected>1024</option><option>2048</option><option>4096</option></select></div>
+    <div class="row"><label for="exSize">PNG size</label><select id="exSize"><option>512</option><option selected>1024</option><option>2048</option><option>4096</option>${nativeSize()?`<option value="${nativeSize()}">Original image quality (${nativeSize()} px)</option>`:''}</select></div>
     <div class="row"><label for="exCrop">Crop to logo</label><input type="checkbox" id="exCrop"${S.canvas.crop?' checked':''}></div>
     <p class="hint">The background stays transparent unless you pick a background color under Canvas. Exported PNG and SVG files carry the LSP data, so LSP can open them again for editing.</p>
     <div class="btnrow"><button class="btn pri" id="exPng">Save PNG</button><button class="btn" id="exSvg">Save SVG</button><button class="btn" id="exCopy">Copy SVG code</button><button class="btn" id="exClose">Close</button></div>
@@ -1200,23 +1228,73 @@ async function libPut(it){libMem.set(it.id,it);const db=await idb();if(!db)retur
   return new Promise(res=>{try{const tx=db.transaction('items','readwrite');tx.objectStore('items').put(it);tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);}catch(e){res(false);}});}
 async function libDel(id){libMem.delete(id);const db=await idb();if(!db)return;
   await new Promise(res=>{try{const tx=db.transaction('items','readwrite');tx.objectStore('items').delete(id);tx.oncomplete=res;tx.onerror=res;}catch(e){res();}});}
-// plain background touching the corners becomes transparent (for JPG photos and flat-background art)
-function removePlainBg(id){const w=id.width,h=id.height,px=id.data,corner=[0,(w-1)*4,(h-1)*w*4,((h-1)*w+w-1)*4];
-  if(!corner.every(i=>px[i+3]>250))return false;
-  const ref=[0,1,2].map(c=>corner.reduce((t,i)=>t+px[i+c],0)/4);
-  if(corner.some(i=>Math.abs(px[i]-ref[0])+Math.abs(px[i+1]-ref[1])+Math.abs(px[i+2]-ref[2])>60))return false;
-  const seen=new Uint8Array(w*h),st=[0,w-1,(h-1)*w,h*w-1];
-  while(st.length){const p=st.pop();if(seen[p])continue;seen[p]=1;const i=p*4,dd=Math.abs(px[i]-ref[0])+Math.abs(px[i+1]-ref[1])+Math.abs(px[i+2]-ref[2]);
-    if(dd>60)continue;px[i+3]=dd<30?0:Math.round(255*(dd-30)/30);
-    const x=p%w,y=(p/w)|0;if(x>0)st.push(p-1);if(x<w-1)st.push(p+1);if(y>0)st.push(p-w);if(y<h-1)st.push(p+w);}
-  return true;}
+// background removal: grows from the image edges through pixels that change only a little from their
+// neighbour, so gradient and vignette backgrounds go too; an object's outline stops it
+let rmTol=28;try{rmTol=+localStorage.getItem('lsp.rmtol')||28;}catch(e){}
+const RECOLORS=[['Original',null],['Gold',['#3a2408','#ffe9a8']],['Silver',['#1e2228','#f4f6f8']],['Bronze',['#2a1406','#f1c49a']],['Copper',['#260d04','#f6b48a']],
+  ['Navy',['#060d1f','#9db8ff']],['Royal blue',['#04103a','#8fd0ff']],['Red',['#2a0306','#ff9a9a']],['Green',['#04170b','#9be2a8']],['Purple',['#14061f','#d9b3ff']],
+  ['Black',['#050505','#8a8a8a']],['White',['#5f636b','#ffffff']],['Ice',['#0b2238','#e8f6ff']],['Teal',['#03201f','#8ff0e6']],['Orange',['#2a0d00','#ffc27a']]];
+function removePlainBg(id,tol=rmTol){const w=id.width,h=id.height,px=id.data,N=w*h;
+  const border=[];for(let x=0;x<w;x++)border.push(x,(h-1)*w+x);for(let y=0;y<h;y++)border.push(y*w,y*w+w-1);
+  if(border.filter(p=>px[p*4+3]<250).length>border.length*.5)return false;  // already transparent
+  const med=[0,1,2].map(c=>{const v=border.map(p=>px[p*4+c]).sort((a,b)=>a-b);return v[v.length>>1];});
+  const dref=p=>{const i=p*4;return Math.abs(px[i]-med[0])+Math.abs(px[i+1]-med[1])+Math.abs(px[i+2]-med[2]);};
+  const bg=new Uint8Array(N),st=border.filter(p=>dref(p)<90);if(!st.length)return false;st.forEach(p=>bg[p]=1);
+  const near=(a,b)=>{const i=a*4,j=b*4;return Math.abs(px[i]-px[j])+Math.abs(px[i+1]-px[j+1])+Math.abs(px[i+2]-px[j+2])<tol;};
+  while(st.length){const p=st.pop(),x=p%w,y=(p/w)|0;
+    for(const q of [x>0?p-1:-1,x<w-1?p+1:-1,y>0?p-w:-1,y<h-1?p+w:-1])if(q>=0&&!bg[q]&&near(p,q)&&dref(q)<170){bg[q]=1;st.push(q);}}
+  let n=0;for(let p=0;p<N;p++)if(bg[p]){px[p*4+3]=0;n++;}
+  // soften the cut edge by one pixel
+  for(let p=0;p<N;p++)if(!bg[p]){const x=p%w,y=(p/w)|0;let k=0;if(x>0&&bg[p-1])k++;if(x<w-1&&bg[p+1])k++;if(y>0&&bg[p-w])k++;if(y<h-1&&bg[p+w])k++;if(k)px[p*4+3]=Math.round(px[p*4+3]*(1-k*.18));}
+  return n>N*.01;}
+// finds the separator lines of a sheet laid out as a grid: a line is a column (or row) whose
+// colour changes from its neighbour along most of its length, not only where a picture is
+function gridCuts(px,w,h,vertical){const n=vertical?w:h,len=vertical?h:w,score=new Float32Array(n),v=new Float32Array(len);
+  for(let a=1;a<n;a++){for(let b=0;b<len;b++){const i=vertical?(b*w+a)*4:(a*w+b)*4,j=vertical?i-4:i-w*4;v[b]=Math.abs(px[i]-px[j])+Math.abs(px[i+1]-px[j+1])+Math.abs(px[i+2]-px[j+2]);}
+    const sv=Array.from(v).sort((x,y)=>x-y);score[a]=sv[Math.floor(len*.35)];}
+  const base=Array.from(score).sort((x,y)=>x-y)[n>>1],thr=Math.max(10,base*4),hits=[];
+  for(let a=1;a<n;a++)if(score[a]>thr)hits.push(a);
+  const cuts=[];hits.forEach(a=>{if(cuts.length&&a-cuts[cuts.length-1][1]<=6)cuts[cuts.length-1][1]=a;else cuts.push([a,a]);});
+  const out=[0,...cuts.map(c=>Math.round((c[0]+c[1])/2)),n],cells=[];
+  for(let i=0;i<out.length-1;i++)if(out[i+1]-out[i]>n*.05)cells.push([out[i],out[i+1]]);
+  return cells.length?cells:[[0,n]];}
+// cuts a sheet with several pictures (e.g. 30 shields) into separate transparent images
+async function splitSheet(f,tol=rmTol){const url=await toDataURL(f);const img=new Image();await new Promise((r,j)=>{img.onload=r;img.onerror=j;img.src=url;});
+  const k=Math.min(1,4000/Math.max(img.width,img.height)),w=Math.round(img.width*k),h=Math.round(img.height*k);
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;const cx=cv.getContext('2d',{willReadFrequently:true});cx.drawImage(img,0,0,w,h);
+  const all=cx.getImageData(0,0,w,h).data,cols=gridCuts(all,w,h,true),rows=gridCuts(all,w,h,false),out=[];
+  for(const [y0,y1] of rows)for(const [x0,x1] of cols){
+    const pad=3,cw=x1-x0-2*pad,ch=y1-y0-2*pad;if(cw<20||ch<20)continue;
+    const c=document.createElement('canvas');c.width=cw;c.height=ch;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(cv,x0+pad,y0+pad,cw,ch,0,0,cw,ch);
+    const id=g.getImageData(0,0,cw,ch);removePlainBg(id,tol);g.putImageData(id,0,0);
+    out.push(...blobsOf(c,id,cols.length*rows.length>1));}
+  return out;}
+// the pictures in one cell (or a whole sheet): blobs of visible pixels, small bits such as numbers left out
+function blobsOf(cv,id,oneCell){const w=cv.width,h=cv.height,N=w*h,on=new Uint8Array(N);for(let p=0;p<N;p++)on[p]=id.data[p*4+3]>40?1:0;
+  const r=Math.max(3,Math.round(Math.max(w,h)/150)),tmp=new Uint8Array(N),dil=new Uint8Array(N);
+  for(let y=0;y<h;y++){let c=0;for(let x=-r;x<w;x++){if(x+r<w&&on[y*w+x+r])c++;if(x-r-1>=0&&on[y*w+x-r-1])c--;if(x>=0)tmp[y*w+x]=c>0?1:0;}}
+  for(let x=0;x<w;x++){let c=0;for(let y=-r;y<h;y++){if(y+r<h&&tmp[(y+r)*w+x])c++;if(y-r-1>=0&&tmp[(y-r-1)*w+x])c--;if(y>=0)dil[y*w+x]=c>0?1:0;}}
+  const lab=new Int32Array(N),boxes=[];let L=0;
+  for(let p0=0;p0<N;p0++){if(!dil[p0]||lab[p0])continue;L++;const b={x0:w,y0:h,x1:0,y1:0,a:0,l:L};const st=[p0];lab[p0]=L;
+    while(st.length){const p=st.pop(),x=p%w,y=(p/w)|0;if(on[p]){b.a++;if(x<b.x0)b.x0=x;if(x>b.x1)b.x1=x;if(y<b.y0)b.y0=y;if(y>b.y1)b.y1=y;}
+      for(const q of [x>0?p-1:-1,x<w-1?p+1:-1,y>0?p-w:-1,y<h-1?p+w:-1])if(q>=0&&dil[q]&&!lab[q]){lab[q]=L;st.push(q);}}
+    if(b.a)boxes.push(b);}
+  if(!boxes.length)return[];
+  const big=Math.max(...boxes.map(b=>b.a));
+  let keep=oneCell?[boxes.reduce((a,b)=>b.a>a.a?b:a)]:boxes.filter(b=>b.a>Math.max(300,big*.04));
+  if(!oneCell){const rowH=keep.map(b=>b.y1-b.y0).sort((a,b)=>a-b)[keep.length>>1]*.6;keep.sort((a,b)=>Math.round((a.y0+a.y1)/2/rowH)-Math.round((b.y0+b.y1)/2/rowH)||a.x0-b.x0);}
+  return keep.map(b=>{const m=4,x0=Math.max(0,b.x0-m),y0=Math.max(0,b.y0-m),cw=Math.min(w,b.x1+m+1)-x0,ch=Math.min(h,b.y1+m+1)-y0;
+    // only this blob's pixels, so numbers and neighbours inside the box are dropped
+    const c2=document.createElement('canvas');c2.width=cw;c2.height=ch;const g2=c2.getContext('2d');const d=g2.createImageData(cw,ch);
+    for(let y=0;y<ch;y++)for(let x=0;x<cw;x++){const p=(y+y0)*w+x+x0;if(lab[p]!==b.l)continue;const i=p*4,o=(y*cw+x)*4;d.data[o]=id.data[i];d.data[o+1]=id.data[i+1];d.data[o+2]=id.data[i+2];d.data[o+3]=id.data[i+3];}
+    g2.putImageData(d,0,0);return{href:c2.toDataURL('image/png'),w:cw,h:ch};});}
 async function prepImage(f,removeBg=rmBgPref){const url=await toDataURL(f);const img=new Image();await new Promise((r,j)=>{img.onload=r;img.onerror=j;img.src=url;});
-  const k=Math.min(1,1200/Math.max(img.width,img.height)),w=Math.max(1,Math.round(img.width*k)),h=Math.max(1,Math.round(img.height*k));
+  const k=Math.min(1,2400/Math.max(img.width,img.height)),w=Math.max(1,Math.round(img.width*k)),h=Math.max(1,Math.round(img.height*k));
   const cv=document.createElement('canvas');cv.width=w;cv.height=h;const cx=cv.getContext('2d');cx.drawImage(img,0,0,w,h);
-  let cut=false;if(removeBg){const id=cx.getImageData(0,0,w,h);if(removePlainBg(id)){cx.putImageData(id,0,0);cut=true;}}
+  let cut=false;if(removeBg){const id=cx.getImageData(0,0,w,h);if(removePlainBg(id,rmTol)){cx.putImageData(id,0,0);cut=true;}}
   const jpg=/jpe?g/i.test(f.type)&&!cut;
   return{href:k===1&&!cut&&IMGRE.test(url)&&!/gif/.test(url.slice(0,20))?url:cv.toDataURL(jpg?'image/jpeg':'image/png',.92),w,h};}
-function addImageLayer(p,name){const k=320/Math.max(p.w,p.h);addLayer(mk('image',{href:p.href,w:f1(p.w*k),h:f1(p.h*k)},{o1w:0},{name:name||'Image'}));}
+function addImageLayer(p,name){const k=320/Math.max(p.w,p.h);addLayer(mk('image',{href:p.href,w:f1(p.w*k),h:f1(p.h*k),nw:p.w,nh:p.h},{o1w:0},{name:name||'Image'}));}
 async function renderLayers(layers){
   // renders just these layers to a cropped transparent PNG, then puts the canvas back
   const keep=S,ks=sel;
@@ -1243,10 +1321,17 @@ async function fillLibGrid(){const g=document.getElementById('myLib');if(!g)retu
 function wireImageLibrary(P){fillLibGrid();
   P.querySelector('#bLibAll').onclick=()=>S.layers.length?saveToLibrary(S.layers,S.name):toast('The canvas is empty.');
   P.querySelector('#bLibAdd').onclick=()=>$('#fileLibImg').click();
+  P.querySelector('#bLibSplit').onclick=()=>$('#fileSplit').click();
+  const ot=P.querySelector('#optRmTol');ot.oninput=()=>{rmTol=+ot.value;P.querySelector('#optRmTolV').textContent=rmTol;try{localStorage.setItem('lsp.rmtol',rmTol);}catch(e){}};
   P.querySelector('#optRmBg').onchange=e=>{rmBgPref=e.target.checked;try{localStorage.setItem('lsp.rmbg',rmBgPref?'1':'0');}catch(err){}};
   P.querySelector('#bLibExp').onclick=async()=>{const items=await libAll();if(!items.length)return toast('The library is empty.');
     saveFile('lsp-image-library.json',JSON.stringify({format:'LSP-IMAGES',version:1,items}));};
   P.querySelector('#bLibImp').onclick=()=>$('#fileLibJson').click();}
+$('#fileSplit').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;toast('Splitting '+f.name+'…');
+  try{const parts=await splitSheet(f);if(!parts.length)return toast('No separate pictures found. Try a higher background tolerance.');
+    const base=f.name.replace(/\.[^.]+$/,'');for(let i=0;i<parts.length;i++)await libPut({id:uid(),name:base+' '+(i+1),...parts[i],t:Date.now()+parts.length-i});
+    toast(`Added ${parts.length} pictures from ${f.name} to the image library.`);fillLibGrid();}
+  catch(err){toast('Could not split '+f.name+'.');}});
 $('#fileLibImg').addEventListener('change',async e=>{const fs=[...e.target.files];e.target.value='';let n=0;
   for(const f of fs){try{const p=await prepImage(f);await libPut({id:uid(),name:f.name.replace(/\.[^.]+$/,''),href:p.href,w:p.w,h:p.h,t:Date.now()});n++;}catch(err){}}
   toast(`Added ${n} image${n===1?'':'s'} to the library`+(n<fs.length?`; ${fs.length-n} could not be read.`:'.'));fillLibGrid();});
@@ -1335,7 +1420,17 @@ function lookStyle(look,c){const dk=mix(c,'#000000',.55);switch(look){
 const TEXT_POS=[['arctop','Arched along the top'],['top','Top'],['center','Center'],['bottom','Bottom'],['arcbottom','Arched along the bottom'],['above','Above the background'],['below','Below the background']];
 const WSTEPS=['Background','Style','Symbols','Size & blend','Text','Finish'];
 const contrast=c=>lum(c)>.55?'#14111f':'#ffffff';
-function blendStyle(mode,color,st,traced){const b={...DEF_STYLE,...st.s};
+// main color of an image background after recoloring, used for embossed and engraved parts
+function imgBase(){if(W.tint)return W.tint;const rc=RECOLORS[W.recolor||0][1];return rc?mix(rc[0],rc[1],.55):(W.bgImg&&W.bgImg.avg)||'#808080';}
+function imgBgStyle(){const rc=RECOLORS[W.recolor||0][1];
+  if(W.tint)return{imgMode:'gmap',gmA:mix(W.tint,'#000000',.78),gmB:mix(W.tint,'#ffffff',.72)};return rc?{imgMode:'gmap',gmA:rc[0],gmB:rc[1]}:{};}
+function blendStyle(mode,color,st,traced,isImg){const b={...DEF_STYLE,...st.s};
+  if(W&&W.bg==='img'){const base=imgBase();
+    if(mode==='emboss')return{fill:'solid',c1:mix(base,'#ffffff',.1),bevel:3,shOn:true,shC:'#000000',shX:2,shY:3,shB:2,shO:.6,artMode:'fill',imgMode:'mono'};
+    if(mode==='engrave')return{fill:'solid',c1:mix(base,'#000000',.5),shOn:true,shC:'#ffffff',shX:-1,shY:-2,shB:1,shO:.5,artMode:'fill',imgMode:'mono'};
+    if(mode==='print')return{fill:'solid',c1:color,blend:'hard-light',artMode:'fill',imgMode:'mono'};}
+  if(isImg&&mode==='separate')return{...SH,shO:.35};
+  if(isImg&&mode!=='separate')return{...blendStyle(mode,color,st,true,false),imgMode:'mono',c1:mode==='print'?color:mode==='emboss'?b.c1:mix(b.c1,'#000000',lum(b.c1)>.5?.32:.55)};
   if(mode==='emboss')return{fill:b.fill==='none'?'solid':b.fill,c1:b.c1,c2:b.c2,c3:b.c3,angle:b.angle,fop:Math.max(b.fop,.6),ov:b.ov,ovO:b.ovO,
     bevel:Math.max(2.5,b.bevel+1),shOn:true,shC:'#000000',shX:2,shY:3,shB:2,shO:.55,artMode:'fill'};
   if(mode==='engrave')return{fill:'solid',c1:mix(b.c1,'#000000',lum(b.c1)>.5?.32:.55),ov:b.ov,ovO:b.ovO*.6,shOn:true,shC:'#ffffff',shX:-1,shY:-2,shB:1,shO:.5,artMode:'fill'};
@@ -1346,11 +1441,13 @@ let W=null;
 function tintStyle(st,c){if(!c)return st;const s0={...st.s},hi=mix(c,'#ffffff',.18),lo=mix(c,'#000000',.45);
   if(['solid','linear','gloss','radial','tri','chrome','mirror'].includes(s0.fill||'solid')){s0.c1=s0.fill==='solid'||!s0.fill?c:hi;s0.c2=lo;if(s0.fill==='tri')s0.c3=mix(c,'#ffffff',.5);}
   return{...st,s:s0,ink:lum(c)>.55?'#14111f':'#ffffff'};}
-const curStyle=()=>tintStyle(STYLES[W.style]||STYLES[0],W.tint);
+const curStyle=()=>W.bg==='img'?{n:'image',s:{},ink:lum(imgBase())>.55?'#14111f':'#ffffff'}:tintStyle(STYLES[W.style]||STYLES[0],W.tint);
 function wizBuild(bgOnly){const L=[],st=curStyle();let bg=null;const t=st.t||{};
   if(W.bg){if(st.plate)L.push(mk('shape',{k:'rsq'},{fill:'linear',c1:'#ececef',c2:'#cfd1d6',bevel:2,o1c:'#ffffff',o1w:3,...SH},{sx:3.2*1.15,sy:3.2*1.12,name:'Plate'}));
     const tf={sx:f1(3.2*(t.sx||1)),sy:f1(3.2*(t.sy||1)),rot:t.rot||0,skew:t.skew||0};
-    if(W.bg==='glyph'){if(W.glyph.art){bg=mk('clip',{k:'',art:W.glyph.art},{...st.s},{...tf,name:W.glyph.art.n});L.push(bg);}}
+    if(W.bg==='img'){if(W.bgImg){const a=W.bgImg,k=200/Math.max(a.w,a.h);
+        bg=mk('image',{href:a.href,w:f1(a.w*k),h:f1(a.h*k),nw:a.w,nh:a.h},{...imgBgStyle(),...SH,shO:.35},{...tf,name:a.name});L.push(bg);}}
+    else if(W.bg==='glyph'){if(W.glyph.art){bg=mk('clip',{k:'',art:W.glyph.art},{...st.s},{...tf,name:W.glyph.art.n});L.push(bg);}}
     else{bg=mk('shape',{k:W.bg},{...st.s},{...tf,name:SHAPES[W.bg].n});L.push(bg);}}
   if(bgOnly)return L;
   // ox, oy and k are in the background's own units (it spans -100…100), so integrated parts follow its tilt
@@ -1359,7 +1456,8 @@ function wizBuild(bgOnly){const L=[],st=curStyle();let bg=null;const t=st.t||{};
     else Object.assign(lay,{x:f1(500+ox*3.2),y:f1(500+oy*3.2),sx:f1(3.2*k),sy:f1(3.2*k)});};
   const n=W.symbols.length;
   W.symbols.forEach((sy,i)=>{const traced=!!sy.art;const mode=bg?sy.mode:'separate';
-    const lay=mk('clip',traced?{k:'',art:sy.art}:{k:sy.k},blendStyle(mode,sy.color,st,traced),{name:sy.name});
+    let lay;if(sy.img){const k=200/Math.max(sy.img.w,sy.img.h);lay=mk('image',{href:sy.img.href,w:f1(sy.img.w*k),h:f1(sy.img.h*k),nw:sy.img.w,nh:sy.img.h},blendStyle(mode,sy.color,st,false,true),{name:sy.name});}
+    else lay=mk('clip',traced?{k:'',art:sy.art}:{k:sy.k},blendStyle(mode,sy.color,st,traced),{name:sy.name});
     const ps=W.texts.map(t=>t.pos),hasTop=ps.some(p=>p==='arctop'||p==='top'),hasBot=ps.some(p=>p==='arcbottom'||p==='bottom');
     const k0=n>1?.3:hasTop&&hasBot?.32:hasTop?.42:hasBot?.4:.46;
     place(lay,(i-(n-1)/2)*(n>1?64:0),(hasTop?12:0)-(hasBot?12:0)-4,k0*(sy.scale||1),true);
@@ -1371,7 +1469,7 @@ function wizBuild(bgOnly){const L=[],st=curStyle();let bg=null;const t=st.t||{};
     place(lay,P[0],P[1],k,inside);if(mode!=='separate')lay.clip={t:bg.id,m:'in',gap:0};L.push(lay);});
   return L;}
 function renderInto(svg,layers){const keep=S;S={...S,canvas:{...S.canvas,bg:'none'},layers};try{svg.innerHTML=buildArt(false);}finally{S=keep;}}
-function openWizard(){W={step:0,bg:'notch',tint:null,glyph:{ch:'A',font:'Bowlby One SC',fill:false,art:null},style:0,symbols:[],texts:[],name:S.name&&S.name!=='Untitled logo'?S.name:'',cat:0};
+function openWizard(){W={step:0,bg:'notch',tint:null,recolor:0,bgImg:null,glyph:{ch:'A',font:'Bowlby One SC',fill:false,art:null},style:0,symbols:[],texts:[],name:S.name&&S.name!=='Untitled logo'?S.name:'',cat:1};
   const m=document.createElement('div');m.className='modal wiz';m.innerHTML=`<div class="wbox" role="dialog" aria-label="Logo wizard">
     <header><h2>Logo wizard</h2><div class="wsteps" id="wzSteps"></div></header>
     <div class="wbody"><div class="wleft" id="wzStep"></div><div class="wright"><svg id="wzPrev" viewBox="0 0 1000 1000" aria-label="Preview"></svg><p class="hint">Live preview. Everything stays editable after you create the logo.</p></div></div>
@@ -1396,17 +1494,21 @@ function openWizard(){W={step:0,bg:'notch',tint:null,glyph:{ch:'A',font:'Bowlby 
       <button class="wtile${!W.bg?' on':''}" data-bg=""><svg viewBox="-112 -112 224 224"><path d="M-80,-80 L80,80 M80,-80 L-80,80" stroke="currentColor" stroke-width="10" fill="none"/></svg>No background</button>
       <button class="wtile${W.bg==='glyph'?' on':''}" data-bg="glyph"><svg viewBox="-112 -112 224 224"><text x="0" y="8" font-size="190" text-anchor="middle" dominant-baseline="central" fill="currentColor" font-family="'${esc(W.glyph.font)}', Impact, sans-serif">${esc(W.glyph.ch.slice(0,2))}</text></svg>Letter or number</button>
       ${Object.entries(SHAPES).filter(([k])=>!['drips','swoosh','banner','pennant'].includes(k)).sort((a,b)=>(b[0]==='rampart')-(a[0]==='rampart')).map(([k,v])=>`<button class="wtile${W.bg===k?' on':''}" data-bg="${k}">${thumb(v.d)}${esc(v.n)}</button>`).join('')}</div>`;
+      h+=`<h2>From your image library</h2><p class="hint">Use a picture as the background, for example a shield cut from an image sheet. It keeps its full detail.</p><div class="wgrid" id="wzLibBg"><p class="hint">Loading…</p></div>`;
       if(W.bg==='glyph')h=h.replace('<div class="wgrid">',`<div class="wform"><label for="wzGl">Letter or number</label><input type="text" id="wzGl" maxlength="3" value="${esc(W.glyph.ch)}">
         <label for="wzGlF">Font</label><select id="wzGlF">${fontOpts(W.glyph.font)}</select>
         <label for="wzGlH">Fill the holes</label><div class="btnrow"><input type="checkbox" id="wzGlH"${W.glyph.fill?' checked':''}><span class="hint">Solid letter, without the holes in A, B, D, O, 0, 8…</span></div></div><div class="wgrid">`);}
+    else if(W.step===1&&W.bg==='img'){h=`<h2>2. Colors</h2><p class="hint">Recolor the picture. Its light, shade and texture stay; only the colors change.</p>
+      <div class="wform"><label for="wzTint">Own color</label><div class="btnrow"><input type="color" id="wzTint" value="${W.tint||'#1f3a5f'}"><label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="wzTintOn"${W.tint?' checked':''}> Use this color</label></div></div>
+      <div class="wgrid">${RECOLORS.map((x,i)=>`<button class="wtile${!W.tint&&(W.recolor||0)===i?' on':''}" data-rc2="${i}"><svg viewBox="110 90 780 820"></svg>${esc(x[0])}</button>`).join('')}</div>`;}
     else if(W.step===1){h=`<h2>2. Style</h2><p class="hint">Pick a finish for the background. You can fine-tune colors and effects later.</p>
       <div class="wform"><label for="wzTint">Main color</label><div class="btnrow"><input type="color" id="wzTint" value="${W.tint||'#1f3a5f'}"><label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="wzTintOn"${W.tint?' checked':''}> Use this color for every style</label></div></div>
       <div class="wgrid" id="wzStyles">${STYLES.map((x,i)=>`<button class="wtile${W.style===i?' on':''}" data-st="${i}"><svg viewBox="110 90 780 820"></svg>${i+1}. ${esc(x.n)}</button>`).join('')}</div>`;}
-    else if(W.step===2){const cats=[...CLIP_CATS.map(c=>({name:c[0],keys:c[1],lib:0})),...LIB_GROUPS.map(g=>({name:g.name,keys:g.keys,lib:1}))];const c=cats[W.cat]||cats[0];
+    else if(W.step===2){if(W.cat===undefined)W.cat=1;const cats=[{name:'My image library',keys:[],img:1},...CLIP_CATS.map(c=>({name:c[0],keys:c[1],lib:0})),...LIB_GROUPS.map(g=>({name:g.name,keys:g.keys,lib:1}))];const c=cats[W.cat]||cats[0];
       h=`<h2>3. Symbols</h2><p class="hint">Add one or more symbols: animals, nature, sports gear and more. Click a symbol to add it.</p>
       <div class="wform"><label for="wzCat">Category</label><select id="wzCat">${cats.map((x,i)=>`<option value="${i}"${i===W.cat?' selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
       ${W.symbols.length?`<div class="list">${W.symbols.map((x,i)=>`<div class="witem"><span class="nm">${esc(x.name)}</span><button class="btn" data-rm="${i}">Remove</button></div>`).join('')}</div>`:''}
-      <div class="wgrid">${c.keys.map(k=>{const a=c.lib?LIB[k]:CLIP[k];return `<button class="wtile" data-sym="${esc(k)}" data-lib="${c.lib}">${c.lib?thumbArt(a):thumb(a.d,a.dd,a.ds)}${esc(a.n)}</button>`;}).join('')}</div>`;}
+      <div class="wgrid" id="wzSymGrid">${c.img?'<p class="hint">Loading…</p>':''}${c.keys.map(k=>{const a=c.lib?LIB[k]:CLIP[k];return `<button class="wtile" data-sym="${esc(k)}" data-lib="${c.lib}">${c.lib?thumbArt(a):thumb(a.d,a.dd,a.ds)}${esc(a.n)}</button>`;}).join('')}</div>`;}
     else if(W.step===3){h=`<h2>4. Symbol size and blending</h2><p class="hint">Set how each symbol sits on the background and how big it is. Embossed and engraved symbols take the background's material, and printed ones its gloss. All three follow the background's tilt and stay inside it.</p>
       ${W.symbols.length?W.symbols.map((x,i)=>`<div class="witem"><span class="nm">${esc(x.name)}</span><select data-mode="${i}" aria-label="How ${esc(x.name)} sits on the background">${BLEND.map(([v,n])=>`<option value="${v}"${x.mode===v?' selected':''}>${n}</option>`).join('')}</select>
         <input type="color" data-col="${i}" value="${x.color}" aria-label="Color" title="Color for separate and printed symbols">
@@ -1432,14 +1534,25 @@ function openWizard(){W={step:0,bg:'notch',tint:null,glyph:{ch:'A',font:'Bowlby 
         <select data-tf="mode" aria-label="How the text sits on the background"${W.bg?'':' disabled'}>${BLEND.slice(1).map(([v,n])=>`<option value="${v}"${x.mode===v?' selected':''}>${n}</option>`).join('')}</select>
         <button class="btn" data-rmt="${i}">Remove</button></div>`).join('')}</div>`:''}`;}
     else{h=`<h2>6. Finish</h2><div class="wform"><label for="wzName">Logo name</label><input type="text" id="wzName" value="${esc(W.name)}" placeholder="e.g. Austin Ramparts"></div>
-      <p class="hint">${W.bg?'Background: '+esc(W.bg==='glyph'?(W.glyph.art?W.glyph.art.n:'letter'):SHAPES[W.bg].n)+', '+esc(STYLES[W.style].n.toLowerCase())+'.':'No background.'} ${W.symbols.length} symbol${W.symbols.length===1?'':'s'}, ${W.texts.length} text${W.texts.length===1?'':'s'}.</p>
+      <p class="hint">${W.bg?'Background: '+esc(W.bg==='img'?(W.bgImg?W.bgImg.name:'picture'):W.bg==='glyph'?(W.glyph.art?W.glyph.art.n:'letter'):SHAPES[W.bg].n)+', '+esc(W.bg==='img'?(W.tint?'own color':RECOLORS[W.recolor||0][0].toLowerCase()):STYLES[W.style].n.toLowerCase())+'.':'No background.'} ${W.symbols.length} symbol${W.symbols.length===1?'':'s'}, ${W.texts.length} text${W.texts.length===1?'':'s'}.</p>
       <p class="hint">Create logo replaces the current canvas; Undo brings it back. The name becomes the file name when you save.</p>`;}
     st.innerHTML=h;
     st.querySelectorAll('[data-bg]').forEach(b=>b.onclick=async()=>{W.bg=b.dataset.bg||null;if(W.bg==='glyph'&&!W.glyph.art)await ensureGlyph();draw();});
     const gl=st.querySelector('#wzGl'),glf=st.querySelector('#wzGlF'),glh=st.querySelector('#wzGlH');
     if(gl){let tm;const upd=()=>{clearTimeout(tm);tm=setTimeout(async()=>{W.glyph.ch=gl.value.trim()||'A';W.glyph.font=glf.value;W.glyph.fill=glh.checked;await ensureGlyph();prev();},250);};
       gl.oninput=upd;glf.onchange=upd;glh.onchange=upd;}
-    if(W.step===1)st.querySelectorAll('[data-st]').forEach(b=>{const i=+b.dataset.st,keep=W.style;W.style=i;const L=wizBuild(true);W.style=keep;b._i=i;
+    const avgColor=async href=>{const im=new Image();await new Promise(r=>{im.onload=r;im.onerror=r;im.src=href;});const c=document.createElement('canvas');c.width=c.height=24;
+      const x=c.getContext('2d');x.drawImage(im,0,0,24,24);const d=x.getImageData(0,0,24,24).data;let r=0,g=0,bl=0,n=0;for(let i=0;i<d.length;i+=4)if(d[i+3]>128){r+=d[i];g+=d[i+1];bl+=d[i+2];n++;}
+      return n?'#'+[r,g,bl].map(v=>Math.round(v/n).toString(16).padStart(2,'0')).join(''):'#808080';};
+    const lb=st.querySelector('#wzLibBg');if(lb)libAll().then(items=>{if(!items.length){lb.innerHTML='<p class="hint" style="grid-column:1/-1">The image library is empty. Add pictures under Art → My image library.</p>';return;}
+      lb.innerHTML=items.map(it=>`<button class="wtile${W.bg==='img'&&W.bgImg&&W.bgImg.id===it.id?' on':''}" data-bgimg="${esc(it.id)}"><img src="${it.href}" alt="" style="width:100%;aspect-ratio:1;object-fit:contain">${esc(it.name)}</button>`).join('');
+      lb.querySelectorAll('[data-bgimg]').forEach(b=>b.onclick=async()=>{const it=items.find(x=>x.id===b.dataset.bgimg);W.bg='img';W.bgImg={id:it.id,href:it.href,w:it.w,h:it.h,name:it.name,avg:await avgColor(it.href)};draw();});});
+    const sg=st.querySelector('#wzSymGrid');if(sg&&W.cat===0)libAll().then(items=>{sg.innerHTML=items.length?items.map(it=>`<button class="wtile" data-simg="${esc(it.id)}"><img src="${it.href}" alt="" style="width:100%;aspect-ratio:1;object-fit:contain">${esc(it.name)}</button>`).join(''):'<p class="hint" style="grid-column:1/-1">The image library is empty.</p>';
+      sg.querySelectorAll('[data-simg]').forEach(b=>b.onclick=()=>{if(W.symbols.length>=6)return toast('Six symbols is the most the wizard places. Add more in the editor.');
+        const it=items.find(x=>x.id===b.dataset.simg);W.symbols.push({img:{href:it.href,w:it.w,h:it.h},name:it.name,mode:W.bg?'separate':'separate',color:curStyle().ink});draw();});});
+    if(W.step===1&&W.bg==='img')st.querySelectorAll('[data-rc2]').forEach(b=>{const i=+b.dataset.rc2,kr=W.recolor,kt=W.tint;W.recolor=i;W.tint=null;const L=wizBuild(true);W.recolor=kr;W.tint=kt;
+      renderInto(b.querySelector('svg'),L);b.onclick=()=>{W.recolor=i;W.tint=null;draw();};});
+    if(W.step===1&&W.bg!=='img')st.querySelectorAll('[data-st]').forEach(b=>{const i=+b.dataset.st,keep=W.style;W.style=i;const L=wizBuild(true);W.style=keep;b._i=i;
       renderInto(b.querySelector('svg'),L);b.onclick=()=>{W.style=i;st.querySelectorAll('[data-st]').forEach(x=>x.classList.toggle('on',x===b));
         W.symbols.forEach(x=>{if(x.mode!=='separate')x.color=curStyle().ink;});prev();};});
     const ti=st.querySelector('#wzTint'),to=st.querySelector('#wzTintOn');
@@ -1469,7 +1582,7 @@ function openWizard(){W={step:0,bg:'notch',tint:null,glyph:{ch:'A',font:'Bowlby 
 $('#bWizard').onclick=openWizard;
 // builds a logo the same way the wizard does, from a plain description (used by tools/make-team-logos.js)
 async function wizardLayers(spec){const keep=W;
-  W={step:0,bg:null,tint:null,glyph:{ch:'A',font:'Bowlby One SC',fill:false,art:null},style:0,symbols:[],texts:[],...spec};
+  W={step:0,bg:null,tint:null,recolor:0,bgImg:null,glyph:{ch:'A',font:'Bowlby One SC',fill:false,art:null},style:0,symbols:[],texts:[],...spec};
   W.glyph={ch:'A',font:'Bowlby One SC',fill:false,art:null,...(spec.glyph||{})};
   try{if(W.bg==='glyph')W.glyph.art=await glyphArt(W.glyph.ch,W.glyph.font,W.glyph.fill);
     W.symbols=(W.symbols||[]).map(x=>{const a=x.lib?LIB[x.lib]:CLIP[x.k];return{k:x.lib?'':x.k,art:x.lib?{n:a.n,d:a.d,e:a.e?1:0,parts:a.parts}:null,name:a.n,mode:'separate',color:curStyle().ink,...x};});

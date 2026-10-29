@@ -167,3 +167,15 @@ Tallenna vastaus tiedostoksi, jonka pääte on `.lsp`, ja lisää se LSP:ssä ko
 - Pyydä 4–8 väriä. Liukuvärit ja varjostukset muuttuvat jäljityksessä porrasmaisiksi värialueiksi.
 - Jos taustasta jää roskia, pyydä use.ai:ta tekemään kuva uudelleen puhtaalla valkoisella taustalla.
 - Jos objekti on liian monimutkainen, pyydä yksinkertaistettua versiota: "Tee sama yksinkertaisempana, isommat muodot, vähemmän yksityiskohtia, paksumpi ääriviiva."
+
+## ChatGPT-kuvat sellaisinaan (ei vektorointia)
+
+ChatGPT:n kuvat ovat maalauksellisia bittikarttoja. LSP osaa koota logon niistä suoraan, jolloin kuvien tarkkuus ja tyyli säilyvät:
+
+1. **Art → Split an image sheet into objects**: valitse kuva-arkki (esim. 30 kilpeä ruudukossa). LSP tunnistaa ruudukon, poistaa jokaisen ruudun taustan (myös liukuväriset ja varjostetut taustat) ja tallentaa jokaisen kuvan kuvakirjastoon. Jos taustaa jää, nosta **Background tolerance** -arvoa; jos kuvasta katoaa osia, laske sitä.
+2. **✦ Logo wizard → From your image library**: valitse kirjaston kuva taustaksi. Seuraavassa vaiheessa voit värittää sen uudelleen (kulta, hopea, sininen, oma väri…): valot, varjot ja pinta säilyvät, vain värit vaihtuvat.
+3. Lisää symbolit (myös kirjaston kuvia) ja tekstit. Taustaan upotettu symboli ottaa taustan muodon, ja **Printed** sekoittaa sen taustan pintaan.
+4. Editorissa jokaisella kuvalla on **Image colors** (uudelleenväritys, sävy, kylläisyys, kirkkaus, kontrasti, taustan poisto) ja jokaisella kerroksella **Blend mode**. **Blend into the layer below** (Clipping-osio) liittää kerroksen alla olevan kuvan pintaan.
+5. Vie kuva **Export image → Original image quality**, niin kuvia ei pienennetä.
+
+Pyydä ChatGPT:ltä kuvat mahdollisimman isoina ja yksi aihe per kuva, niin lopputulos on tarkin.
