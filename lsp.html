@@ -804,7 +804,7 @@ function buildAdd(){const P=$('#addPane');let h='';
       <h2>Rings and ring text</h2><div class="list"><button class="btn" data-add="ring">◎ Circle with ring text</button><button class="btn" data-add="ringthin">○ Thin ring without text</button></div>
       <h2>Letter as background</h2><div class="list"><button class="btn" data-add="bigletter">Bold filled letter</button><button class="btn" data-add="silhouette">Letter silhouette (outline)</button><button class="btn" data-add="mono">Monogram</button></div>
       <h2>Letter or number silhouette</h2><div class="wform"><label for="glCh">Character</label><input type="text" id="glCh" maxlength="3" value="A">
-        <label for="glFont">Font</label><select id="glFont">${fontOpts('Bowlby One SC')}</select>
+        <label for="glFont">Font</label><select id="glFont">${fontOpts('Graduate')}</select>
         <label for="glFill">Fill the holes</label><input type="checkbox" id="glFill"></div>
       <div class="list"><button class="btn" id="glAdd">Add letter background</button></div>
       <p class="hint">The letter becomes a shape, so the background styles, outlines, 3D depth, surfaces and clipping all work on it.</p>
@@ -852,7 +852,7 @@ function buildAdd(){const P=$('#addPane');let h='';
   P.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addPreset(b.dataset.add));
   const ga=P.querySelector('#glAdd');if(ga)ga.onclick=async()=>{const ch=P.querySelector('#glCh').value.trim()||'A';
     try{const art=await glyphArt(ch,P.querySelector('#glFont').value,P.querySelector('#glFill').checked);
-      addLayer(mk('clip',{k:'',art},{fill:'linear',c1:'#33367e',c2:'#1c1d50',o1w:6,o1c:'#f5a524'},{sx:3,sy:3,name:art.n}));}
+      addLayer(mk('clip',{k:'',art},{fill:'solid',c1:'#13294b',o1c:'#ffffff',o1w:6,o2c:'#c8102e',o2w:6,shOn:true,shO:.35},{sx:3,sy:3,name:art.n}));}
     catch(e){toast(e&&e.message==='tracer'?'The letter tool could not load. Keep the vendor folder next to lsp.html.':'That character could not be drawn. Try another letter or font.');}};
   const bi=P.querySelector('#bImg');if(bi)bi.onclick=()=>$('#fileImg').click();
   const ba=P.querySelector('#bAddLsp');if(ba)ba.onclick=()=>$('#fileAdd').click();
@@ -861,8 +861,8 @@ function addPreset(k){const T=(p,s,t)=>addLayer(mk('text',{...TEXT_DEF,...p},s,t
   switch(k){
     case 'ring':return addLayer(mk('ring',{...RING_DEF},{fill:'solid',c1:'#14111f',o1c:'#f5a524',o1w:6}));
     case 'ringthin':return addLayer(mk('ring',{...RING_DEF,w:24,top:'',bot:'',mark:''},{fill:'solid',c1:'#f5a524'}));
-    case 'bigletter':return T({text:'A',font:'Bowlby One SC',size:600,ls:0},{fill:'linear',c1:'#c8102e',c2:'#7a0a1b',o1c:'#ffffff',o1w:10,o2c:'#14111f',o2w:8});
-    case 'silhouette':return T({text:'A',font:'Bowlby One SC',size:600,ls:0},{fill:'none',o1c:'#f5a524',o1w:8});
+    case 'bigletter':return T({text:'A',font:'Graduate',size:600,ls:0},{fill:'solid',c1:'#13294b',o1c:'#ffffff',o1w:9,o2c:'#c8102e',o2w:8,shOn:true,shO:.35});
+    case 'silhouette':return T({text:'A',font:'Graduate',size:600,ls:0},{fill:'none',o1c:'#f5a524',o1w:8});
     case 'mono':return T({text:'NY',font:'UnifrakturMaguntia',size:420,ls:-60},{fill:'solid',c1:'#0b3d91',o1c:'#ffffff',o1w:8});
     case 'text':return T({},{fill:'solid',c1:'#ffffff',o1w:6});
     case 'arcup':return T({text:'KAARITEKSTI',size:90,arc:35},{fill:'solid',c1:'#ffffff',o1w:6});
@@ -1469,7 +1469,7 @@ function wizBuild(bgOnly){const L=[],st=curStyle();let bg=null;const t=st.t||{};
     place(lay,P[0],P[1],k,inside);if(mode!=='separate')lay.clip={t:bg.id,m:'in',gap:0};L.push(lay);});
   return L;}
 function renderInto(svg,layers){const keep=S;S={...S,canvas:{...S.canvas,bg:'none'},layers};try{svg.innerHTML=buildArt(false);}finally{S=keep;}}
-function openWizard(){W={step:0,bg:'notch',tint:null,recolor:0,bgImg:null,glyph:{ch:'A',font:'Bowlby One SC',fill:false,art:null},style:0,symbols:[],texts:[],name:S.name&&S.name!=='Untitled logo'?S.name:'',cat:1};
+function openWizard(){W={step:0,bg:'notch',tint:null,recolor:0,bgImg:null,glyph:{ch:'A',font:'Graduate',fill:false,art:null},style:0,symbols:[],texts:[],name:S.name&&S.name!=='Untitled logo'?S.name:'',cat:1};
   const m=document.createElement('div');m.className='modal wiz';m.innerHTML=`<div class="wbox" role="dialog" aria-label="Logo wizard">
     <header><h2>Logo wizard</h2><div class="wsteps" id="wzSteps"></div></header>
     <div class="wbody"><div class="wleft" id="wzStep"></div><div class="wright"><svg id="wzPrev" viewBox="0 0 1000 1000" aria-label="Preview"></svg><p class="hint">Live preview. Everything stays editable after you create the logo.</p></div></div>
@@ -1582,8 +1582,8 @@ function openWizard(){W={step:0,bg:'notch',tint:null,recolor:0,bgImg:null,glyph:
 $('#bWizard').onclick=openWizard;
 // builds a logo the same way the wizard does, from a plain description (used by tools/make-team-logos.js)
 async function wizardLayers(spec){const keep=W;
-  W={step:0,bg:null,tint:null,recolor:0,bgImg:null,glyph:{ch:'A',font:'Bowlby One SC',fill:false,art:null},style:0,symbols:[],texts:[],...spec};
-  W.glyph={ch:'A',font:'Bowlby One SC',fill:false,art:null,...(spec.glyph||{})};
+  W={step:0,bg:null,tint:null,recolor:0,bgImg:null,glyph:{ch:'A',font:'Graduate',fill:false,art:null},style:0,symbols:[],texts:[],...spec};
+  W.glyph={ch:'A',font:'Graduate',fill:false,art:null,...(spec.glyph||{})};
   try{if(W.bg==='glyph')W.glyph.art=await glyphArt(W.glyph.ch,W.glyph.font,W.glyph.fill);
     W.symbols=(W.symbols||[]).map(x=>{const a=x.lib?LIB[x.lib]:CLIP[x.k];return{k:x.lib?'':x.k,art:x.lib?{n:a.n,d:a.d,e:a.e?1:0,parts:a.parts}:null,name:a.n,mode:'separate',color:curStyle().ink,...x};});
     W.texts=(W.texts||[]).map(x=>({font:'Graduate',pos:'below',scale:1,look:'clean',color:curStyle().ink,blend:false,mode:'print',...x,arc:x.arc??TPOS[x.pos||'below'][2]}));
