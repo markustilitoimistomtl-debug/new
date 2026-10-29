@@ -793,6 +793,11 @@ function buildAdd(){const P=$('#addPane');let h='';
     h=`<div class="pane"><h2>Shields and shapes</h2><div class="grid">${Object.entries(SHAPES).map(([k,v])=>`<button class="tile" title="${v.n}" data-shape="${k}">${thumb(v.d)}</button>`).join('')}</div>
       <h2>Rings and ring text</h2><div class="list"><button class="btn" data-add="ring">◎ Circle with ring text</button><button class="btn" data-add="ringthin">○ Thin ring without text</button></div>
       <h2>Letter as background</h2><div class="list"><button class="btn" data-add="bigletter">Bold filled letter</button><button class="btn" data-add="silhouette">Letter silhouette (outline)</button><button class="btn" data-add="mono">Monogram</button></div>
+      <h2>Letter or number silhouette</h2><div class="wform"><label for="glCh">Character</label><input type="text" id="glCh" maxlength="3" value="A">
+        <label for="glFont">Font</label><select id="glFont">${fontOpts('Bowlby One SC')}</select>
+        <label for="glFill">Fill the holes</label><input type="checkbox" id="glFill"></div>
+      <div class="list"><button class="btn" id="glAdd">Add letter background</button></div>
+      <p class="hint">The letter becomes a shape, so the background styles, outlines, 3D depth, surfaces and clipping all work on it.</p>
       <p class="hint">Tip: select an object and use the Clipping section to place art inside a letter or cut one object through another.</p></div>`;
   }else if(tab==='text'){
     h=`<div class="pane"><h2>Add text</h2><div class="list">
@@ -834,6 +839,10 @@ function buildAdd(){const P=$('#addPane');let h='';
   P.querySelectorAll('[data-newlogo]').forEach(b=>b.onclick=()=>{try{loadLSP(window.LSP_NEW_LOGOS[+b.dataset.newlogo]);}catch(e){toast('That logo could not be opened.');}});
   P.querySelectorAll('[data-tpl]').forEach(b=>b.onclick=()=>{S.layers=TEMPLATES[+b.dataset.tpl][1]();sel=null;full();commit();});
   P.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addPreset(b.dataset.add));
+  const ga=P.querySelector('#glAdd');if(ga)ga.onclick=async()=>{const ch=P.querySelector('#glCh').value.trim()||'A';
+    try{const art=await glyphArt(ch,P.querySelector('#glFont').value,P.querySelector('#glFill').checked);
+      addLayer(mk('clip',{k:'',art},{fill:'linear',c1:'#33367e',c2:'#1c1d50',o1w:6,o1c:'#f5a524'},{sx:3,sy:3,name:art.n}));}
+    catch(e){toast(e&&e.message==='tracer'?'The letter tool could not load. Keep the vendor folder next to lsp.html.':'That character could not be drawn. Try another letter or font.');}};
   const bi=P.querySelector('#bImg');if(bi)bi.onclick=()=>$('#fileImg').click();
   const ba=P.querySelector('#bAddLsp');if(ba)ba.onclick=()=>$('#fileAdd').click();
 }
@@ -899,8 +908,11 @@ function buildProps(){const P=$('#props'),l=cur();
      ctlRow('Text color','p.tc','color')+ctlRow('Text outline','p.tsw','range',{min:0,max:12,step:.5})+ctlRow('Outline color','p.tsc','color')+
      `<div class="fonts" aria-label="Font">${FONTS.map(f=>`<button class="chip${p.font===f[0]?' on':''}" data-rfont="${esc(f[0])}" style="font-family:'${f[0]}';font-weight:${f[2]}">${esc(f[0])}</button>`).join('')}</div>`;}
   if(l.type==='shape')c+=ctlRow('Shape','p.k','select',{opts:Object.entries(SHAPES).map(([k,v])=>[k,v.n])});
+  if(l.type==='clip'&&p.art&&p.art.g)c+=`<div class="wform"><label for="pgCh">Character</label><input type="text" id="pgCh" maxlength="3" value="${esc(p.art.g.ch)}">
+    <label for="pgFont">Font</label><select id="pgFont">${fontOpts(p.art.g.font)}</select><label for="pgFill">Fill the holes</label><input type="checkbox" id="pgFill"${p.art.g.fill?' checked':''}></div>`;
   if(l.type==='clip'&&artOf(l).parts)c+=ctlRow('Colors','s.artMode','select',{opts:[['orig','Original colors'],['tint','Shaded with fill color'],['fill','Fill color only']],rebuild:1});
-  if(l.type==='clip')c+=(p.art&&p.art.d?`<p class="hint">Imported art: ${esc(p.art.n||'custom')}</p>`:ctlRow('Art','p.k','select',{opts:Object.entries(CLIP).map(([k,v])=>[k,v.n])}))+ctlRow('Detail color','s.detC','color')+(artOf(l).d2?ctlRow('Detail 2','s.det2C','color'):'')+(artOf(l).ds?ctlRow('Line color','s.lineC','color'):'')+ctlRow('Detail lines','s.detW','range',{min:0,max:20,step:.5});
+  if(l.type==='clip'){const a=artOf(l);c+=(p.art&&p.art.d?(p.art.g?'':`<p class="hint">Imported art: ${esc(p.art.n||'custom')}</p>`):ctlRow('Art','p.k','select',{opts:Object.entries(CLIP).map(([k,v])=>[k,v.n])}))
+    +(a.dd?ctlRow('Detail color','s.detC','color'):'')+(a.d2?ctlRow('Detail 2','s.det2C','color'):'')+(a.ds?ctlRow('Line color','s.lineC','color')+ctlRow('Detail lines','s.detW','range',{min:0,max:20,step:.5}):'');}
   if(l.type==='lines')c+=ctlRow('Style','p.mode','select',{opts:[['para','Speed lines'],['burst','Burst'],['swoosh','Swooshes']]})+ctlRow('Count','p.n','range',{min:1,max:40})+
      ctlRow('Length','p.len','range',{min:20,max:1000})+ctlRow('Thickness','p.th','range',{min:1,max:120})+ctlRow('Gap','p.gap','range',{min:0,max:120})+
      ctlRow('Taper','p.taper','range',{min:0,max:1,step:.05})+ctlRow('Stagger','p.stag','range',{min:0,max:1,step:.05})+ctlRow('Curve','p.curve','range',{min:-200,max:200});
@@ -940,6 +952,10 @@ function buildProps(){const P=$('#props'),l=cur();
   P.innerHTML=h;
   P.querySelectorAll('details').forEach(d=>d.addEventListener('toggle',()=>{d.open?openSecs.add(d.dataset.sec):openSecs.delete(d.dataset.sec);}));
   bindInputs(P,()=>cur(),()=>{render();});
+  const pg=P.querySelector('#pgCh');if(pg){let tm;const upd=()=>{clearTimeout(tm);tm=setTimeout(async()=>{
+      try{const old=l.p.art.n;l.p.art=await glyphArt(pg.value.trim()||'A',P.querySelector('#pgFont').value,P.querySelector('#pgFill').checked);if(l.name===old){l.name=l.p.art.n;const ni=document.getElementById('c_name');if(ni)ni.value=l.name;}render();buildLayers();commit();}
+      catch(e){toast('That character could not be drawn. Try another letter or font.');}},300);};
+    pg.oninput=upd;P.querySelector('#pgFont').onchange=upd;P.querySelector('#pgFill').onchange=upd;}
   P.querySelectorAll('[data-font]').forEach(b=>b.onclick=()=>{l.p.font=b.dataset.font;l.name=l.p.text;render();buildProps();commit();});
   P.querySelectorAll('[data-rfont]').forEach(b=>b.onclick=()=>{l.p.font=b.dataset.rfont;render();buildProps();commit();});
   P.querySelectorAll('[data-pal]').forEach(b=>b.onclick=()=>{const q=PALETTES[+b.dataset.pal];Object.assign(l.s,{fill:q[1],c1:q[2],c2:q[3],c3:'#ffffff'});render();buildProps();commit();});
@@ -1020,6 +1036,7 @@ function normalize(o){
       if(a&&typeof a.d==='string'&&a.d.trim()&&PATHD.test(a.d)){n.p.art={n:String(a.n||'Custom art').slice(0,60),d:a.d};
         ['dd','d2','ds'].forEach(k=>{if(typeof a[k]==='string'&&a[k].trim()&&PATHD.test(a[k]))n.p.art[k]=a[k];});
         if(a.e)n.p.art.e=1;
+        if(a.g&&typeof a.g==='object')n.p.art.g={ch:String(a.g.ch||'A').slice(0,3),font:String(a.g.font||'Anton').slice(0,60),fill:!!a.g.fill};
         if(Array.isArray(a.parts)){const ps=a.parts.filter(q=>Array.isArray(q)&&HEX.test(q[0])&&typeof q[1]==='string'&&PATHD.test(q[1])).slice(0,64).map(q=>[q[0],q[1]]);if(ps.length)n.p.art.parts=ps;}
         if(!CLIP[n.p.k])n.p.k='';}
       else if(!CLIP[n.p.k])n.p.k='star5';}
@@ -1240,6 +1257,33 @@ $('#fileLibJson').addEventListener('change',async e=>{const f=e.target.files[0];
   catch(err){toast(f.name+' is not an LSP image library file.');}});
 document.addEventListener('click',e=>{if(e.target&&e.target.id==='bLibSel'){const l=cur();if(l)saveToLibrary(selectedWithTargets(l),l.name);}});
 
+/* ---------- letter and number silhouettes ----------
+   The glyph is drawn with the chosen web font on a canvas, its holes are optionally filled,
+   and it is traced into a vector path, so it takes every effect a shape does. */
+async function glyphArt(ch,font,fillHoles){
+  ch=String(ch||'A').slice(0,3);const IT=await loadTracer(),fi=fontInfo(font);
+  try{await document.fonts.load(`${fi[2]} 200px "${fi[0]}"`,ch);}catch(e){}
+  const N=640,cv=document.createElement('canvas');cv.width=cv.height=N;const cx=cv.getContext('2d',{willReadFrequently:true});
+  const setF=sz=>{cx.font=`${fi[2]} ${sz}px "${fi[0]}", Impact, sans-serif`;return cx.measureText(ch);};
+  let sz=480,m=setF(sz);const w0=m.actualBoundingBoxLeft+m.actualBoundingBoxRight,h0=m.actualBoundingBoxAscent+m.actualBoundingBoxDescent;
+  sz*=Math.min(1.6,N*.84/Math.max(w0,h0,1));m=setF(sz);
+  cx.fillStyle='#000';cx.textAlign='left';cx.textBaseline='alphabetic';
+  cx.fillText(ch,N/2-(m.actualBoundingBoxRight-m.actualBoundingBoxLeft)/2,N/2+(m.actualBoundingBoxAscent-m.actualBoundingBoxDescent)/2);
+  const px=cx.getImageData(0,0,N,N).data,ink=new Uint8Array(N*N);for(let i=0;i<N*N;i++)ink[i]=px[i*4+3]>127?1:0;
+  if(fillHoles){const out=new Uint8Array(N*N),st=[];for(let i=0;i<N;i++)st.push(i,(N-1)*N+i,i*N,i*N+N-1);
+    while(st.length){const p=st.pop();if(out[p]||ink[p])continue;out[p]=1;const x=p%N,y=(p/N)|0;if(x>0)st.push(p-1);if(x<N-1)st.push(p+1);if(y>0)st.push(p-N);if(y<N-1)st.push(p+N);}
+    for(let i=0;i<N*N;i++)if(!out[i])ink[i]=1;}
+  let x0=N,y0=N,x1=0,y1=0;for(let i=0;i<N*N;i++)if(ink[i]){const x=i%N,y=(i/N)|0;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+  if(x1<x0)throw new Error('empty');
+  const id=new ImageData(N,N);for(let i=0;i<N*N;i++){const v=ink[i]?0:255;id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=v;id.data[i*4+3]=255;}
+  const sc=200/Math.max(x1-x0+1,y1-y0+1),ox=-(x0+x1+1)/2*sc,oy=-(y0+y1+1)/2*sc;
+  const svg=IT.imagedataToSVG(id,{numberofcolors:2,colorsampling:0,pal:[{r:0,g:0,b:0,a:255},{r:255,g:255,b:255,a:255}],ltres:.5,qtres:.5,pathomit:12,blurradius:0,roundcoords:1,linefilter:false,strokewidth:0});
+  const doc=new DOMParser().parseFromString(svg,'image/svg+xml');
+  const d=[...doc.querySelectorAll('path')].filter(p=>/rgb\(0,0,0\)/.test(p.getAttribute('fill')||'')).map(p=>(p.getAttribute('d')||'').replace(/(-?\d*\.?\d+)[ ,]+(-?\d*\.?\d+)/g,(mm,x,y)=>f1(+x*sc+ox)+','+f1(+y*sc+oy))).join(' ');
+  if(!d.trim())throw new Error('empty');
+  return{n:(/\d/.test(ch)?'Number ':'Letter ')+ch,d,e:1,g:{ch,font:fi[0],fill:!!fillHoles}};}
+const fontOpts=sel=>FONTS.map(f=>`<option style="font-family:'${f[0]}'"${f[0]===sel?' selected':''}>${esc(f[0])}</option>`).join('');
+
 /* ---------- logo wizard ---------- */
 const SH={shOn:true,shX:6,shY:10,shB:10,shO:.45};
 // the 30 ready-made background styles; t tilts the background, plate adds a square plate behind it, ink is the default color for printed symbols and text
@@ -1275,6 +1319,17 @@ const STYLES=[
  {n:'Fabric',s:{fill:'solid',c1:'#e6e6ea',ov:'mesh',ovO:.6,o1c:'#f7f7f8',o1w:4,bevel:1.5,...SH},ink:'#1f2937'},
  {n:'Black and gold split',s:{fill:'linear',c1:'#202022',c2:'#060607',angle:0,ov:'split',ovO:.25,o1c:'#e3b04b',o1w:5,o2c:'#6b4a12',o2w:1.5,...SH},ink:'#e3b04b'}];
 const BLEND=[['separate','Separate (own colors)'],['emboss','Embossed into the background'],['engrave','Engraved into the background'],['print','Printed on the background']];
+const TPOS={arctop:[0,-55,44],top:[0,-60,0],center:[0,0,0],bottom:[0,60,0],arcbottom:[0,58,-44],above:[0,-128,0],below:[0,128,0]};
+const TEXT_LOOKS=[['clean','Clean outline'],['varsity','Varsity, double outline'],['3d','3D block'],['chrome','Chrome'],['gold','Gold'],['neon','Neon glow'],['gradient','Gradient'],['plain','Plain']];
+function lookStyle(look,c){const dk=mix(c,'#000000',.55);switch(look){
+  case 'varsity':return{fill:'solid',c1:c,o1c:lum(c)>.85?'#14111f':'#ffffff',o1w:5,o2c:'#14111f',o2w:6,...SH,shO:.35};
+  case '3d':return{fill:'solid',c1:c,o1c:contrast(c),o1w:4,exD:10,exA:120,exC:dk,...SH,shO:.3};
+  case 'chrome':return{fill:'chrome',c1:mix(c,'#ffffff',.3),c2:dk,o1c:'#14111f',o1w:4,o2c:'#ffffff',o2w:3};
+  case 'gold':return{fill:'chrome',c1:'#ffd166',c2:'#8a3b0c',o1c:'#14111f',o1w:4,o2c:'#fff1b0',o2w:2};
+  case 'neon':return{fill:'solid',c1:mix(c,'#ffffff',.5),o1c:c,o1w:3,glow:16,glowC:c};
+  case 'gradient':return{fill:'linear',c1:mix(c,'#ffffff',.35),c2:mix(c,'#000000',.35),o1c:contrast(c),o1w:5,...SH,shO:.35};
+  case 'plain':return{fill:'solid',c1:c};
+  default:return{fill:'solid',c1:c,o1c:contrast(c),o1w:5,...SH,shO:.35};}}
 const TEXT_POS=[['arctop','Arched along the top'],['top','Top'],['center','Center'],['bottom','Bottom'],['arcbottom','Arched along the bottom'],['above','Above the background'],['below','Below the background']];
 const WSTEPS=['Background','Style','Symbols','Blend','Text','Finish'];
 const contrast=c=>lum(c)>.55?'#14111f':'#ffffff';
@@ -1285,9 +1340,12 @@ function blendStyle(mode,color,st,traced){const b={...DEF_STYLE,...st.s};
   if(mode==='print')return{fill:'solid',c1:color,ov:['shine','brushed'].includes(b.ov)?b.ov:'none',ovO:b.ovO,glow:st.glow?14:0,glowC:color,artMode:'fill'};
   return traced?{artMode:'orig',...SH,shO:.35}:{fill:'solid',c1:color,o1c:contrast(color),o1w:4,...SH,shO:.35};}
 let W=null;
-function wizBuild(){const L=[],st=STYLES[W.style]||STYLES[0];let bg=null;const t=st.t||{};
+function wizBuild(bgOnly){const L=[],st=STYLES[W.style]||STYLES[0];let bg=null;const t=st.t||{};
   if(W.bg){if(st.plate)L.push(mk('shape',{k:'rsq'},{fill:'linear',c1:'#ececef',c2:'#cfd1d6',bevel:2,o1c:'#ffffff',o1w:3,...SH},{sx:3.2*1.15,sy:3.2*1.12,name:'Plate'}));
-    bg=mk('shape',{k:W.bg},{...st.s},{sx:f1(3.2*(t.sx||1)),sy:f1(3.2*(t.sy||1)),rot:t.rot||0,skew:t.skew||0,name:SHAPES[W.bg].n});L.push(bg);}
+    const tf={sx:f1(3.2*(t.sx||1)),sy:f1(3.2*(t.sy||1)),rot:t.rot||0,skew:t.skew||0};
+    if(W.bg==='glyph'){if(W.glyph.art){bg=mk('clip',{k:'',art:W.glyph.art},{...st.s},{...tf,name:W.glyph.art.n});L.push(bg);}}
+    else{bg=mk('shape',{k:W.bg},{...st.s},{...tf,name:SHAPES[W.bg].n});L.push(bg);}}
+  if(bgOnly)return L;
   // ox, oy and k are in the background's own units (it spans -100…100), so integrated parts follow its tilt
   const place=(lay,ox,oy,k,inside)=>{if(bg&&inside){const q=layerMatrix(bg).transformPoint(new DOMPoint(ox,oy));
       Object.assign(lay,{x:f1(q.x),y:f1(q.y),rot:bg.rot,skew:bg.skew,sx:f1(bg.sx*k),sy:f1(bg.sy*k)});}
@@ -1298,14 +1356,14 @@ function wizBuild(){const L=[],st=STYLES[W.style]||STYLES[0];let bg=null;const t
     const ps=W.texts.map(t=>t.pos),hasTop=ps.some(p=>p==='arctop'||p==='top'),hasBot=ps.some(p=>p==='arcbottom'||p==='bottom');
     place(lay,(i-(n-1)/2)*(n>1?64:0),(hasTop?8:0)-(hasBot?10:0)-4,n>1?.3:(hasTop||hasBot)?(hasTop&&hasBot?.3:.36):.46,true);
     if(bg&&mode!=='separate')lay.clip={t:bg.id,m:'in',gap:0};L.push(lay);});
-  W.texts.forEach(tx=>{const P={arctop:[0,-55,44],top:[0,-60,0],center:[0,0,0],bottom:[0,60,0],arcbottom:[0,58,-44],above:[0,-128,0],below:[0,128,0]}[tx.pos]||[0,0,0];
+  W.texts.forEach(tx=>{const P=TPOS[tx.pos]||[0,0,0];
     const inside=!['above','below'].includes(tx.pos),mode=bg&&inside&&tx.blend?tx.mode:'separate';
-    const k=Math.min(.24,150/(String(tx.text).length*62||1));
-    const lay=mk('text',{...TEXT_DEF,text:tx.text,font:tx.font,size:100,ls:2,arc:P[2]},mode==='separate'?{fill:'solid',c1:tx.color,o1c:contrast(tx.color),o1w:5,...SH,shO:.35}:blendStyle(mode,tx.color,st,false),{name:tx.text});
+    const k=Math.min(.24,150/(String(tx.text).length*62||1))*(tx.scale||1);
+    const lay=mk('text',{...TEXT_DEF,text:tx.text,font:tx.font,size:100,ls:2,arc:tx.arc??P[2]},mode==='separate'?lookStyle(tx.look,tx.color):blendStyle(mode,tx.color,st,false),{name:tx.text});
     place(lay,P[0],P[1],k,inside);if(mode!=='separate')lay.clip={t:bg.id,m:'in',gap:0};L.push(lay);});
   return L;}
 function renderInto(svg,layers){const keep=S;S={...S,canvas:{...S.canvas,bg:'none'},layers};try{svg.innerHTML=buildArt(false);}finally{S=keep;}}
-function openWizard(){W={step:0,bg:'notch',style:0,symbols:[],texts:[],name:S.name&&S.name!=='Untitled logo'?S.name:'',cat:0};
+function openWizard(){W={step:0,bg:'notch',glyph:{ch:'A',font:'Bowlby One SC',fill:false,art:null},style:0,symbols:[],texts:[],name:S.name&&S.name!=='Untitled logo'?S.name:'',cat:0};
   const m=document.createElement('div');m.className='modal wiz';m.innerHTML=`<div class="wbox" role="dialog" aria-label="Logo wizard">
     <header><h2>Logo wizard</h2><div class="wsteps" id="wzSteps"></div></header>
     <div class="wbody"><div class="wleft" id="wzStep"></div><div class="wright"><svg id="wzPrev" viewBox="0 0 1000 1000" aria-label="Preview"></svg><p class="hint">Live preview. Everything stays editable after you create the logo.</p></div></div>
@@ -1315,6 +1373,7 @@ function openWizard(){W={step:0,bg:'notch',style:0,symbols:[],texts:[],name:S.na
   m.querySelector('#wzBack').onclick=()=>go(-1);m.querySelector('#wzNext').onclick=()=>W.step===5?finish():go(1);
   m.querySelector('#wzSkip').onclick=()=>{if(W.step===0)W.bg=null;if(W.step===2)W.symbols=[];if(W.step===4)W.texts=[];go(1);};
   const skipped=i=>!W.bg&&(i===1||i===3);
+  async function ensureGlyph(){if(W.bg!=='glyph')return;try{W.glyph.art=await glyphArt(W.glyph.ch,W.glyph.font,W.glyph.fill);}catch(e){W.glyph.art=null;toast('That character could not be drawn. Try another letter or font.');}}
   function go(d){let i=W.step+d;while(i>0&&i<5&&skipped(i))i+=d;W.step=Math.max(0,Math.min(5,i));draw();}
   function finish(){const L=wizBuild();if(!L.length){toast('Pick a background, a symbol or a text first.');return;}
     S.layers=L;S.name=W.name.trim()||'Untitled logo';sel=null;full();commit();m.remove();toast('Logo created. Every part is a layer you can keep editing.');}
@@ -1327,7 +1386,11 @@ function openWizard(){W={step:0,bg:'notch',style:0,symbols:[],texts:[],name:S.na
     let h='';
     if(W.step===0){h=`<h2>1. Background</h2><p class="hint">Pick the background shape, or skip if the logo has none.</p><div class="wgrid">
       <button class="wtile${!W.bg?' on':''}" data-bg=""><svg viewBox="-112 -112 224 224"><path d="M-80,-80 L80,80 M80,-80 L-80,80" stroke="currentColor" stroke-width="10" fill="none"/></svg>No background</button>
-      ${Object.entries(SHAPES).filter(([k])=>!['drips','swoosh','banner','pennant'].includes(k)).map(([k,v])=>`<button class="wtile${W.bg===k?' on':''}" data-bg="${k}">${thumb(v.d)}${esc(v.n)}</button>`).join('')}</div>`;}
+      <button class="wtile${W.bg==='glyph'?' on':''}" data-bg="glyph"><svg viewBox="-112 -112 224 224"><text x="0" y="8" font-size="190" text-anchor="middle" dominant-baseline="central" fill="currentColor" font-family="'${esc(W.glyph.font)}', Impact, sans-serif">${esc(W.glyph.ch.slice(0,2))}</text></svg>Letter or number</button>
+      ${Object.entries(SHAPES).filter(([k])=>!['drips','swoosh','banner','pennant'].includes(k)).map(([k,v])=>`<button class="wtile${W.bg===k?' on':''}" data-bg="${k}">${thumb(v.d)}${esc(v.n)}</button>`).join('')}</div>`;
+      if(W.bg==='glyph')h=h.replace('<div class="wgrid">',`<div class="wform"><label for="wzGl">Letter or number</label><input type="text" id="wzGl" maxlength="3" value="${esc(W.glyph.ch)}">
+        <label for="wzGlF">Font</label><select id="wzGlF">${fontOpts(W.glyph.font)}</select>
+        <label for="wzGlH">Fill the holes</label><div class="btnrow"><input type="checkbox" id="wzGlH"${W.glyph.fill?' checked':''}><span class="hint">Solid letter, without the holes in A, B, D, O, 0, 8…</span></div></div><div class="wgrid">`);}
     else if(W.step===1){h=`<h2>2. Style</h2><p class="hint">Pick a finish for the background. You can fine-tune colors and effects later.</p><div class="wgrid" id="wzStyles">${STYLES.map((x,i)=>`<button class="wtile${W.style===i?' on':''}" data-st="${i}"><svg viewBox="110 90 780 820"></svg>${i+1}. ${esc(x.n)}</button>`).join('')}</div>`;}
     else if(W.step===2){const cats=[...CLIP_CATS.map(c=>({name:c[0],keys:c[1],lib:0})),...LIB_GROUPS.map(g=>({name:g.name,keys:g.keys,lib:1}))];const c=cats[W.cat]||cats[0];
       h=`<h2>3. Symbols</h2><p class="hint">Add one or more symbols: animals, nature, sports gear and more. Click a symbol to add it.</p>
@@ -1342,16 +1405,30 @@ function openWizard(){W={step:0,bg:'notch',style:0,symbols:[],texts:[],name:S.na
       <div class="wform"><label for="wzTxt">Text</label><input type="text" id="wzTxt" placeholder="e.g. RAMPARTS">
       <label for="wzFont">Font</label><select id="wzFont">${FONTS.map(f=>`<option style="font-family:'${f[0]}'"${f[0]==='Graduate'?' selected':''}>${esc(f[0])}</option>`).join('')}</select>
       <label for="wzPos">Placement</label><select id="wzPos">${TEXT_POS.map(([v,n])=>`<option value="${v}"${v==='arcbottom'?' selected':''}>${n}</option>`).join('')}</select>
+      <label for="wzLook">Style</label><select id="wzLook">${TEXT_LOOKS.map(([v,n])=>`<option value="${v}">${n}</option>`).join('')}</select>
       <label for="wzCol">Color</label><input type="color" id="wzCol" value="${W.bg?ink:'#ffffff'}">
       <label for="wzBl">Part of the background</label><div class="btnrow"><input type="checkbox" id="wzBl"${W.bg?'':' disabled'}><select id="wzMode"${W.bg?'':' disabled'}>${BLEND.slice(1).map(([v,n])=>`<option value="${v}"${v==='print'?' selected':''}>${n}</option>`).join('')}</select></div></div>
       <div class="btnrow"><button class="btn pri" id="wzAddTxt">Add text</button></div>
-      ${W.texts.length?`<div class="list">${W.texts.map((x,i)=>`<div class="witem"><span class="nm" style="font-family:'${esc(x.font)}'">${esc(x.text)}</span><span class="hint">${TEXT_POS.find(p=>p[0]===x.pos)[1]}${x.blend&&W.bg?', '+BLEND.find(b=>b[0]===x.mode)[1].toLowerCase():''}</span><button class="btn" data-rmt="${i}">Remove</button></div>`).join('')}</div>`:''}`;}
+      ${W.texts.length?`<h2>Added texts</h2><p class="hint">Change any text below; the preview updates as you go.</p><div class="list">${W.texts.map((x,i)=>`<div class="witem wtext" data-ti="${i}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 10px;align-items:center">
+        <input type="text" data-tf="text" value="${esc(x.text)}" aria-label="Text" style="font-family:'${esc(x.font)}'">
+        <select data-tf="font" aria-label="Font">${fontOpts(x.font)}</select>
+        <select data-tf="look" aria-label="Style">${TEXT_LOOKS.map(([v,n])=>`<option value="${v}"${x.look===v?' selected':''}>${n}</option>`).join('')}</select>
+        <select data-tf="pos" aria-label="Placement">${TEXT_POS.map(([v,n])=>`<option value="${v}"${x.pos===v?' selected':''}>${n}</option>`).join('')}</select>
+        <label class="hint" style="display:flex;gap:6px;align-items:center">Color <input type="color" data-tf="color" value="${x.color}"></label>
+        <label class="hint" style="display:flex;gap:6px;align-items:center">Arch <input type="range" data-tf="arc" min="-100" max="100" value="${x.arc}" style="flex:1;min-width:0;accent-color:var(--accent)"></label>
+        <label class="hint" style="display:flex;gap:6px;align-items:center">Size <input type="range" data-tf="scale" min=".4" max="2" step=".05" value="${x.scale}" style="flex:1;min-width:0;accent-color:var(--accent)"></label>
+        <label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-tf="blend"${x.blend?' checked':''}${W.bg?'':' disabled'}> Part of the background</label>
+        <select data-tf="mode" aria-label="How the text sits on the background"${W.bg?'':' disabled'}>${BLEND.slice(1).map(([v,n])=>`<option value="${v}"${x.mode===v?' selected':''}>${n}</option>`).join('')}</select>
+        <button class="btn" data-rmt="${i}">Remove</button></div>`).join('')}</div>`:''}`;}
     else{h=`<h2>6. Finish</h2><div class="wform"><label for="wzName">Logo name</label><input type="text" id="wzName" value="${esc(W.name)}" placeholder="e.g. Austin Ramparts"></div>
-      <p class="hint">${W.bg?'Background: '+esc(SHAPES[W.bg].n)+', '+esc(STYLES[W.style].n.toLowerCase())+'.':'No background.'} ${W.symbols.length} symbol${W.symbols.length===1?'':'s'}, ${W.texts.length} text${W.texts.length===1?'':'s'}.</p>
+      <p class="hint">${W.bg?'Background: '+esc(W.bg==='glyph'?(W.glyph.art?W.glyph.art.n:'letter'):SHAPES[W.bg].n)+', '+esc(STYLES[W.style].n.toLowerCase())+'.':'No background.'} ${W.symbols.length} symbol${W.symbols.length===1?'':'s'}, ${W.texts.length} text${W.texts.length===1?'':'s'}.</p>
       <p class="hint">Create logo replaces the current canvas; Undo brings it back. The name becomes the file name when you save.</p>`;}
     st.innerHTML=h;
-    st.querySelectorAll('[data-bg]').forEach(b=>b.onclick=()=>{W.bg=b.dataset.bg||null;draw();});
-    if(W.step===1)st.querySelectorAll('[data-st]').forEach(b=>{const i=+b.dataset.st,keep=W.style;W.style=i;const L=wizBuild().filter(l=>l.type==='shape');W.style=keep;
+    st.querySelectorAll('[data-bg]').forEach(b=>b.onclick=async()=>{W.bg=b.dataset.bg||null;if(W.bg==='glyph'&&!W.glyph.art)await ensureGlyph();draw();});
+    const gl=st.querySelector('#wzGl'),glf=st.querySelector('#wzGlF'),glh=st.querySelector('#wzGlH');
+    if(gl){let tm;const upd=()=>{clearTimeout(tm);tm=setTimeout(async()=>{W.glyph.ch=gl.value.trim()||'A';W.glyph.font=glf.value;W.glyph.fill=glh.checked;await ensureGlyph();prev();},250);};
+      gl.oninput=upd;glf.onchange=upd;glh.onchange=upd;}
+    if(W.step===1)st.querySelectorAll('[data-st]').forEach(b=>{const i=+b.dataset.st,keep=W.style;W.style=i;const L=wizBuild(true);W.style=keep;
       renderInto(b.querySelector('svg'),L);b.onclick=()=>{W.style=i;st.querySelectorAll('[data-st]').forEach(x=>x.classList.toggle('on',x===b));
         W.symbols.forEach(x=>{if(x.mode!=='separate')x.color=STYLES[i].ink;});prev();};});
     const cs=st.querySelector('#wzCat');if(cs)cs.onchange=()=>{W.cat=+cs.value;draw();};
@@ -1362,7 +1439,14 @@ function openWizard(){W={step:0,bg:'notch',style:0,symbols:[],texts:[],name:S.na
     st.querySelectorAll('[data-mode]').forEach(sl=>sl.onchange=()=>{W.symbols[+sl.dataset.mode].mode=sl.value;prev();});
     st.querySelectorAll('[data-col]').forEach(c=>c.oninput=()=>{W.symbols[+c.dataset.col].color=c.value;prev();});
     const at=st.querySelector('#wzAddTxt');if(at)at.onclick=()=>{const v=st.querySelector('#wzTxt').value.trim();if(!v){st.querySelector('#wzTxt').focus();return;}
-      W.texts.push({text:v,font:st.querySelector('#wzFont').value,pos:st.querySelector('#wzPos').value,color:st.querySelector('#wzCol').value,blend:st.querySelector('#wzBl').checked,mode:st.querySelector('#wzMode').value});draw();};
+      const pos=st.querySelector('#wzPos').value;
+      W.texts.push({text:v,font:st.querySelector('#wzFont').value,pos,arc:TPOS[pos][2],scale:1,look:st.querySelector('#wzLook').value,color:st.querySelector('#wzCol').value,blend:st.querySelector('#wzBl').checked,mode:st.querySelector('#wzMode').value});draw();};
+    st.querySelectorAll('.wtext').forEach(row=>{const x=W.texts[+row.dataset.ti];
+      row.querySelectorAll('[data-tf]').forEach(inp=>{const k=inp.dataset.tf;inp.addEventListener(inp.tagName==='SELECT'||inp.type==='checkbox'?'change':'input',()=>{
+        x[k]=inp.type==='checkbox'?inp.checked:inp.type==='range'?+inp.value:inp.value;
+        if(k==='pos'){x.arc=TPOS[x.pos][2];row.querySelector('[data-tf="arc"]').value=x.arc;}
+        if(k==='font')row.querySelector('[data-tf="text"]').style.fontFamily=`'${x.font}'`;
+        prev();});});});
     const tx=st.querySelector('#wzTxt');if(tx)tx.addEventListener('keydown',e=>{if(e.key==='Enter')at.click();});
     st.querySelectorAll('[data-rmt]').forEach(b=>b.onclick=()=>{W.texts.splice(+b.dataset.rmt,1);draw();});
     const nm=st.querySelector('#wzName');if(nm)nm.oninput=()=>{W.name=nm.value;};
