@@ -261,7 +261,7 @@ const SHAPES={
   roundb:{n:'Round-bottom shield',d:'M-80,-90 L80,-90 L80,20 A80,80 0 0 1 -80,20Z'},
   spiky:{n:'Spiked shield',d:'M-85,-95 L-55,-75 L-28,-95 L0,-75 L28,-95 L55,-75 L85,-95 L85,5 C85,52 45,82 0,100 C-45,82 -85,52 -85,5Z'},
   badge:{n:'Badge',d:'M0,-100 C25,-80 60,-85 85,-90 C80,-40 90,0 75,40 C60,75 25,90 0,100 C-25,90 -60,75 -75,40 C-90,0 -80,-40 -85,-90 C-60,-85 -25,-80 0,-100Z'},
-  rampart:{n:'Rampart shield',d:'M0,-100 C25,-88 60,-80 94,-84 C87,-42 87,-6 85,22 C79,62 41,86 0,100 C-41,86 -79,62 -85,22 C-87,-6 -87,-42 -94,-84 C-60,-80 -25,-88 0,-100Z'},
+  rampart:{n:'Rampart shield (Austin)',d:'M0,-100 C25,-88 60,-80 94,-84 C87,-42 87,-6 85,22 C79,62 41,86 0,100 C-41,86 -79,62 -85,22 C-87,-6 -87,-42 -94,-84 C-60,-80 -25,-88 0,-100Z'},
   rampart2:{n:'Rampart shield, flat top',d:'M-94,-90 C-60,-84 60,-84 94,-90 C87,-46 87,-8 85,20 C79,62 41,86 0,100 C-41,86 -79,62 -85,20 C-87,-8 -87,-46 -94,-90Z'},
   scallop3:{n:'Scalloped-top shield',d:'M-88,-90 Q-59,-104 -30,-88 Q0,-104 30,-88 Q59,-104 88,-90 L88,0 C88,55 40,85 0,100 C-40,85 -88,55 -88,0Z'},
   tablet:{n:'Cut-corner shield',d:'M-90,-80 L-70,-100 L70,-100 L90,-80 L90,10 C90,55 45,85 0,100 C-45,85 -90,55 -90,10Z'},
@@ -1395,7 +1395,7 @@ function openWizard(){W={step:0,bg:'notch',tint:null,glyph:{ch:'A',font:'Bowlby 
     if(W.step===0){h=`<h2>1. Background</h2><p class="hint">Pick the background shape, or skip if the logo has none.</p><div class="wgrid">
       <button class="wtile${!W.bg?' on':''}" data-bg=""><svg viewBox="-112 -112 224 224"><path d="M-80,-80 L80,80 M80,-80 L-80,80" stroke="currentColor" stroke-width="10" fill="none"/></svg>No background</button>
       <button class="wtile${W.bg==='glyph'?' on':''}" data-bg="glyph"><svg viewBox="-112 -112 224 224"><text x="0" y="8" font-size="190" text-anchor="middle" dominant-baseline="central" fill="currentColor" font-family="'${esc(W.glyph.font)}', Impact, sans-serif">${esc(W.glyph.ch.slice(0,2))}</text></svg>Letter or number</button>
-      ${Object.entries(SHAPES).filter(([k])=>!['drips','swoosh','banner','pennant'].includes(k)).map(([k,v])=>`<button class="wtile${W.bg===k?' on':''}" data-bg="${k}">${thumb(v.d)}${esc(v.n)}</button>`).join('')}</div>`;
+      ${Object.entries(SHAPES).filter(([k])=>!['drips','swoosh','banner','pennant'].includes(k)).sort((a,b)=>(b[0]==='rampart')-(a[0]==='rampart')).map(([k,v])=>`<button class="wtile${W.bg===k?' on':''}" data-bg="${k}">${thumb(v.d)}${esc(v.n)}</button>`).join('')}</div>`;
       if(W.bg==='glyph')h=h.replace('<div class="wgrid">',`<div class="wform"><label for="wzGl">Letter or number</label><input type="text" id="wzGl" maxlength="3" value="${esc(W.glyph.ch)}">
         <label for="wzGlF">Font</label><select id="wzGlF">${fontOpts(W.glyph.font)}</select>
         <label for="wzGlH">Fill the holes</label><div class="btnrow"><input type="checkbox" id="wzGlH"${W.glyph.fill?' checked':''}><span class="hint">Solid letter, without the holes in A, B, D, O, 0, 8…</span></div></div><div class="wgrid">`);}
