@@ -9,6 +9,7 @@ Uuden logon lisääminen:
 
 ## Joukkueiden logot
 
-Kaikkien joukkueiden logot (32 kpl) on tehty ohjatulla toiminnolla (✦ Logo wizard) skriptillä
-`node tools/make-team-logos.js`. Esikatselu: `joukkueet.png`. `austin-ramparts-icon.lsp` ja
-`austin-ramparts-wordmark.lsp` ovat aiemmin käsin tehdyt Ramparts-versiot.
+Nykyiset joukkueiden logot (36 kpl) on erotettu liigan uusimmista logokuvista ja muutettu muokattaviksi
+(`node tools/make-current-logos.js`). Osalla joukkueista on useampi logo, ja ne on numeroitu
+(esim. Baltimore Bigfeet 1 ja 2). Aiemmat ohjatulla toiminnolla tehdyt logot ovat kansiossa
+`logos/arkisto/wizard-logot-2026-10/`.

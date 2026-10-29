@@ -38,7 +38,25 @@ def save(name, crop, bg, xr=None):
     rgba = np.dstack([crop, keep * 255]).astype(np.uint8)[y0:y1, x0:x1]
     Image.fromarray(rgba, 'RGBA').save(os.path.join(out, name + '.png'))
 
-if mode == 'vbl':
+if mode == 'vbl2':
+    # current league sheet on a white background: every icon is its own blob below the title
+    names = ['providence-jewelers', 'buffalo-windmills', 'montreal-beavers', 'richmond-foxes', 'raleigh-red-wolves',
+             'pittsburgh-passers', 'cincinnati-cleaners', 'columbus-inventors', 'louisville-claws', 'nashville-pickers', 'birmingham-ironmen', 'jacksonville-manatees',
+             'st-louis-arches', 'kansas-city-stockmen', 'omaha-express', 'tulsa-oilmen', 'el-paso-scorpions',
+             'melbourne-moose', 'honolulu-nene', 'san-diego-sea-lions', 'albuquerque-balloons']
+    nonwhite = np.abs(im - 255).sum(axis=2) > 60
+    lab, n = ndi.label(ndi.binary_dilation(nonwhite, iterations=6))
+    blobs = []
+    for sl in ndi.find_objects(lab):
+        y0, x0, y1, x1 = sl[0].start, sl[1].start, sl[0].stop, sl[1].stop
+        if y1 - y0 > 40 and x1 - x0 > 40 and (y0 + y1) / 2 > 150:
+            blobs.append((round((y0 + y1) / 2 / 150), (x0 + x1) / 2, y0, x0, y1, x1))
+    blobs.sort()
+    assert len(blobs) == len(names), len(blobs)
+    for nm, (_, _, y0, x0, y1, x1) in zip(names, blobs):
+        crop = im[max(0, y0 - 4):y1 + 4, max(0, x0 - 4):x1 + 4]
+        save(nm, crop, flood_bg(crop, 60))
+elif mode == 'vbl':
     # icon grid of the league wallpaper: 7 columns, 4 rows (label text below each icon is left out)
     names = [['baltimore-shipwrights', 'providence-jewelers', 'hartford-underwriters', 'buffalo-windmills', 'montreal-beavers', 'richmond-foxes', 'raleigh-red-wolves'],
              ['pittsburgh-passers', 'cincinnati-cleaners', 'columbus-inventors', 'louisville-claws', 'nashville-pickers', 'birmingham-ironmen', 'jacksonville-manatees'],

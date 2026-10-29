@@ -1,5 +1,5 @@
 """Packs traced art (from trace_logos.py) into lsp-library.js, the library file LSP loads next to lsp.html.
-Usage: python3 tools/build_library.py <traced_vbl.json> <traced_concepts.json>"""
+Usage: python3 tools/build_library.py <traced_vbl.json> <traced_concepts.json> [<traced_vbl_current.json>]"""
 import sys, json
 
 vbl, con = json.load(open(sys.argv[1])), json.load(open(sys.argv[2]))
@@ -8,7 +8,11 @@ VBL_ORDER = ['baltimore-shipwrights', 'providence-jewelers', 'hartford-underwrit
              'pittsburgh-passers', 'cincinnati-cleaners', 'columbus-inventors', 'louisville-claws', 'nashville-pickers', 'birmingham-ironmen', 'jacksonville-manatees',
              'st-louis-arches', 'kansas-city-stockmen', 'omaha-express', 'tulsa-oilmen', 'austin-ramparts', 'el-paso-scorpions', 'mexico-city-cardones',
              'seattle-ferries', 'vancouver-cedars', 'melbourne-moose', 'honolulu-nene', 'san-diego-sea-lions', 'albuquerque-balloons']
-groups = [{'id': 'vbl', 'name': 'VBL league icons', 'items': {k: dict(n=title(k), **vbl[k]) for k in VBL_ORDER if k in vbl}}]
+groups = []
+if len(sys.argv) > 3:  # the current league sheet comes first
+    cur = json.load(open(sys.argv[3]))
+    groups.append({'id': 'vbl-current', 'name': 'VBL league icons (current)', 'items': {k: dict(n=title(k), **cur[k]) for k in VBL_ORDER if k in cur}})
+groups.append({'id': 'vbl', 'name': 'VBL league icons (earlier)', 'items': {k: dict(n=title(k), **vbl[k]) for k in VBL_ORDER if k in vbl}})
 for team in ['baltimore-bigfeet', 'hartford-connectors', 'louisville-claws', 'kansas-city-tumblers', 'mexico-city-cardones', 'seattle-greens', 'melbourne-diggers']:
     items = {k.split('__')[1]: dict(n=f'{title(team)} {int(k.split("__")[1])}', **v) for k, v in sorted(con.items()) if k.startswith(team + '__')}
     groups.append({'id': team, 'name': title(team) + ' concepts', 'items': items})
