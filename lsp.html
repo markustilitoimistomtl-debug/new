@@ -649,7 +649,7 @@ function layerSVG(l,defs,byId){
       if(c.d2)inner+=`<path d="${c.d2}" fill="${s.det2C}"/>`;
       if(c.ds)inner+=`<path d="${c.ds}" fill="none" stroke="${s.lineC||s.detC}" stroke-width="${s.detW}" stroke-linecap="round" stroke-linejoin="round"/>`;}
     if(s.ov!=='none'&&s.ovO>0){defs.push(`<clipPath id="oc-${id}">${geom(l,'').replace('fill-rule','clip-rule')}</clipPath>`);
-      inner+=`<g clip-path="url(#oc-${id})" opacity="${f1(s.ovO)}" pointer-events="none">${overlayMarkup(l,defs)}</g>`;}
+      inner+=`<g data-ov="1" clip-path="url(#oc-${id})" opacity="${f1(s.ovO)}" pointer-events="none">${overlayMarkup(l,defs)}</g>`;}
     if(l.type==='ring'){const fa=fontAttrs(p.font,p.fs,p.ls),st=p.tsw>0?` stroke="${p.tsc}" stroke-width="${p.tsw*2}" paint-order="stroke" stroke-linejoin="round"`:'';
       const rm=p.r-p.w/2;
       inner+=`<g fill="${p.tc}" ${fa}${st}><text text-anchor="middle" dominant-baseline="central"><textPath href="#rt-${id}" startOffset="50%">${esc(p.top)}</textPath></text><text text-anchor="middle" dominant-baseline="central"><textPath href="#rb-${id}" startOffset="50%">${esc(p.bot)}</textPath></text>`;
@@ -1109,7 +1109,9 @@ function contentBox(){const a=document.getElementById('art');if(!a||!S.layers.le
   // getBBox ignores strokes and filters, so add room for outlines, depth, shadow, glow and spray
   const extra=Math.max(0,...S.layers.filter(l=>l.visible).map(l=>{const s=l.s,k=Math.max(Math.abs(l.sx),Math.abs(l.sy));
     return (s.o1w+s.o2w+s.o3w+s.thick+(l.type==='ring'?l.p.tsw:0))*k+s.exD+(s.shOn?Math.max(Math.abs(s.shX),Math.abs(s.shY))+s.shB*2:0)+s.glow+s.spray*1.5+s.rough*3+s.pixel;}));
-  try{const b=a.getBBox();const pad=Math.max(b.width,b.height)*.05+16+extra;return{x:b.x-pad,y:b.y-pad,width:b.width+2*pad,height:b.height+2*pad};}catch(e){return{x:0,y:0,width:1000,height:1000};}}
+  // surface overlays are clipped to their layer but still count in getBBox, so they are hidden while measuring
+  const ovs=[...a.querySelectorAll('[data-ov]')];ovs.forEach(g=>g.style.display='none');
+  try{const b=a.getBBox();ovs.forEach(g=>g.style.display='');const pad=Math.max(b.width,b.height)*.05+16+extra;return{x:b.x-pad,y:b.y-pad,width:b.width+2*pad,height:b.height+2*pad};}catch(e){ovs.forEach(g=>g.style.display='');return{x:0,y:0,width:1000,height:1000};}}
 async function ensureFonts(){const fs=new Set();S.layers.forEach(l=>{if(l.type==='text'||l.type==='ring')fs.add(l.p.font);});
   try{await Promise.all([...fs].map(f=>{const fi=fontInfo(f);return document.fonts.load(`${fi[2]} 60px "${fi[0]}"`);}));}catch(e){}}
 async function exportSVG(){await ensureFonts();const {css,failed}=await fontCSS();const sl=sel;sel=null;render();
@@ -1331,7 +1333,7 @@ function lookStyle(look,c){const dk=mix(c,'#000000',.55);switch(look){
   case 'plain':return{fill:'solid',c1:c};
   default:return{fill:'solid',c1:c,o1c:contrast(c),o1w:5,...SH,shO:.35};}}
 const TEXT_POS=[['arctop','Arched along the top'],['top','Top'],['center','Center'],['bottom','Bottom'],['arcbottom','Arched along the bottom'],['above','Above the background'],['below','Below the background']];
-const WSTEPS=['Background','Style','Symbols','Blend','Text','Finish'];
+const WSTEPS=['Background','Style','Symbols','Size & blend','Text','Finish'];
 const contrast=c=>lum(c)>.55?'#14111f':'#ffffff';
 function blendStyle(mode,color,st,traced){const b={...DEF_STYLE,...st.s};
   if(mode==='emboss')return{fill:b.fill==='none'?'solid':b.fill,c1:b.c1,c2:b.c2,c3:b.c3,angle:b.angle,fop:Math.max(b.fop,.6),ov:b.ov,ovO:b.ovO,
@@ -1340,7 +1342,12 @@ function blendStyle(mode,color,st,traced){const b={...DEF_STYLE,...st.s};
   if(mode==='print')return{fill:'solid',c1:color,ov:['shine','brushed'].includes(b.ov)?b.ov:'none',ovO:b.ovO,glow:st.glow?14:0,glowC:color,artMode:'fill'};
   return traced?{artMode:'orig',...SH,shO:.35}:{fill:'solid',c1:color,o1c:contrast(color),o1w:4,...SH,shO:.35};}
 let W=null;
-function wizBuild(bgOnly){const L=[],st=STYLES[W.style]||STYLES[0];let bg=null;const t=st.t||{};
+// the main color recolors a style's base and keeps its rims, surface and effects
+function tintStyle(st,c){if(!c)return st;const s0={...st.s},hi=mix(c,'#ffffff',.18),lo=mix(c,'#000000',.45);
+  if(['solid','linear','gloss','radial','tri','chrome','mirror'].includes(s0.fill||'solid')){s0.c1=s0.fill==='solid'||!s0.fill?c:hi;s0.c2=lo;if(s0.fill==='tri')s0.c3=mix(c,'#ffffff',.5);}
+  return{...st,s:s0,ink:lum(c)>.55?'#14111f':'#ffffff'};}
+const curStyle=()=>tintStyle(STYLES[W.style]||STYLES[0],W.tint);
+function wizBuild(bgOnly){const L=[],st=curStyle();let bg=null;const t=st.t||{};
   if(W.bg){if(st.plate)L.push(mk('shape',{k:'rsq'},{fill:'linear',c1:'#ececef',c2:'#cfd1d6',bevel:2,o1c:'#ffffff',o1w:3,...SH},{sx:3.2*1.15,sy:3.2*1.12,name:'Plate'}));
     const tf={sx:f1(3.2*(t.sx||1)),sy:f1(3.2*(t.sy||1)),rot:t.rot||0,skew:t.skew||0};
     if(W.bg==='glyph'){if(W.glyph.art){bg=mk('clip',{k:'',art:W.glyph.art},{...st.s},{...tf,name:W.glyph.art.n});L.push(bg);}}
@@ -1354,7 +1361,8 @@ function wizBuild(bgOnly){const L=[],st=STYLES[W.style]||STYLES[0];let bg=null;c
   W.symbols.forEach((sy,i)=>{const traced=!!sy.art;const mode=bg?sy.mode:'separate';
     const lay=mk('clip',traced?{k:'',art:sy.art}:{k:sy.k},blendStyle(mode,sy.color,st,traced),{name:sy.name});
     const ps=W.texts.map(t=>t.pos),hasTop=ps.some(p=>p==='arctop'||p==='top'),hasBot=ps.some(p=>p==='arcbottom'||p==='bottom');
-    place(lay,(i-(n-1)/2)*(n>1?64:0),(hasTop?8:0)-(hasBot?10:0)-4,n>1?.3:(hasTop||hasBot)?(hasTop&&hasBot?.3:.36):.46,true);
+    const k0=n>1?.3:hasTop&&hasBot?.32:hasTop?.42:hasBot?.4:.46;
+    place(lay,(i-(n-1)/2)*(n>1?64:0),(hasTop?12:0)-(hasBot?12:0)-4,k0*(sy.scale||1),true);
     if(bg&&mode!=='separate')lay.clip={t:bg.id,m:'in',gap:0};L.push(lay);});
   W.texts.forEach(tx=>{const P=TPOS[tx.pos]||[0,0,0];
     const inside=!['above','below'].includes(tx.pos),mode=bg&&inside&&tx.blend?tx.mode:'separate';
@@ -1363,7 +1371,7 @@ function wizBuild(bgOnly){const L=[],st=STYLES[W.style]||STYLES[0];let bg=null;c
     place(lay,P[0],P[1],k,inside);if(mode!=='separate')lay.clip={t:bg.id,m:'in',gap:0};L.push(lay);});
   return L;}
 function renderInto(svg,layers){const keep=S;S={...S,canvas:{...S.canvas,bg:'none'},layers};try{svg.innerHTML=buildArt(false);}finally{S=keep;}}
-function openWizard(){W={step:0,bg:'notch',glyph:{ch:'A',font:'Bowlby One SC',fill:false,art:null},style:0,symbols:[],texts:[],name:S.name&&S.name!=='Untitled logo'?S.name:'',cat:0};
+function openWizard(){W={step:0,bg:'notch',tint:null,glyph:{ch:'A',font:'Bowlby One SC',fill:false,art:null},style:0,symbols:[],texts:[],name:S.name&&S.name!=='Untitled logo'?S.name:'',cat:0};
   const m=document.createElement('div');m.className='modal wiz';m.innerHTML=`<div class="wbox" role="dialog" aria-label="Logo wizard">
     <header><h2>Logo wizard</h2><div class="wsteps" id="wzSteps"></div></header>
     <div class="wbody"><div class="wleft" id="wzStep"></div><div class="wright"><svg id="wzPrev" viewBox="0 0 1000 1000" aria-label="Preview"></svg><p class="hint">Live preview. Everything stays editable after you create the logo.</p></div></div>
@@ -1391,16 +1399,19 @@ function openWizard(){W={step:0,bg:'notch',glyph:{ch:'A',font:'Bowlby One SC',fi
       if(W.bg==='glyph')h=h.replace('<div class="wgrid">',`<div class="wform"><label for="wzGl">Letter or number</label><input type="text" id="wzGl" maxlength="3" value="${esc(W.glyph.ch)}">
         <label for="wzGlF">Font</label><select id="wzGlF">${fontOpts(W.glyph.font)}</select>
         <label for="wzGlH">Fill the holes</label><div class="btnrow"><input type="checkbox" id="wzGlH"${W.glyph.fill?' checked':''}><span class="hint">Solid letter, without the holes in A, B, D, O, 0, 8…</span></div></div><div class="wgrid">`);}
-    else if(W.step===1){h=`<h2>2. Style</h2><p class="hint">Pick a finish for the background. You can fine-tune colors and effects later.</p><div class="wgrid" id="wzStyles">${STYLES.map((x,i)=>`<button class="wtile${W.style===i?' on':''}" data-st="${i}"><svg viewBox="110 90 780 820"></svg>${i+1}. ${esc(x.n)}</button>`).join('')}</div>`;}
+    else if(W.step===1){h=`<h2>2. Style</h2><p class="hint">Pick a finish for the background. You can fine-tune colors and effects later.</p>
+      <div class="wform"><label for="wzTint">Main color</label><div class="btnrow"><input type="color" id="wzTint" value="${W.tint||'#1f3a5f'}"><label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="wzTintOn"${W.tint?' checked':''}> Use this color for every style</label></div></div>
+      <div class="wgrid" id="wzStyles">${STYLES.map((x,i)=>`<button class="wtile${W.style===i?' on':''}" data-st="${i}"><svg viewBox="110 90 780 820"></svg>${i+1}. ${esc(x.n)}</button>`).join('')}</div>`;}
     else if(W.step===2){const cats=[...CLIP_CATS.map(c=>({name:c[0],keys:c[1],lib:0})),...LIB_GROUPS.map(g=>({name:g.name,keys:g.keys,lib:1}))];const c=cats[W.cat]||cats[0];
       h=`<h2>3. Symbols</h2><p class="hint">Add one or more symbols: animals, nature, sports gear and more. Click a symbol to add it.</p>
       <div class="wform"><label for="wzCat">Category</label><select id="wzCat">${cats.map((x,i)=>`<option value="${i}"${i===W.cat?' selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
       ${W.symbols.length?`<div class="list">${W.symbols.map((x,i)=>`<div class="witem"><span class="nm">${esc(x.name)}</span><button class="btn" data-rm="${i}">Remove</button></div>`).join('')}</div>`:''}
       <div class="wgrid">${c.keys.map(k=>{const a=c.lib?LIB[k]:CLIP[k];return `<button class="wtile" data-sym="${esc(k)}" data-lib="${c.lib}">${c.lib?thumbArt(a):thumb(a.d,a.dd,a.ds)}${esc(a.n)}</button>`;}).join('')}</div>`;}
-    else if(W.step===3){h=`<h2>4. Blend symbols into the background</h2><p class="hint">Embossed and engraved symbols take the background's material, and printed ones its gloss. All three follow the background's tilt and stay inside it.</p>
+    else if(W.step===3){h=`<h2>4. Symbol size and blending</h2><p class="hint">Set how each symbol sits on the background and how big it is. Embossed and engraved symbols take the background's material, and printed ones its gloss. All three follow the background's tilt and stay inside it.</p>
       ${W.symbols.length?W.symbols.map((x,i)=>`<div class="witem"><span class="nm">${esc(x.name)}</span><select data-mode="${i}" aria-label="How ${esc(x.name)} sits on the background">${BLEND.map(([v,n])=>`<option value="${v}"${x.mode===v?' selected':''}>${n}</option>`).join('')}</select>
-        <input type="color" data-col="${i}" value="${x.color}" aria-label="Color" title="Color for separate and printed symbols"></div>`).join(''):'<p class="hint">No symbols added. Go back to add some, or continue to the text.</p>'}`;}
-    else if(W.step===4){const ink=(STYLES[W.style]||STYLES[0]).ink;
+        <input type="color" data-col="${i}" value="${x.color}" aria-label="Color" title="Color for separate and printed symbols">
+        <label class="hint" style="display:flex;gap:6px;align-items:center">Size <input type="range" data-ssc="${i}" min=".4" max="2" step=".05" value="${x.scale||1}" style="width:110px;accent-color:var(--accent)"></label></div>`).join(''):'<p class="hint">No symbols added. Go back to add some, or continue to the text.</p>'}`;}
+    else if(W.step===4){const ink=curStyle().ink;
       h=`<h2>5. Text</h2><p class="hint">Add as many texts as you like. Tick "Part of the background" to emboss, engrave or print the text onto the background.</p>
       <div class="wform"><label for="wzTxt">Text</label><input type="text" id="wzTxt" placeholder="e.g. RAMPARTS">
       <label for="wzFont">Font</label><select id="wzFont">${FONTS.map(f=>`<option style="font-family:'${f[0]}'"${f[0]==='Graduate'?' selected':''}>${esc(f[0])}</option>`).join('')}</select>
@@ -1428,16 +1439,19 @@ function openWizard(){W={step:0,bg:'notch',glyph:{ch:'A',font:'Bowlby One SC',fi
     const gl=st.querySelector('#wzGl'),glf=st.querySelector('#wzGlF'),glh=st.querySelector('#wzGlH');
     if(gl){let tm;const upd=()=>{clearTimeout(tm);tm=setTimeout(async()=>{W.glyph.ch=gl.value.trim()||'A';W.glyph.font=glf.value;W.glyph.fill=glh.checked;await ensureGlyph();prev();},250);};
       gl.oninput=upd;glf.onchange=upd;glh.onchange=upd;}
-    if(W.step===1)st.querySelectorAll('[data-st]').forEach(b=>{const i=+b.dataset.st,keep=W.style;W.style=i;const L=wizBuild(true);W.style=keep;
+    if(W.step===1)st.querySelectorAll('[data-st]').forEach(b=>{const i=+b.dataset.st,keep=W.style;W.style=i;const L=wizBuild(true);W.style=keep;b._i=i;
       renderInto(b.querySelector('svg'),L);b.onclick=()=>{W.style=i;st.querySelectorAll('[data-st]').forEach(x=>x.classList.toggle('on',x===b));
-        W.symbols.forEach(x=>{if(x.mode!=='separate')x.color=STYLES[i].ink;});prev();};});
+        W.symbols.forEach(x=>{if(x.mode!=='separate')x.color=curStyle().ink;});prev();};});
+    const ti=st.querySelector('#wzTint'),to=st.querySelector('#wzTintOn');
+    if(ti){const upd=()=>{W.tint=to.checked?ti.value:null;draw();};ti.onchange=()=>{to.checked=true;upd();};to.onchange=upd;}
     const cs=st.querySelector('#wzCat');if(cs)cs.onchange=()=>{W.cat=+cs.value;draw();};
     st.querySelectorAll('[data-sym]').forEach(b=>b.onclick=()=>{if(W.symbols.length>=6)return toast('Six symbols is the most the wizard places. Add more in the editor.');
       const lib=b.dataset.lib==='1',k=b.dataset.sym,a=lib?LIB[k]:CLIP[k];
-      W.symbols.push({k:lib?'':k,art:lib?{n:a.n,d:a.d,e:a.e?1:0,parts:a.parts}:null,name:a.n,mode:W.bg?'emboss':'separate',color:(STYLES[W.style]||STYLES[0]).ink});draw();});
+      W.symbols.push({k:lib?'':k,art:lib?{n:a.n,d:a.d,e:a.e?1:0,parts:a.parts}:null,name:a.n,mode:W.bg?'emboss':'separate',color:curStyle().ink});draw();});
     st.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{W.symbols.splice(+b.dataset.rm,1);draw();});
     st.querySelectorAll('[data-mode]').forEach(sl=>sl.onchange=()=>{W.symbols[+sl.dataset.mode].mode=sl.value;prev();});
     st.querySelectorAll('[data-col]').forEach(c=>c.oninput=()=>{W.symbols[+c.dataset.col].color=c.value;prev();});
+    st.querySelectorAll('[data-ssc]').forEach(c=>c.oninput=()=>{W.symbols[+c.dataset.ssc].scale=+c.value;prev();});
     const at=st.querySelector('#wzAddTxt');if(at)at.onclick=()=>{const v=st.querySelector('#wzTxt').value.trim();if(!v){st.querySelector('#wzTxt').focus();return;}
       const pos=st.querySelector('#wzPos').value;
       W.texts.push({text:v,font:st.querySelector('#wzFont').value,pos,arc:TPOS[pos][2],scale:1,look:st.querySelector('#wzLook').value,color:st.querySelector('#wzCol').value,blend:st.querySelector('#wzBl').checked,mode:st.querySelector('#wzMode').value});draw();};
@@ -1453,6 +1467,15 @@ function openWizard(){W={step:0,bg:'notch',glyph:{ch:'A',font:'Bowlby One SC',fi
     prev();}
   draw();}
 $('#bWizard').onclick=openWizard;
+// builds a logo the same way the wizard does, from a plain description (used by tools/make-team-logos.js)
+async function wizardLayers(spec){const keep=W;
+  W={step:0,bg:null,tint:null,glyph:{ch:'A',font:'Bowlby One SC',fill:false,art:null},style:0,symbols:[],texts:[],...spec};
+  W.glyph={ch:'A',font:'Bowlby One SC',fill:false,art:null,...(spec.glyph||{})};
+  try{if(W.bg==='glyph')W.glyph.art=await glyphArt(W.glyph.ch,W.glyph.font,W.glyph.fill);
+    W.symbols=(W.symbols||[]).map(x=>{const a=x.lib?LIB[x.lib]:CLIP[x.k];return{k:x.lib?'':x.k,art:x.lib?{n:a.n,d:a.d,e:a.e?1:0,parts:a.parts}:null,name:a.n,mode:'separate',color:curStyle().ink,...x};});
+    W.texts=(W.texts||[]).map(x=>({font:'Graduate',pos:'below',scale:1,look:'clean',color:curStyle().ink,blend:false,mode:'print',...x,arc:x.arc??TPOS[x.pos||'below'][2]}));
+    return wizBuild();}
+  finally{W=keep;}}
 
 /* ---------- boot ---------- */
 try{const saved=localStorage.getItem('lsp.v1')||localStorage.getItem('logopaja.v1');if(saved)S=normalize(JSON.parse(saved));}catch(e){}
@@ -1462,7 +1485,7 @@ snap=takeSnap();
 buildTabs();buildAdd();full();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>render());
 window.addEventListener('resize',()=>drawOverlay());
-window.LSP={styles:STYLES,openWizard,lib:LIB,addArt,libAll,saveToLibrary,load:o=>{S=normalize(o);sel=null;full();snap=takeSnap();},toLSP,exportPNG,exportSVG,normalize};
+window.LSP={styles:STYLES,openWizard,wizardLayers,lib:LIB,addArt,libAll,saveToLibrary,load:o=>{S=normalize(o);sel=null;full();snap=takeSnap();},toLSP,exportPNG,exportSVG,normalize};
 })();
 </script>
 
