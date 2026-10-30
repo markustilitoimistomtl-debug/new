@@ -1,5 +1,5 @@
 // Builds the current team logos as picture layers from logos/lahdekuvat/ (cut from the league sheets),
-// so they keep the look of the original painted images; Austin Ramparts is built from LSP's own shapes. Writes logos/uudet-logot/*.lsp and, with a folder, 1024 px PNG files.
+// so they keep the look of the original painted images. Writes logos/uudet-logot/*.lsp and, with a folder, 1024 px PNG files.
 // Usage: node tools/make-raster-logos.js [pngDir]
 const fs = require('fs');
 const path = require('path');
@@ -10,27 +10,18 @@ const OUT = path.join(ROOT, 'logos', 'uudet-logot');
 const PNG = process.argv[2] || null;
 
 const NAMES = {
-  'albuquerque-balloons': 'Albuquerque Balloons', 'baltimore-bigfeet-1': 'Baltimore Bigfeet 1', 'baltimore-bigfeet-2': 'Baltimore Bigfeet 2',
+  'albuquerque-balloons': 'Albuquerque Balloons', 'austin-ramparts': 'Austin Ramparts', 'baltimore-bigfeet-1': 'Baltimore Bigfeet 1', 'baltimore-bigfeet-2': 'Baltimore Bigfeet 2',
   'birmingham-ironmen': 'Birmingham Ironmen', 'buffalo-windmills': 'Buffalo Windmills', 'cincinnati-cleaners': 'Cincinnati Cleaners',
   'columbus-inventors': 'Columbus Inventors', 'el-paso-scorpions': 'El Paso Scorpions', 'hartford-connectors-1': 'Hartford Connectors 1',
   'hartford-connectors-2': 'Hartford Connectors 2', 'honolulu-nene': 'Honolulu Nene', 'jacksonville-manatees': 'Jacksonville Manatees',
   'kansas-city-stockmen': 'Kansas City Stockmen', 'kansas-city-tumblers': 'Kansas City Tumblers', 'louisville-claws-1': 'Louisville Claws 1',
   'louisville-claws-2': 'Louisville Claws 2', 'louisville-claws-3': 'Louisville Claws 3', 'melbourne-diggers': 'Melbourne Diggers', 'melbourne-moose': 'Melbourne Moose',
-  'mexico-city-cardones-1': 'Mexico City Cardones 1', 'mexico-city-cardones-2': 'Mexico City Cardones 2', 'mexico-city-cardones-3': 'Mexico City Cardones 3',
+  'mexico-city-cardones-2': 'Mexico City Cardones 2', 'mexico-city-cardones-3': 'Mexico City Cardones 3',
   'mexico-city-cardones-4': 'Mexico City Cardones 4', 'montreal-beavers': 'Montreal Beavers', 'nashville-pickers': 'Nashville Pickers',
   'omaha-express': 'Omaha Express', 'pittsburgh-passers': 'Pittsburgh Passers', 'providence-jewelers': 'Providence Jewelers',
   'raleigh-red-wolves': 'Raleigh Red Wolves', 'richmond-foxes': 'Richmond Foxes', 'san-diego-sea-lions': 'San Diego Sea Lions',
   'st-louis-arches': 'St. Louis Arches', 'tulsa-oilmen': 'Tulsa Oilmen', 'vancouver-greens': 'Vancouver Greens',
 };
-const SH = { shOn: true, shX: 4, shY: 7, shB: 6, shO: 0.45 };
-const BUILT = {
-  'austin-ramparts': ['Austin Ramparts', [
-    { type: 'shape', id: 'bg', x: 500, y: 500, sx: 3.4, sy: 3.4, p: { k: 'rampart' },
-      s: { fill: 'linear', c1: '#2a5080', c2: '#132841', o1c: '#cfd3da', o1w: 6, o2c: '#14111f', o2w: 4, bevel: 1.5, ...SH } },
-    { type: 'clip', id: 'fl', x: 500, y: 480, sx: 2.45, sy: 2.45, p: { k: 'flags' },
-      s: { fill: 'linear', c1: '#c08a4a', c2: '#7a4f24', angle: 0, detC: '#f3f3f1', det2C: '#c8102e', o1c: '#14111f', o1w: 3, ...SH, shX: 3, shY: 5, shB: 3 } }]],
-};
-
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
@@ -38,20 +29,14 @@ const BUILT = {
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('file://' + path.join(ROOT, 'lsp.html'));
   await page.waitForFunction(() => window.LSP);
-  const jobs = [
-    ...Object.entries(NAMES).map(([k, name]) => ({ k, name, href: 'data:image/webp;base64,' + fs.readFileSync(path.join(SRC, k + '.webp')).toString('base64') })),
-    ...Object.entries(BUILT).map(([k, [name, layers]]) => ({ k, name, layers })),
-  ];
+  const jobs = Object.entries(NAMES).map(([k, name]) => ({ k, name, href: 'data:image/webp;base64,' + fs.readFileSync(path.join(SRC, k + '.webp')).toString('base64') }));
   for (const f of fs.readdirSync(OUT)) if (f.endsWith('.lsp')) fs.unlinkSync(path.join(OUT, f));
   const list = [];
   for (const j of jobs) {
     const res = await page.evaluate(async ([j, png]) => {
-      let layers = j.layers;
-      if (!layers) {
-        const img = new Image(); await new Promise(r => { img.onload = r; img.src = j.href; });
-        const k = 640 / Math.max(img.width, img.height);
-        layers = [{ type: 'image', id: 'pic', name: j.name, x: 500, y: 500, p: { href: j.href, w: img.width * k / 2, h: img.height * k / 2, nw: img.width, nh: img.height }, sx: 2, sy: 2, s: {} }];
-      }
+      const img = new Image(); await new Promise(r => { img.onload = r; img.src = j.href; });
+      const k = 640 / Math.max(img.width, img.height);
+      const layers = [{ type: 'image', id: 'pic', name: j.name, x: 500, y: 500, p: { href: j.href, w: img.width * k / 2, h: img.height * k / 2, nw: img.width, nh: img.height }, sx: 2, sy: 2, s: {} }];
       LSP.load({ format: 'LSP', version: 1, name: j.name, canvas: { bg: 'none', crop: true }, layers });
       await document.fonts.ready;
       const lsp = LSP.toLSP(); delete lsp.saved;

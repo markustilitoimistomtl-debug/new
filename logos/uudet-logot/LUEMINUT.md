@@ -9,7 +9,7 @@ Uuden logon lisääminen:
 
 ## Joukkueiden logot
 
-Nykyiset joukkueiden logot (35 kpl) on koottu kuvakerroksina liigan uusimmista logokuvista (lähteet kansiossa `logos/lahdekuvat/`)
+Nykyiset joukkueiden logot (34 kpl) on koottu kuvakerroksina liigan uusimmista logokuvista (lähteet kansiossa `logos/lahdekuvat/`)
 (`node tools/make-raster-logos.js`). Osalla joukkueista on useampi logo, ja ne on numeroitu
 (esim. Baltimore Bigfeet 1 ja 2). Aiemmat ohjatulla toiminnolla tehdyt logot ovat kansiossa
 `logos/arkisto/wizard-logot-2026-10/`.
