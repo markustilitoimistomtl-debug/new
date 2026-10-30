@@ -18,7 +18,7 @@ const NAMES = {
   'louisville-claws-2': 'Louisville Claws 2', 'louisville-claws-3': 'Louisville Claws 3', 'melbourne-diggers': 'Melbourne Diggers', 'melbourne-moose': 'Melbourne Moose',
   'mexico-city-cardones-2': 'Mexico City Cardones 2', 'mexico-city-cardones-3': 'Mexico City Cardones 3',
   'mexico-city-cardones-4': 'Mexico City Cardones 4', 'montreal-beavers': 'Montreal Beavers', 'nashville-pickers': 'Nashville Pickers',
-  'omaha-express': 'Omaha Express', 'pittsburgh-passers': 'Pittsburgh Passers', 'providence-jewelers': 'Providence Jewelers',
+  'omaha-express-1': 'Omaha Express 1', 'omaha-express-2': 'Omaha Express 2', 'pittsburgh-passers': 'Pittsburgh Passers', 'providence-jewelers': 'Providence Jewelers',
   'raleigh-red-wolves': 'Raleigh Red Wolves', 'richmond-foxes': 'Richmond Foxes', 'san-diego-sea-lions': 'San Diego Sea Lions',
   'st-louis-arches': 'St. Louis Arches', 'tulsa-oilmen': 'Tulsa Oilmen', 'vancouver-greens': 'Vancouver Greens',
 };
