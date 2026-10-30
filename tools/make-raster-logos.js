@@ -10,7 +10,7 @@ const OUT = path.join(ROOT, 'logos', 'uudet-logot');
 const PNG = process.argv[2] || null;
 
 const NAMES = {
-  'albuquerque-balloons': 'Albuquerque Balloons', 'austin-ramparts': 'Austin Ramparts', 'baltimore-bigfeet-1': 'Baltimore Bigfeet 1', 'baltimore-bigfeet-2': 'Baltimore Bigfeet 2',
+  'albuquerque-balloons': 'Albuquerque Balloons', 'austin-ramparts': 'Austin Ramparts', 'baltimore-bigfeet-1': 'Baltimore Bigfeet 1', 'baltimore-bigfeet-2': 'Baltimore Bigfeet 2', 'bay-area-grinders': 'Bay Area Grinders',
   'birmingham-ironmen': 'Birmingham Ironmen', 'buffalo-windmills': 'Buffalo Windmills', 'cincinnati-cleaners': 'Cincinnati Cleaners',
   'columbus-inventors': 'Columbus Inventors', 'el-paso-scorpions': 'El Paso Scorpions', 'hartford-connectors-1': 'Hartford Connectors 1',
   'hartford-connectors-2': 'Hartford Connectors 2', 'honolulu-nene': 'Honolulu Nene', 'jacksonville-manatees': 'Jacksonville Manatees',
