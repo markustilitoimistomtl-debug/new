@@ -10,12 +10,12 @@ const OUT = path.join(ROOT, 'logos', 'uudet-logot');
 const PNG = process.argv[2] || null;
 
 const NAMES = {
-  'albuquerque-balloons': 'Albuquerque Balloons', 'austin-ramparts': 'Austin Ramparts', 'baltimore-bigfeet-1': 'Baltimore Bigfeet 1', 'baltimore-bigfeet-2': 'Baltimore Bigfeet 2', 'bay-area-grinders': 'Bay Area Grinders',
+  'albuquerque-balloons': 'Albuquerque Balloons', 'austin-ramparts': 'Austin Ramparts', 'baltimore-bigfeet-1': 'Baltimore Bigfeet 1', 'baltimore-bigfeet-2': 'Baltimore Bigfeet 2', 'baltimore-bigfeet-3': 'Baltimore Bigfeet 3', 'bay-area-grinders': 'Bay Area Grinders',
   'birmingham-ironmen': 'Birmingham Ironmen', 'buffalo-windmills': 'Buffalo Windmills', 'cincinnati-cleaners': 'Cincinnati Cleaners',
   'columbus-inventors': 'Columbus Inventors', 'el-paso-scorpions': 'El Paso Scorpions', 'hartford-connectors-1': 'Hartford Connectors 1',
   'hartford-connectors-2': 'Hartford Connectors 2', 'honolulu-nene': 'Honolulu Nene', 'jacksonville-manatees': 'Jacksonville Manatees',
   'kansas-city-stockmen': 'Kansas City Stockmen', 'kansas-city-tumblers': 'Kansas City Tumblers', 'louisville-claws-1': 'Louisville Claws 1',
-  'louisville-claws-2': 'Louisville Claws 2', 'louisville-claws-3': 'Louisville Claws 3', 'melbourne-diggers': 'Melbourne Diggers', 'melbourne-moose': 'Melbourne Moose',
+  'louisville-claws-2': 'Louisville Claws 2', 'louisville-claws-3': 'Louisville Claws 3', 'melbourne-diggers': 'Melbourne Diggers',
   'mexico-city-cardones-2': 'Mexico City Cardones 2', 'mexico-city-cardones-3': 'Mexico City Cardones 3',
   'mexico-city-cardones-4': 'Mexico City Cardones 4', 'montreal-beavers': 'Montreal Beavers', 'nashville-pickers': 'Nashville Pickers',
   'omaha-express-1': 'Omaha Express 1', 'omaha-express-2': 'Omaha Express 2', 'pittsburgh-passers': 'Pittsburgh Passers', 'providence-jewelers': 'Providence Jewelers',
