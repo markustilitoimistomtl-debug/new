@@ -123,12 +123,14 @@ const STORY=[
  ['Technical foul','tech',['jn:j_tech','jn:j_temper']],['Flagrant foul','physical',['jn:j_phys']],['Players exchange words','words',['tn:t_words']],
  ['Player hurt','medical',['tn:t_medical']],['Timeout','break',['jn:j_break']],['Shot denied at the rim','denied',['jn:j_denied']],
  ['Big men on the boards','bigs',['tn:t_bigs','jn:j_pound']],['Shot clock running down','clock',['tn:t_clock','jn:j_clock']],
+ ['Visitors ahead early in the 4th','awaywork',['tn:t_awaywork']],
  ['Quarter summary','summary',Array.from({length:20},(_,i)=>'tn:s'+(i+1))]];
 const PB_LAB={num:'"Number" before a jersey number',loft:'Long three in the air',settle:'Settles for a jumper',pass:'Pass',sinks3:'Sinks a three',miss:'Missed shot',
  rim:'Off the rim',tov:'Turnover',steal:'Steal',reb:'Rebound',lob:'Alley-oop lob',crush:'Dunk finish',spin:'Spin move',pick:'Picked his pocket, breakaway',
  xsteal:'Steal (extra)',xpass:'Pass (extra)',wt1:'First foul warning',wt2:'Second foul warning',wt3:'Third foul warning',wt4:'Fourth foul warning',
  wg1:'First foul (other take)',wg2:'Second foul (other take)',wg3:'Third foul (other take)',wg4:'Fourth foul (other take)',wn2:'Two fouls now',wn3:'Three fouls now',
  wn4:'Four fouls now',wn5:'Five fouls now',charge:'Charge taken',oreb:'Offensive rebound',min1:'One minute left',final:'Final buzzer',td:'Long touchdown pass',
+ jump:'Takes a jump shot (with the name)',putback:'Putback after an offensive rebound',ast5:'Fifth assist',ast10:'Tenth assist',apre:'Tenth assist: "He has also picked up"',apts:'Tenth assist: "points"',aand:'Tenth assist: "and"',areb:'Tenth assist: "rebounds so far"',asofar:'Tenth assist: "so far"',
  fire:'On fire',roof:'Raises the roof',rhythm:'Finding his rhythm',loose:'Loose ball',pts3:'Three points',pts2:'Two points'};
 // array categories: prefix = who is named before the clip (player or team)
 const ARR=[
@@ -173,7 +175,7 @@ function toast(msg,ms=3500){let t=document.querySelector('.toast');if(!t){t=docu
 /* ============ read the game file ============ */
 function readGame(text){
   const lines=text.split('\n');
-  const want=/^(const (VOX_DATA|SFX_DATA|MUSIC_LONG|TM_KEY|NAMEOFF|HEMAP|PB|TN_META|JX_META|LINE_META|ABBR|LEAGUE_REC|KITS|DEFAULT_LOOK|DEFAULT_MUSIC_USE)\b|let MUSIC_LONG\b|Object\.assign\((VOX|SFX)_DATA|Object\.assign\(HEMAP|VOX_DATA\.|SFX_DATA\.)/;
+  const want=/^(const (VOX_DATA|SFX_DATA|MUSIC_LONG|TM_KEY|NAMEOFF|HEMAP|PB|TN_META|JX_META|LINE_META|ABBR|LEAGUE_REC|KITS|DEFAULT_LOOK|DEFAULT_MUSIC_USE)\b|let MUSIC_LONG\b|Object\.assign\((VOX|SFX)_DATA|Object\.assign\(HEMAP|Object\.assign\(PB|VOX_DATA\.|SFX_DATA\.)/;
   let code='';for(const l of lines)if(want.test(l))code+=l+'\n';
   const a=text.indexOf('const LEAGUE=[\n');const b=text.indexOf(']];',a);if(a<0||b<0)throw new Error('This does not look like the Vintage Basket game file (no team list found).');
   code+=text.slice(a,b+3)+'\n';
