@@ -150,7 +150,7 @@ const ARR=[
  ['Arena','fanfare','Quarter-break fanfare','','arena'],['Arena','finale','Final fanfare','','arena']];
 // looks for the whole game: [id, name, idea, colours (bg, panel, panel2, ink, dim, led, hot, line), fonts (display, body, numbers)]
 const THEMES=[["vintage", "Vintage Arcade", "The original: arcade pixels and warm LED amber", ["#0d0b14", "#1a1522", "#262033", "#f1ece4", "#a39cad", "#ffb21e", "#ff5a36", "#3a3049"], ["Silkscreen", "Chakra Petch", "Teko"]], ["jam", "Jam Session", "Early-90s arcade two-on-two: loud blue, yellow and red", ["#0a0f2a", "#14204d", "#1d2d66", "#ffffff", "#9fb3ff", "#ffd400", "#ff2d2d", "#2c3f8a"], ["Press Start 2P", "Rubik", "Bungee"]], ["network80", "Network '80s", "Saturday-afternoon network broadcast in navy and gold", ["#071a33", "#0e2a52", "#163a6b", "#f4f1e6", "#a8b8cf", "#f2c14e", "#d7263d", "#23497d"], ["Oswald", "Source Sans 3", "Oswald"]], ["cable90", "Cable Sports '90s", "Black, white and a red bar, like a 90s sports channel", ["#0b0b0b", "#1a1a1a", "#2a2a2a", "#ffffff", "#b5b5b5", "#ffffff", "#e1261c", "#3a3a3a"], ["Archivo Black", "Archivo", "Archivo Narrow"]], ["showtime", "Showtime", "Purple and gold, fast-break glamour", ["#1d0b33", "#2c1250", "#3c1b6a", "#fff6e0", "#c9b4e8", "#fdb927", "#fdb927", "#4e2a80"], ["Bebas Neue", "Lato", "Bebas Neue"]], ["hardwood", "Hardwood Classics", "Warm wood, cream and slab serifs from the old programs", ["#2a1a10", "#3b2618", "#4d3322", "#f6ead2", "#c8b291", "#e8a33d", "#c8502b", "#5e4330"], ["Alfa Slab One", "Roboto Slab", "Alfa Slab One"]], ["miami", "Miami Neon", "Night-club teal and hot pink", ["#0b0f1e", "#151a33", "#1e2547", "#f2fbff", "#8fd6e8", "#2ef2ff", "#ff3fa4", "#2b3566"], ["Audiowide", "Exo 2", "Audiowide"]], ["windy", "Windy City '90s", "Red and black dynasty years", ["#0e0e0e", "#1c1416", "#2a1b1e", "#ffffff", "#c2a8ac", "#ce1141", "#ce1141", "#3d2428"], ["Anton", "Roboto Condensed", "Anton"]], ["garden", "Garden Green", "Parquet green, cream and old-school gold", ["#0c2116", "#123122", "#1a4430", "#f7f1df", "#b9cbb8", "#e8c35a", "#e05a3b", "#24553c"], ["Abril Fatface", "Libre Franklin", "Oswald"]], ["handheld", "Handheld", "Four shades of green from a pocket game console", ["#0f1f0f", "#1f3a1f", "#2d4f2d", "#c4f0c2", "#8bb88a", "#e0ff9e", "#f2ff5e", "#3f6b3f"], ["VT323", "VT323", "VT323"]], ["console16", "16-Bit Console", "Living-room console blues and bright yellow", ["#101034", "#1c1c5c", "#28287a", "#ffffff", "#a9a9e8", "#ffcc00", "#ff4f4f", "#3a3aa0"], ["Silkscreen", "Pixelify Sans", "Silkscreen"]], ["broadcast", "Modern Broadcast", "Clean slate graphics of today's TV coverage", ["#0f141a", "#19212b", "#232e3b", "#f5f7fa", "#9aa7b6", "#3fa9ff", "#ff5c5c", "#2f3c4c"], ["Barlow Condensed", "Barlow", "Barlow Condensed"]], ["amber", "Amber Scoreboard", "The arena's old bulb scoreboard", ["#120a00", "#1f1404", "#2b1d08", "#ffd89a", "#b88a4a", "#ffb000", "#ff6a00", "#4a3210"], ["Orbitron", "Share Tech Mono", "Orbitron"]], ["boxscore", "Box Score Print", "Newspaper sports page: paper, ink and red headlines", ["#efe9dc", "#f8f4ea", "#e6dfcf", "#1d1a16", "#6b6457", "#b3261e", "#b3261e", "#c9bfa9"], ["Old Standard TT", "Libre Franklin", "Oswald"]], ["street", "Street Court", "Concrete grey and safety orange from the playground", ["#1e1e1e", "#2b2b2b", "#393939", "#f2f2f2", "#b0b0b0", "#ff8c1a", "#ff8c1a", "#4a4a4a"], ["Permanent Marker", "Rubik", "Bungee"]], ["varsity", "Varsity", "College gym: maroon, cream and block letters", ["#2a0d12", "#3b141b", "#4d1c25", "#f6ecd8", "#cdb59a", "#f2c14e", "#e8e0c8", "#5e2531"], ["Graduate", "Roboto Slab", "Graduate"]], ["dream92", "Dream '92", "Summer-games blue, white and red", ["#0b1d4a", "#13296b", "#1b378a", "#ffffff", "#b3c3ea", "#ffffff", "#e2231a", "#2a4aa3"], ["Montserrat", "Montserrat", "Montserrat"]], ["hologram", "Hologram", "Future arena: dark glass and cyan light", ["#050a12", "#0a1622", "#102236", "#dffcff", "#7fb3c2", "#00e5ff", "#7c4dff", "#18344d"], ["Exo 2", "Exo 2", "Orbitron"]], ["sunset", "Sunset Coast", "West-coast evening: orange and pink", ["#1c0d1f", "#2d1530", "#3d1d40", "#fff1e6", "#e0b4c4", "#ff9f1c", "#ff4f79", "#55284f"], ["Righteous", "Nunito", "Righteous"]], ["blackout", "Blackout", "All black with silver, for the night games", ["#000000", "#0d0d0f", "#18181c", "#e8e8ec", "#8a8a93", "#c0c0c8", "#ffffff", "#2a2a30"], ["Rajdhani", "Rajdhani", "Rajdhani"]]];
-const LOOK0={theme:'vintage',scale:{score:1,side:1,lower:1,box:1,banner:1,tip:1},tip:{logo:1.6,layout:'inline'}};
+const LOOK0={theme:'vintage',scale:{score:1,side:1,lower:1,box:1,banner:1,tip:1},tip:{logo:1.6,layout:'inline'},court:{logo:9}};
 const VARN=['--bg','--panel','--panel2','--ink','--dim','--led','--hot','--line'];
 function lookVars(id){const T=THEMES.find(t=>t[0]===id)||THEMES[0];const v={};VARN.forEach((k,i)=>v[k]=T[3][i]);const q=f=>`'${f}'`;v['--f-disp']=`${q(T[4][0])},'Courier New',monospace`;v['--f-body']=`${q(T[4][1])},system-ui,sans-serif`;v['--f-num']=`${q(T[4][2])},'Arial Narrow',sans-serif`;return v;}
 const ABC=i=>{let s='';i++;while(i>0){i--;s=String.fromCharCode(97+i%26)+s;i=Math.floor(i/26);}return s;};
@@ -256,7 +256,7 @@ VIEWS.home=()=>{let h=`<h2>VINTAGE BUILDER</h2><p class="lead">Pick the music, l
   <p class="muted">Game file: ${esc(gameName)}</p>
   <div class="row"><button class="big" id="saveVbf">SAVE SETUP (.VBF)</button><button id="openVbf">Open a saved setup</button><button id="openGame">Open another game file</button><button id="resetAll" class="del">Undo all changes</button></div>
   <div class="guide"><b>How the setup reaches the game.</b> Save the file as <b>vintage.vbf</b> in the folder where the game's index.html is. The game reads it on start. If your browser saves it as vintage(1).vbf, rename it.</div>
-  <div class="guide"><b>Sizes.</b> Logos: square PNG with a transparent background, at least 256 × 256 px (the game shows them at 96 px). Clip lengths are shown on each page; lines that are too long or short are marked in yellow.<br>
+  <div class="guide"><b>Sizes.</b> Logos: square PNG with a transparent background, at least 256 × 256 px (the game shows them at up to 160 px). Clip lengths are shown on each page; lines that are too long or short are marked in yellow.<br>
   <b>Fills.</b> In a phrase, write <b>X</b> where the team's name goes, <b>Y</b> for the other team, <b>P</b> for a player and <b>#</b> for a number. In the 1st quarter the game says the full name (city + nickname) one time in three; otherwise the city or the nickname. If the name goes in the middle of the recording, give the cut time in seconds.<br>
   <b>Check with Claude.</b> When everything is in place, bring the .vbf to Claude to check that every clip cuts in correctly.</div>`;
   return h;};
@@ -343,8 +343,31 @@ VIEWS.look=()=>{ROWS={};const L=S.look;let h=`<h2>LOOK &amp; LAYOUT</h2><p class
     h+=`<label for="sz_${k}">${lab}</label><input type="range" id="sz_${k}" data-sz="${k}" min="0.6" max="1.8" step="0.05" value="${L.scale[k]}"><output id="o_${k}">${Math.round(L.scale[k]*100)} %</output>`;
   h+=`</div><h3>TIP-OFF CARD LOGOS</h3><div class="sliders"><label for="tipLogo">Logo size</label><input type="range" id="tipLogo" min="0.8" max="5" step="0.1" value="${L.tip.logo}"><output id="o_tipLogo">${L.tip.logo.toFixed(1)}×</output>
     <label for="tipLay">Placement</label><select id="tipLay"><option value="inline" ${L.tip.layout==='inline'?'selected':''}>After each team name</option><option value="above" ${L.tip.layout==='above'?'selected':''}>Big logos above the names</option><option value="before" ${L.tip.layout==='before'?'selected':''}>Before each team name</option><option value="none" ${L.tip.layout==='none'?'selected':''}>No logos</option></select><span></span></div>
-    <h3>PREVIEW</h3><div class="tipprev" id="tipPrev"></div>`;
+    <h3>PREVIEW</h3><div class="tipprev" id="tipPrev"></div>
+    <h3>ARENA</h3><p class="lead">One end of the home floor up to just past half court, as the game draws it, with the centre logo painted on the floor.</p>
+    <div class="sliders"><label for="arTeam">Home team</label><select id="arTeam">${Object.values(S.teams).sort((a,b)=>a.city.localeCompare(b.city)).map(t=>`<option value="${t.key}" ${t.key===arenaKey?'selected':''}>${esc(t.city+' '+t.nick)}</option>`).join('')}</select><span></span>
+    <label for="arLogo">Centre logo size</label><input type="range" id="arLogo" min="5" max="12" step="0.25" value="${L.court.logo}"><output id="o_arLogo">${L.court.logo.toFixed(2)} ft</output>
+    <label for="arPick">Logo</label><select id="arPick">${S.teams[arenaKey].logos.map((_,i)=>`<option value="${i}" ${i===arenaLogo?'selected':''}>Logo ${i+1}</option>`).join('')}</select><span></span></div>
+    <canvas id="arena" style="width:100%;max-width:1000px;display:block;margin-top:10px;border-radius:6px" aria-label="Arena preview"></canvas>`;
   return h;};
+// the home floor as the game draws it: 94 x 50 ft, seen from the side at the game's squash (K), centre logo flat on the floor
+let arenaKey='BAL',arenaLogo=0;const AK=0.42,ACW=94,ACH=50,AHY=25;
+function drawArena(){const cv=$('arena');if(!cv)return;const T=S.teams[arenaKey];if(!T)return;const x1=56,M=4,pxw=Math.min(1000,cv.clientWidth||900),dpr=Math.min(2,devicePixelRatio||1),u=pxw/(x1+M);
+  cv.width=Math.round(pxw*dpr);cv.height=Math.round((ACH*AK+M*2.2)*u*dpr);cv.style.height=(cv.height/dpr)+'px';const c=cv.getContext('2d');
+  c.setTransform(u*dpr,0,0,u*dpr*AK,M*u*dpr,M*1.1*u*dpr/AK*AK);   // court units; y squashed like the game
+  c.fillStyle=T.pri;c.fillRect(-M,-M*1.3/AK,ACW+2*M,ACH+M*2.6/AK);c.fillStyle='#d8a066';c.fillRect(0,0,ACW,ACH);
+  let seed=11;const rr=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  for(let y=0;y<ACH;y+=0.62){const v=(rr()-0.5)*16;c.fillStyle=`rgba(${v>0?255:60},${v>0?220:30},${v>0?170:10},${Math.abs(v)/160})`;c.fillRect(0,y,ACW,0.62);c.fillStyle='rgba(90,50,20,.16)';c.fillRect(0,y,ACW,0.05);}
+  c.fillStyle=T.pri;c.globalAlpha=0.42;c.fillRect(0,AHY-8,19,16);c.globalAlpha=0.5;c.beginPath();c.arc(ACW/2,AHY,6,0,7);c.fill();c.globalAlpha=1;
+  const LW=S.look.court.logo;c.strokeStyle='#fbf6ec';c.lineWidth=0.17;c.strokeRect(0,0,ACW,ACH);
+  c.beginPath();c.moveTo(ACW/2,0);c.lineTo(ACW/2,AHY-LW/2-0.3);c.moveTo(ACW/2,AHY+LW/2+0.3);c.lineTo(ACW/2,ACH);c.stroke();c.beginPath();c.arc(ACW/2,AHY,6,0,7);c.stroke();
+  c.strokeRect(0,AHY-8,19,16);c.beginPath();c.arc(19,AHY,6,-Math.PI/2,Math.PI/2);c.stroke();c.beginPath();c.moveTo(0,3);c.lineTo(14,3);c.moveTo(0,ACH-3);c.lineTo(14,ACH-3);c.stroke();
+  const a=Math.asin(22/23.75);c.beginPath();c.arc(5.25,AHY,23.75,-a,a);c.stroke();c.beginPath();c.arc(5.25,AHY,4,-Math.PI/2,Math.PI/2);c.stroke();
+  c.fillStyle='#ff7a1a';c.fillRect(4.25,AHY-0.12,1.2,0.24);
+  const src=T.logos[arenaLogo]||T.logos[0];
+  const fin=()=>{c.fillStyle='rgba(255,255,255,.85)';c.font='600 4.2px Teko, "Arial Narrow", sans-serif';c.textAlign='center';c.textBaseline='middle';if('letterSpacing'in c)c.letterSpacing='0.5px';
+    c.fillText(T.city.toUpperCase(),ACW*0.27,ACH+2.15);if('letterSpacing'in c)c.letterSpacing='0px';};
+  if(src){const im=new Image();im.onload=()=>{c.save();c.globalAlpha=0.95;c.imageSmoothingQuality='high';c.translate(ACW/2,AHY);c.drawImage(im,-LW/2,-LW/2,LW,LW);c.restore();fin();};im.src=src;}else fin();}
 function tipPreview(){const el=$('tipPrev');if(!el)return;const L=S.look,v=lookVars(L.theme),T=Object.values(S.teams),a=T.find(t=>t.key==='OMA')||T[0],b=T.find(t=>t.key==='BAL')||T[1];
   const im=t=>t.logos[0]?`<img src="${t.logos[0]}" alt="" style="height:${L.tip.logo}em">`:'';const nm=t=>esc(t.city+' '+t.nick).toUpperCase();
   const line=L.tip.layout==='above'?`<div class="logos">${im(a)}<span>at</span>${im(b)}</div>${nm(a)} AT ${nm(b)}`:L.tip.layout==='before'?`${im(a)} ${nm(a)} AT ${im(b)} ${nm(b)}`:L.tip.layout==='none'?`${nm(a)} AT ${nm(b)}`:`${nm(a)} ${im(a)} AT ${nm(b)} ${im(b)}`;
@@ -367,7 +390,7 @@ VIEWS.music=()=>{ROWS={};let h=`<h2>MUSIC</h2><p class="lead">The game picks tip
   return h;};
 
 VIEWS.teams=()=>{ROWS={};let h=`<h2>TEAMS, LOGOS &amp; KITS</h2><p class="lead">Names, colours, home and away kits and logos. A team with several logos shows one of them at random in each game.</p>
-  <div class="guide">Logos: square PNG with a transparent background, at least <b>256 × 256 px</b>; the game scales it to 96 px. Kit colours: base, lettering, trim, second trim.</div><div class="cards">`;
+  <div class="guide">Logos: square PNG with a transparent background, at least <b>256 × 256 px</b>; the game shows it at up to 160 px. Kit colours: base, lettering, trim, second trim.</div><div class="cards">`;
   for(const k of Object.keys(S.teams).sort((a,b)=>(S.teams[a].city).localeCompare(S.teams[b].city))){const T=S.teams[k];
     h+=`<div class="card"><h4>${esc(T.city+' '+T.nick)} <span class="tag">${esc(k)}</span></h4>
     <div class="kv"><label for="c_${k}">City</label><input type="text" id="c_${k}" data-tf="${k}:city" value="${esc(T.city)}">
@@ -408,6 +431,10 @@ function wire(){const m=$('main');
   m.querySelectorAll('[data-sz]').forEach(i=>i.oninput=()=>{S.look.scale[i.dataset.sz]=+i.value;$('o_'+i.dataset.sz).textContent=Math.round(i.value*100)+' %';tipPreview();});
   const tl=$('tipLogo');if(tl)tl.oninput=()=>{S.look.tip.logo=+tl.value;$('o_tipLogo').textContent=(+tl.value).toFixed(1)+'×';tipPreview();};
   const ty=$('tipLay');if(ty)ty.onchange=()=>{S.look.tip.layout=ty.value;tipPreview();};
+  const at=$('arTeam');if(at)at.onchange=()=>{arenaKey=at.value;arenaLogo=0;render();setTimeout(()=>$('arena')&&$('arena').scrollIntoView({block:'center'}),50);};
+  const ap=$('arPick');if(ap)ap.onchange=()=>{arenaLogo=+ap.value;drawArena();};
+  const al=$('arLogo');if(al)al.oninput=()=>{S.look.court.logo=+al.value;$('o_arLogo').textContent=(+al.value).toFixed(2)+' ft';drawArena();};
+  if(document.fonts)document.fonts.load('600 20px Teko').then(drawArena);drawArena();
   tipPreview();
   const og=$('openGame');if(og)og.onclick=()=>$('pickGame').click();
   const ov=$('openVbf');if(ov)ov.onclick=()=>$('pickVbf').click();
@@ -421,7 +448,7 @@ function pickImage(cb){pending=cb;$('pickImage').value='';$('pickImage').click()
 $('pickAudio').onchange=e=>{const f=e.target.files[0];if(!f||!pending)return;const r=new FileReader();r.onload=async()=>{const x=clip(r.result,{orig:false,text:f.name.replace(/\.mp3$/i,'').replace(/[_-]+/g,' ')});const l=await lenOf(x);if(l<0){toast('That file could not be read as audio.');return;}pending(x);pending=null;};r.readAsDataURL(f);};
 $('pickImage').onchange=e=>{const f=e.target.files[0];if(!f||!pending)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{
   if(Math.min(im.width,im.height)<256)toast(`The logo is ${im.width}×${im.height} px; 256 px or more looks better.`,5000);
-  const S2=96,c=document.createElement('canvas');c.width=c.height=S2;const g=c.getContext('2d');const k=S2/Math.max(im.width,im.height);g.imageSmoothingQuality='high';
+  const S2=160,c=document.createElement('canvas');c.width=c.height=S2;const g=c.getContext('2d');const k=S2/Math.max(im.width,im.height);g.imageSmoothingQuality='high';
   g.drawImage(im,(S2-im.width*k)/2,(S2-im.height*k)/2,im.width*k,im.height*k);pending(c.toDataURL('image/png'));pending=null;};im.src=r.result;};r.readAsDataURL(f);};
 $('pickGame').onchange=e=>{const f=e.target.files[0];if(f)loadGameFile(f);};
 $('pickVbf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{applyVbfToState(parseVbf(String(r.result)));render();toast('Setup opened: '+f.name);}catch(err){toast('Could not read the setup: '+err.message,6000);}};r.readAsText(f);};
@@ -451,7 +478,7 @@ function saveVbf(){const V=buildVbf();const txt='/* Vintage Builder setup: keep 
   toast(V.problems.length?`Saved, but ${V.problems.length} line(s) need a cut time: ${V.problems.slice(0,3).join('; ')}`:'Saved vintage.vbf. Put it in the game folder.',7000);}
 function parseVbf(txt){const i=txt.indexOf('{'),j=txt.lastIndexOf('}');const V=JSON.parse(txt.slice(i,j+1));if(V.format!=='VBF')throw new Error('not a Vintage Builder file');return V;}
 function applyVbfToState(V){if(!G)throw new Error('open the game file first');initState();
-  if(V.look)S.look={theme:V.look.theme||'vintage',scale:Object.assign(clone(LOOK0.scale),V.look.scale||{}),tip:Object.assign(clone(LOOK0.tip),V.look.tip||{})};
+  if(V.look)S.look={theme:V.look.theme||'vintage',scale:Object.assign(clone(LOOK0.scale),V.look.scale||{}),tip:Object.assign(clone(LOOK0.tip),V.look.tip||{}),court:Object.assign(clone(LOOK0.court),V.look.court||{})};
   for(const k in V.teams||{}){const T=S.teams[k];if(!T)continue;const t=V.teams[k];Object.assign(T,{city:t.city,nick:t.nick,abbr:t.abbr,pri:t.pri,sec:t.sec,numc:t.numc,kit:t.kit,logos:t.logos||T.logos,voiced:!!t.voiced});}
   for(const c in V.arr||{}){const o=G.VOX_DATA[c]||[];S.arr[c]=V.arr[c].map((src,i)=>{const j=o.indexOf(src);return j>=0?clip(src,{i:j}):clip(src,{orig:false,text:(V.notes||{})['arr.'+c+'.'+i]||'',cut:(V.hemap[c+i]&&V.hemap[c+i][0]==='ins')?String(V.hemap[c+i][1]):''});});}
   for(const v in V.obj||{}){const O=V.obj[v];S.obj[v]=S.obj[v]||{};for(const k of O.del||[])delete S.obj[v][k];
