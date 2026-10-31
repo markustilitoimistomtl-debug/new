@@ -431,7 +431,9 @@ if(VBF&&VBF.teams)for(const row of LEAGUE){const t=VBF.teams[row[0]];if(!t)conti
   if(t.city)row[1]=t.city;if(t.nick)row[2]=t.nick;row[4]=[t.pri||row[4][0],t.sec||row[4][1],t.numc||row[4][2]];
   if(t.kit)KITS[row[0]]=t.kit;if(t.abbr)ABBR[row[0]]=t.abbr;if(t.voiced)delete LEAGUE_REC[row[0]];}
 // Vintage Builder look: theme colours and fonts, panel text sizes
-const LOOK=VBF&&VBF.look?VBF.look:null;
+// the default look (chosen in the builder 31.10.); a vintage.vbf with its own look replaces it
+const DEFAULT_LOOK={"theme":"network80","scale":{"score":1,"side":1,"lower":1,"box":1,"banner":1,"tip":1},"tip":{"logo":5,"layout":"before"},"court":{"logo":9},"vars":{"--bg":"#071a33","--panel":"#0e2a52","--panel2":"#163a6b","--ink":"#f4f1e6","--dim":"#a8b8cf","--led":"#f2c14e","--hot":"#d7263d","--line":"#23497d","--f-disp":"'Oswald','Courier New',monospace","--f-body":"'Source Sans 3',system-ui,sans-serif","--f-num":"'Oswald','Arial Narrow',sans-serif"},"fonts":["Oswald","Source+Sans+3"]};
+const LOOK=VBF&&VBF.look?VBF.look:DEFAULT_LOOK;
 if(LOOK){const R=document.documentElement;for(const k in LOOK.vars||{})R.style.setProperty(k,LOOK.vars[k]);
   if(LOOK.fonts&&LOOK.fonts.length){const l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?'+LOOK.fonts.map(f=>'family='+encodeURIComponent(f).replace(/%2B/g,'+')).join('&')+'&display=swap';document.head.appendChild(l);}
   const z=LOOK.scale||{},sel={score:'#bug',side:'#side',lower:'#lower',box:'#inter .card,#final .card',banner:'#banner',tip:'#preCard'},css=[];

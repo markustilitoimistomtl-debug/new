@@ -151,6 +151,8 @@ const ARR=[
 // looks for the whole game: [id, name, idea, colours (bg, panel, panel2, ink, dim, led, hot, line), fonts (display, body, numbers)]
 const THEMES=[["vintage", "Vintage Arcade", "The original: arcade pixels and warm LED amber", ["#0d0b14", "#1a1522", "#262033", "#f1ece4", "#a39cad", "#ffb21e", "#ff5a36", "#3a3049"], ["Silkscreen", "Chakra Petch", "Teko"]], ["jam", "Jam Session", "Early-90s arcade two-on-two: loud blue, yellow and red", ["#0a0f2a", "#14204d", "#1d2d66", "#ffffff", "#9fb3ff", "#ffd400", "#ff2d2d", "#2c3f8a"], ["Press Start 2P", "Rubik", "Bungee"]], ["network80", "Network '80s", "Saturday-afternoon network broadcast in navy and gold", ["#071a33", "#0e2a52", "#163a6b", "#f4f1e6", "#a8b8cf", "#f2c14e", "#d7263d", "#23497d"], ["Oswald", "Source Sans 3", "Oswald"]], ["cable90", "Cable Sports '90s", "Black, white and a red bar, like a 90s sports channel", ["#0b0b0b", "#1a1a1a", "#2a2a2a", "#ffffff", "#b5b5b5", "#ffffff", "#e1261c", "#3a3a3a"], ["Archivo Black", "Archivo", "Archivo Narrow"]], ["showtime", "Showtime", "Purple and gold, fast-break glamour", ["#1d0b33", "#2c1250", "#3c1b6a", "#fff6e0", "#c9b4e8", "#fdb927", "#fdb927", "#4e2a80"], ["Bebas Neue", "Lato", "Bebas Neue"]], ["hardwood", "Hardwood Classics", "Warm wood, cream and slab serifs from the old programs", ["#2a1a10", "#3b2618", "#4d3322", "#f6ead2", "#c8b291", "#e8a33d", "#c8502b", "#5e4330"], ["Alfa Slab One", "Roboto Slab", "Alfa Slab One"]], ["miami", "Miami Neon", "Night-club teal and hot pink", ["#0b0f1e", "#151a33", "#1e2547", "#f2fbff", "#8fd6e8", "#2ef2ff", "#ff3fa4", "#2b3566"], ["Audiowide", "Exo 2", "Audiowide"]], ["windy", "Windy City '90s", "Red and black dynasty years", ["#0e0e0e", "#1c1416", "#2a1b1e", "#ffffff", "#c2a8ac", "#ce1141", "#ce1141", "#3d2428"], ["Anton", "Roboto Condensed", "Anton"]], ["garden", "Garden Green", "Parquet green, cream and old-school gold", ["#0c2116", "#123122", "#1a4430", "#f7f1df", "#b9cbb8", "#e8c35a", "#e05a3b", "#24553c"], ["Abril Fatface", "Libre Franklin", "Oswald"]], ["handheld", "Handheld", "Four shades of green from a pocket game console", ["#0f1f0f", "#1f3a1f", "#2d4f2d", "#c4f0c2", "#8bb88a", "#e0ff9e", "#f2ff5e", "#3f6b3f"], ["VT323", "VT323", "VT323"]], ["console16", "16-Bit Console", "Living-room console blues and bright yellow", ["#101034", "#1c1c5c", "#28287a", "#ffffff", "#a9a9e8", "#ffcc00", "#ff4f4f", "#3a3aa0"], ["Silkscreen", "Pixelify Sans", "Silkscreen"]], ["broadcast", "Modern Broadcast", "Clean slate graphics of today's TV coverage", ["#0f141a", "#19212b", "#232e3b", "#f5f7fa", "#9aa7b6", "#3fa9ff", "#ff5c5c", "#2f3c4c"], ["Barlow Condensed", "Barlow", "Barlow Condensed"]], ["amber", "Amber Scoreboard", "The arena's old bulb scoreboard", ["#120a00", "#1f1404", "#2b1d08", "#ffd89a", "#b88a4a", "#ffb000", "#ff6a00", "#4a3210"], ["Orbitron", "Share Tech Mono", "Orbitron"]], ["boxscore", "Box Score Print", "Newspaper sports page: paper, ink and red headlines", ["#efe9dc", "#f8f4ea", "#e6dfcf", "#1d1a16", "#6b6457", "#b3261e", "#b3261e", "#c9bfa9"], ["Old Standard TT", "Libre Franklin", "Oswald"]], ["street", "Street Court", "Concrete grey and safety orange from the playground", ["#1e1e1e", "#2b2b2b", "#393939", "#f2f2f2", "#b0b0b0", "#ff8c1a", "#ff8c1a", "#4a4a4a"], ["Permanent Marker", "Rubik", "Bungee"]], ["varsity", "Varsity", "College gym: maroon, cream and block letters", ["#2a0d12", "#3b141b", "#4d1c25", "#f6ecd8", "#cdb59a", "#f2c14e", "#e8e0c8", "#5e2531"], ["Graduate", "Roboto Slab", "Graduate"]], ["dream92", "Dream '92", "Summer-games blue, white and red", ["#0b1d4a", "#13296b", "#1b378a", "#ffffff", "#b3c3ea", "#ffffff", "#e2231a", "#2a4aa3"], ["Montserrat", "Montserrat", "Montserrat"]], ["hologram", "Hologram", "Future arena: dark glass and cyan light", ["#050a12", "#0a1622", "#102236", "#dffcff", "#7fb3c2", "#00e5ff", "#7c4dff", "#18344d"], ["Exo 2", "Exo 2", "Orbitron"]], ["sunset", "Sunset Coast", "West-coast evening: orange and pink", ["#1c0d1f", "#2d1530", "#3d1d40", "#fff1e6", "#e0b4c4", "#ff9f1c", "#ff4f79", "#55284f"], ["Righteous", "Nunito", "Righteous"]], ["blackout", "Blackout", "All black with silver, for the night games", ["#000000", "#0d0d0f", "#18181c", "#e8e8ec", "#8a8a93", "#c0c0c8", "#ffffff", "#2a2a30"], ["Rajdhani", "Rajdhani", "Rajdhani"]]];
 const LOOK0={theme:'vintage',scale:{score:1,side:1,lower:1,box:1,banner:1,tip:1},tip:{logo:1.6,layout:'inline'},court:{logo:9}};
+// the game's own default look (from the game file), else the original arcade look
+function baseLook(){const D=G&&G.DEFAULT_LOOK;return D?{theme:D.theme||'vintage',scale:Object.assign(clone(LOOK0.scale),D.scale||{}),tip:Object.assign(clone(LOOK0.tip),D.tip||{}),court:Object.assign(clone(LOOK0.court),D.court||{})}:clone(LOOK0);}
 const VARN=['--bg','--panel','--panel2','--ink','--dim','--led','--hot','--line'];
 function lookVars(id){const T=THEMES.find(t=>t[0]===id)||THEMES[0];const v={};VARN.forEach((k,i)=>v[k]=T[3][i]);const q=f=>`'${f}'`;v['--f-disp']=`${q(T[4][0])},'Courier New',monospace`;v['--f-body']=`${q(T[4][1])},system-ui,sans-serif`;v['--f-num']=`${q(T[4][2])},'Arial Narrow',sans-serif`;return v;}
 const ABC=i=>{let s='';i++;while(i>0){i--;s=String.fromCharCode(97+i%26)+s;i=Math.floor(i/26);}return s;};
@@ -169,19 +171,19 @@ function toast(msg,ms=3500){let t=document.querySelector('.toast');if(!t){t=docu
 /* ============ read the game file ============ */
 function readGame(text){
   const lines=text.split('\n');
-  const want=/^(const (VOX_DATA|SFX_DATA|MUSIC_LONG|TM_KEY|NAMEOFF|HEMAP|PB|TN_META|JX_META|LINE_META|ABBR|LEAGUE_REC|KITS)\b|let MUSIC_LONG\b|Object\.assign\((VOX|SFX)_DATA|VOX_DATA\.|SFX_DATA\.)/;
+  const want=/^(const (VOX_DATA|SFX_DATA|MUSIC_LONG|TM_KEY|NAMEOFF|HEMAP|PB|TN_META|JX_META|LINE_META|ABBR|LEAGUE_REC|KITS|DEFAULT_LOOK)\b|let MUSIC_LONG\b|Object\.assign\((VOX|SFX)_DATA|VOX_DATA\.|SFX_DATA\.)/;
   let code='';for(const l of lines)if(want.test(l))code+=l+'\n';
   const a=text.indexOf('const LEAGUE=[\n');const b=text.indexOf(']];',a);if(a<0||b<0)throw new Error('This does not look like the Vintage Basket game file (no team list found).');
   code+=text.slice(a,b+3)+'\n';
   const ls=lines.find(l=>l.startsWith('const LOGO_SETS='));if(ls)code+=ls.slice(0,ls.indexOf(';const LOGO_DATA'))+';\n';
-  code+='return{VOX_DATA,SFX_DATA,MUSIC_LONG,HEMAP,PB,TN_META,JN_META,TI_META,JT_META,JX_META,LEAGUE,ABBR:typeof ABBR!=="undefined"?ABBR:{},LEAGUE_REC:typeof LEAGUE_REC!=="undefined"?LEAGUE_REC:{},KITS:typeof KITS!=="undefined"?KITS:{},LOGO_SETS:typeof LOGO_SETS!=="undefined"?LOGO_SETS:{}};';
+  code+='return{VOX_DATA,SFX_DATA,MUSIC_LONG,HEMAP,PB,TN_META,JN_META,TI_META,JT_META,JX_META,LEAGUE,ABBR:typeof ABBR!=="undefined"?ABBR:{},LEAGUE_REC:typeof LEAGUE_REC!=="undefined"?LEAGUE_REC:{},KITS:typeof KITS!=="undefined"?KITS:{},LOGO_SETS:typeof LOGO_SETS!=="undefined"?LOGO_SETS:{},DEFAULT_LOOK:typeof DEFAULT_LOOK!=="undefined"?DEFAULT_LOOK:null};';
   const D=(new Function(code))();
   if(!D.VOX_DATA||!D.PB)throw new Error('The game file has no commentary data.');
   return D;}
 
 function clip(src,o={}){return Object.assign({src,orig:true,text:'',cut:'',len:null},o);}
 function initState(){
-  const V=G.VOX_DATA;S={teams:{},arr:{},obj:{},meta:{},music:[],notes:{},look:clone(LOOK0)};
+  const V=G.VOX_DATA;S={teams:{},arr:{},obj:{},meta:{},music:[],notes:{},look:baseLook()};
   for(const[k,city,nick,,cols]of G.LEAGUE){const L=G.LOGO_SETS[k]||[];
     S.teams[k]={key:k,city,nick,abbr:G.ABBR[k]||k,pri:cols[0],sec:cols[1],numc:cols[2],kit:JSON.parse(JSON.stringify(G.KITS[k]||{h:['#f4f1ea',cols[0],cols[0],cols[1]],a:[cols[0],cols[2],cols[1],cols[1]]})),
       logos:L.slice(),orig:{city,nick},voiced:!G.LEAGUE_REC[k]};}
@@ -262,7 +264,7 @@ VIEWS.home=()=>{let h=`<h2>VINTAGE BUILDER</h2><p class="lead">Pick the music, l
   return h;};
 function countClips(){let all=0,changed=0;const chk=c=>{all++;if(!c.orig||c.dirty)changed++;};
   for(const c in S.arr)S.arr[c].forEach(chk);for(const v in S.obj)Object.values(S.obj[v]).forEach(chk);
-  changed+=delCount();if(JSON.stringify(S.look)!==JSON.stringify(LOOK0))changed++;for(const k in S.teams)if(teamDirty(k))changed++;if(musicDirty())changed++;return{all,changed};}
+  changed+=delCount();if(JSON.stringify(S.look)!==JSON.stringify(baseLook()))changed++;for(const k in S.teams)if(teamDirty(k))changed++;if(musicDirty())changed++;return{all,changed};}
 function delCount(){let n=0;for(const c in S.arr){const kept=new Set(S.arr[c].filter(x=>x.orig).map(x=>x.i));n+=(G.VOX_DATA[c]||[]).filter((_,i)=>!kept.has(i)).length;}
   for(const v in S.obj)for(const k in G.VOX_DATA[v]||{})if(!S.obj[v][k])n++;return n;}
 
@@ -469,7 +471,7 @@ function buildVbf(){const V={format:'VBF',version:1,saved:new Date().toISOString
       if(['tn','jn','jx','ti'].includes(v)){const M=metaFor(x,x.len||0);if(M.err)V.problems.push(`${v}.${k}: ${M.err}`);else(V.meta[v]=V.meta[v]||{})[k]=M;}
       if(v==='pb'){const F=fillsOf(x.text);(V.meta.pb=V.meta.pb||{})[k]=Object.assign({len:+(x.len||0).toFixed(3)},F[0]&&F[0].pos==='start'?{he:0}:{});}}
     if(Object.keys(O.set).length||O.del.length)V.obj[v]=O;}
-  if(JSON.stringify(S.look)!==JSON.stringify(LOOK0)){const T=THEMES.find(t=>t[0]===S.look.theme)||THEMES[0];V.look=Object.assign(clone(S.look),{vars:lookVars(T[0]),fonts:[...new Set(T[4])].map(f=>f.replace(/ /g,'+'))});}
+  if(JSON.stringify(S.look)!==JSON.stringify(baseLook())){const T=THEMES.find(t=>t[0]===S.look.theme)||THEMES[0];V.look=Object.assign(clone(S.look),{vars:lookVars(T[0]),fonts:[...new Set(T[4])].map(f=>f.replace(/ /g,'+'))});}
   if(musicDirty()){const L=S.music.filter(x=>x.long).concat(S.music.filter(x=>!x.long));V.music={list:L.map(x=>x.src),long:L.filter(x=>x.long).length};}
   return V;}
 function saveVbf(){const V=buildVbf();const txt='/* Vintage Builder setup: keep this file next to the game (index.html) as vintage.vbf */\nwindow.VBF='+JSON.stringify(V)+';\n';
