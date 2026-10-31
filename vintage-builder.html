@@ -175,13 +175,13 @@ function toast(msg,ms=3500){let t=document.querySelector('.toast');if(!t){t=docu
 /* ============ read the game file ============ */
 function readGame(text){
   const lines=text.split('\n');
-  const want=/^(const (VOX_DATA|SFX_DATA|MUSIC_LONG|TM_KEY|NAMEOFF|HEMAP|PB|TN_META|JX_META|LINE_META|ABBR|LEAGUE_REC|KITS|DEFAULT_LOOK|DEFAULT_MUSIC_USE)\b|let MUSIC_LONG\b|Object\.assign\((VOX|SFX)_DATA|Object\.assign\(HEMAP|Object\.assign\(PB|VOX_DATA\.|SFX_DATA\.)/;
+  const want=/^(const (VOX_DATA|SFX_DATA|MUSIC_LONG|TM_KEY|NAMEOFF|HEMAP|PB|TN_META|JX_META|LINE_META|ABBR|LEAGUE_REC|KITS|DEFAULT_LOOK|DEFAULT_MUSIC_USE|RESERVE_TEAMS)\b|let MUSIC_LONG\b|Object\.assign\((VOX|SFX)_DATA|Object\.assign\(HEMAP|Object\.assign\(PB|VOX_DATA\.|SFX_DATA\.)/;
   let code='';for(const l of lines)if(want.test(l))code+=l+'\n';
   const a=text.indexOf('const LEAGUE=[\n');const b=text.indexOf(']];',a);if(a<0||b<0)throw new Error('This does not look like the Vintage Basket game file (no team list found).');
   code+=text.slice(a,b+3)+'\n';
   const ls=lines.find(l=>l.startsWith('const LOGO_SETS='));if(ls)code+=ls.slice(0,ls.indexOf(';const LOGO_DATA'))+';\n';
-  code+='return{VOX_DATA,SFX_DATA,MUSIC_LONG,HEMAP,PB,TN_META,JN_META,TI_META,JT_META,JX_META,LEAGUE,ABBR:typeof ABBR!=="undefined"?ABBR:{},LEAGUE_REC:typeof LEAGUE_REC!=="undefined"?LEAGUE_REC:{},KITS:typeof KITS!=="undefined"?KITS:{},LOGO_SETS:typeof LOGO_SETS!=="undefined"?LOGO_SETS:{},DEFAULT_LOOK:typeof DEFAULT_LOOK!=="undefined"?DEFAULT_LOOK:null,DEFAULT_MUSIC_USE:typeof DEFAULT_MUSIC_USE!=="undefined"?DEFAULT_MUSIC_USE:null};';
-  const D=(new Function(code))();
+  code+='return{VOX_DATA,SFX_DATA,MUSIC_LONG,HEMAP,PB,TN_META,JN_META,TI_META,JT_META,JX_META,LEAGUE,ABBR:typeof ABBR!=="undefined"?ABBR:{},LEAGUE_REC:typeof LEAGUE_REC!=="undefined"?LEAGUE_REC:{},KITS:typeof KITS!=="undefined"?KITS:{},LOGO_SETS:typeof LOGO_SETS!=="undefined"?LOGO_SETS:{},DEFAULT_LOOK:typeof DEFAULT_LOOK!=="undefined"?DEFAULT_LOOK:null,DEFAULT_MUSIC_USE:typeof DEFAULT_MUSIC_USE!=="undefined"?DEFAULT_MUSIC_USE:null,RESERVE:typeof RESERVE_TEAMS!=="undefined"?RESERVE_TEAMS:[]};';
+  const D=(new Function(code))();D.LEAGUE=D.LEAGUE.filter(r=>!D.RESERVE.includes(r[0]));   // teams sitting out are not edited
   if(!D.VOX_DATA||!D.PB)throw new Error('The game file has no commentary data.');
   return D;}
 

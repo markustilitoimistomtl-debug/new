@@ -497,6 +497,10 @@ const TEAMS={};
         const i=MX.P.indexOf(q),j=T.P.indexOf(p);MX.P[i]=p;T.P[j]=q;if(p.pos!==q.pos)[p.pos,q.pos]=[q.pos,p.pos];p.no=free({P:MX.P.filter(x=>x!==p)},p.no);q.no=free({P:T.P.filter(x=>x!==q)},q.no);}}};
     trade(latS,latS);trade(p=>latF(p)&&!latS(p),p=>latS(p)||latF(p));}
 })();
+// Kansas City has one team, the Tumblers. The Stockmen sit out until they get a new city (their roster is kept in
+// docs/varajoukkue-stockmen.csv); the team is generated first so every other roster and recorded name stays the same.
+const RESERVE_TEAMS=['KCK'];
+for(const k of RESERVE_TEAMS)delete TEAMS[k];
 // league characters: the superstar, the tattooed Birmingham big, the Cincinnati gentleman and the Omaha joker
 const CHAR=(()=>{const all=Object.values(TEAMS).flatMap(T=>T.P),ov=p=>p.sht+p.thr+p.ins+p.pas+p.spd,best=(L,f)=>L.slice().sort((a,b)=>f(b)-f(a))[0];
   const star=best(all.filter(p=>p.f.includes('*')),ov),bhm=TEAMS.BHM?best(TEAMS.BHM.P.filter(p=>p.pos==='C'||p.pos==='PF'),p=>p.ins+p.reb+p.ht):null,
@@ -3051,7 +3055,7 @@ function showInter(d){
   chip($('iC0'),1);chip($('iC1'),0);$('iScore').textContent=`${G.teams[1].score}–${G.teams[0].score}`;
   $('inter').hidden=false;$('touch').hidden=true;interPh=-1;interSkip=0;breakT=0;interDoneT=0;
   const bal=G.teams[0].key==='BAL';   // Baltimore: Bigfoot at half-time and in most quarter breaks; others now and then the recoloured act
-  G.breakShow=G.breakQ===2?(bal||Math.random()<0.4?{kind:'bigfoot',t0:G.time,shirts:[]}:null):{kind:Math.random()<(bal?0.25:0.5)?'dance':bal?'bigfoot':Math.random()<0.3?'bigfoot':'tshirt',t0:G.time,shirts:[]};
+  G.breakShow=G.breakQ===2?(bal?{kind:'bigfoot',t0:G.time,shirts:[]}:null):{kind:Math.random()<(bal?0.25:0.5)?'dance':bal?'bigfoot':'tshirt',t0:G.time,shirts:[]};
   setInterPh(0);sfx('horn0',{gain:0.75});const half=G.breakQ===2;if(half)sfx('halftime0',{when:2.2,gain:0.8});else sfx('fanfare'+((Math.random()*2)|0),{when:1.8,gain:0.8});
   setTimeout(()=>{if(!$('inter').hidden)Music.play();},half&&VOX.buf.halftime0?14000:3300);
 }
@@ -3137,7 +3141,7 @@ function startGame(x){
   $('preLine').innerHTML=lu(A0)+lu(H0);$('preGo').textContent=hum>=0?'TIP OFF':'TIP OFF (AUTO)';
   $('pre').hidden=false;$('pre').classList.remove('clear');$('preCard').hidden=false;$('preSkip').hidden=true;
   G.pre={kind:MASCOT_SHOW[G.teams[0].key]&&Math.random()<0.6?'mascot':SHOWS[(Math.random()*SHOWS.length)|0],T:0,ph:0,win:Math.random()<0.25};
-  if(G.pre.kind==='mascot')G.pre.anim=G.teams[0].key==='BAL'||Math.random()<0.5;   // Baltimore always has Bigfoot's act; others sometimes the recoloured act
+  if(G.pre.kind==='mascot')G.pre.anim=G.teams[0].key==='BAL';   // Bigfoot's act only in Baltimore; the other teams keep their trampoline mascot
   Music.play();try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{});}catch(e){}
 }
 // after the tip-off card: the starting lineups on the court, then the jump ball
@@ -3150,17 +3154,18 @@ function dropFirst(){if(!G||G.state!=='pregame')return;
 function openMenu(){paused=false;hideLineup();Music.stop();Crowd.stop();Bed.stop();setTimeout(()=>Music.play({slot:'m'}),350);if(G&&G.pre)stopShowAudio(G.pre);['inter','final','touch','banner','pre','season','side','lower','pbar','rost','subs'].forEach(i=>$(i).hidden=true);startAttract();$('menu').hidden=false;}
 
 /* ---------- VBL season ---------- */
-const DIVS={Atlantic:['BAL','PRO','HFD','BUF','MTL','RIC','RAL'],Central:['PIT','CIN','COL','LOU','NSH','BHM','JAX'],Midwest:['STL','KCK','ANC','OMA','TUL','AUS','ELP'],Pacific:['SEA','VAN','HNL','SDG','LVS','ABQ','MEX']};
+const DIVS={Atlantic:['BAL','PRO','HFD','BUF','MTL','RIC','RAL'],Central:['PIT','CIN','COL','LOU','NSH','BHM','JAX'],Midwest:['STL','ANC','OMA','TUL','AUS','ELP'],Pacific:['SEA','VAN','HNL','SDG','LVS','ABQ','MEX']};
 const CONFS={Eastern:['Atlantic','Central'],Western:['Midwest','Pacific']};
 const divOf=k=>Object.keys(DIVS).find(d=>DIVS[d].includes(k));
 const confOf=k=>{const d=divOf(k);return Object.keys(CONFS).find(c=>CONFS[c].includes(d));};
 let SEASON=null,seTab='overview',seStatPh='reg',seSort='ppg';
-const SKEY='vbasket-season1';
+const SKEY='vbasket-season2';   // new key: the league changed size
 function seSave(){try{localStorage.setItem(SKEY,JSON.stringify(SEASON));}catch(e){}}
 function seLoad(){if(SEASON)return;try{const s=JSON.parse(localStorage.getItem(SKEY)||'null');if(s&&s.v===1&&TEAMS[s.team])SEASON=s;}catch(e){}}
 function emptyStats(){const ps={};for(const k in TEAMS)for(const p of TEAMS[k].P)ps[p.n]={t:k,no:p.no,pos:p.pos,gp:0,min:0,pts:0,reb:0,ast:0,stl:0,blk:0,fgm:0,fga:0,tpm:0,tpa:0,ftm:0,fta:0};return{ps};}
-function makeSchedule(){const ks=Object.keys(TEAMS),n=ks.length,days=[];let arr=ks.slice();
-  for(let cyc=0;days.length<82;cyc++)for(let r=0;r<n-1&&days.length<82;r++){const d=[];for(let i=0;i<n/2;i++){let h=arr[i],a=arr[n-1-i];if((r+cyc+i)%2)[h,a]=[a,h];d.push([h,a]);}days.push(d);arr=[arr[0],arr[n-1],...arr.slice(1,n-1)];}
+// round robin; with an odd number of teams one team rests each day, and the season runs a few days longer so everyone still plays about 82
+function makeSchedule(){const ks=Object.keys(TEAMS),odd=ks.length%2,arr0=odd?ks.concat([null]):ks.slice(),n=arr0.length,D=odd?Math.round(82*n/(n-1)):82,days=[];let arr=arr0;
+  for(let cyc=0;days.length<D;cyc++)for(let r=0;r<n-1&&days.length<D;r++){const d=[];for(let i=0;i<n/2;i++){let h=arr[i],a=arr[n-1-i];if(!h||!a)continue;if((r+cyc+i)%2)[h,a]=[a,h];d.push([h,a]);}days.push(d);arr=[arr[0],arr[n-1],...arr.slice(1,n-1)];}
   return days;}
 function newSeason(team,minutes){const st={};for(const k in TEAMS)st[k]={gp:0,w:0,l:0,pf:0,pa:0};
   SEASON={v:1,team,minutes,day:0,sched:makeSchedule(),st,stats:{reg:emptyStats(),po:emptyStats()},phase:'reg',po:null,recent:[]};seSave();}
@@ -3280,6 +3285,7 @@ function openSeason(){seLoad();paused=false;Bed.stop();Music.play({slot:'m'});['
 
 /* ---------- controls ---------- */
 const keysT=Object.keys(TEAMS).sort((a,b)=>(TEAMS[a].city+TEAMS[a].nick).localeCompare(TEAMS[b].city+TEAMS[b].nick));
+if(!TEAMS[opts.home])opts.home='SEA';if(!TEAMS[opts.away]||opts.away===opts.home)opts.away=keysT.find(k=>k!==opts.home);   // a saved pick of a team that sits out
 for(const sid of['selHome','selAway']){const s=$(sid);for(const k of keysT){const o=document.createElement('option');o.value=k;o.textContent=`${TEAMS[k].city} ${TEAMS[k].nick}`;s.appendChild(o);}}
 function save(){try{localStorage.setItem('vbasket',JSON.stringify(opts));}catch(e){}}
 function seg(id,key){const box=$(id);box.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;for(const x of box.querySelectorAll('button'))x.setAttribute('aria-pressed',x===b?'true':'false');opts[key]=+b.dataset.v;save();});}
