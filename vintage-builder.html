@@ -132,6 +132,8 @@ const PB_LAB={num:'"Number" before a jersey number',loft:'Long three in the air'
  fire:'On fire',roof:'Raises the roof',rhythm:'Finding his rhythm',loose:'Loose ball',pts3:'Three points',pts2:'Two points'};
 // array categories: prefix = who is named before the clip (player or team)
 const ARR=[
+ ['Characters','chStar','Superstar scores','P','line'],['Characters','chTattoo','Tattooed big (Birmingham) scores','P','line'],['Characters','chGent','The gentleman (Cincinnati) scores','P','line'],
+ ['Characters','chJoker','The joker (Omaha) scores','P','line'],['Characters','mexMom','Mexico City momentum (Spanish)','','line'],
  ['Fouls','foul','Foul warning','P','line'],['Fouls','trouble','Foul trouble (fifth foul)','P','line'],['Fouls','out','Fouled out','P','line'],
  ['Moments','scorer','New leading scorer','P','line'],['Moments','boards','New leading rebounder','P','line'],['Moments','jam','Dunk','P','line'],
  ['Moments','ddrib','Double dribble','P','line'],['Moments','handle','Ball handling','P','line'],['Moments','brk','Breakaway','P','line'],
@@ -187,7 +189,7 @@ function initState(){
   for(const[k,city,nick,,cols]of G.LEAGUE){const L=G.LOGO_SETS[k]||[];
     S.teams[k]={key:k,city,nick,abbr:G.ABBR[k]||k,pri:cols[0],sec:cols[1],numc:cols[2],kit:JSON.parse(JSON.stringify(G.KITS[k]||{h:['#f4f1ea',cols[0],cols[0],cols[1]],a:[cols[0],cols[2],cols[1],cols[1]]})),
       logos:L.slice(),orig:{city,nick},voiced:!G.LEAGUE_REC[k]};}
-  for(const[, c]of ARR)if(Array.isArray(V[c]))S.arr[c]=V[c].map((src,i)=>clip(src,{i}));
+  for(const[, c]of ARR)S.arr[c]=(Array.isArray(V[c])?V[c]:[]).map((src,i)=>clip(src,{i}));
   for(const v of['pb','tn','jn','jx','ti','city','nick','team','jt','pn','pnum','pbn','ppos','th','tmx']){S.obj[v]={};for(const k in V[v]||{})S.obj[v][k]=clip(V[v][k]);}
   S.meta={pb:clone(G.PB),tn:clone(G.TN_META),jn:clone(G.JN_META),jx:clone(G.JX_META),ti:clone(G.TI_META)};
   S.music=(G.SFX_DATA.music||[]).map((src,i)=>clip(src,{use:useDefault(i,i<G.MUSIC_LONG)}));
@@ -313,7 +315,7 @@ function arrSection(groups,title,lead){ROWS={};let h=`<h2>${title}</h2><p class=
       return rowHTML(reg({kind:'arr',ctx:{cat,pre},c,del:()=>S.arr[cat].splice(S.arr[cat].indexOf(c),1),imp:x=>{S.arr[cat][S.arr[cat].indexOf(c)]=Object.assign(x,{orig:false});}}),lab,nm,c,{cutOK:pre==='P',lk,ph:pre==='P'?'e.g. P takes his first warning':pre==='X'?'e.g. X has gone ice cold':'Write the line'});}).join('');
     h+=`<div class="guide">${esc(lab)}: ${pre==='P'?'the player is named before the line (write P first, or P in the middle with a cut time).':pre==='X'?'the team is named before the line.':'played as it is.'} Length <b>${LEN_TXT(lk)}</b>.</div>${TABLE_HEAD}${rows}</tbody></table><button data-add="${reg({add:x=>S.arr[cat].push(Object.assign(x,{orig:false}))})}">+ Add a line</button>`;}
   return h;}
-VIEWS.moments=()=>arrSection(['Fouls','Moments','Team play','Game flow','Arena announcer'],'PLAYERS &amp; MOMENTS','Lines for fouls, milestones, team runs and the arena announcer.');
+VIEWS.moments=()=>arrSection(['Characters','Fouls','Moments','Team play','Game flow','Arena announcer'],'PLAYERS &amp; MOMENTS','Lines for the league characters, fouls, milestones, team runs and the arena announcer. The characters: the league superstar, the tattooed Birmingham big, the Cincinnati gentleman and the Omaha joker; their line plays on some of their baskets.');
 VIEWS.arena=()=>arrSection(['Crowd','Arena'],'CROWD &amp; ARENA SOUNDS','Chants, cheers, the crowd bed and the arena horns and fanfares.');
 
 VIEWS.names=()=>{ROWS={};let h=`<h2>TEAM NAMES &amp; INTROS</h2><p class="lead">How the commentators say each team. Every phrase with X uses these. A team with a new name needs new name clips; until then the game says only the city, or no name at all if the city changed too.</p>
@@ -390,8 +392,8 @@ VIEWS.music=()=>{ROWS={};let h=`<h2>MUSIC</h2><p class="lead">Tick where each tr
   <div class="guide">Tip-off tracks <b>${LEN_TXT('musicL')}</b> (faded out after 40 s), other music <b>${LEN_TXT('musicS')}</b>. MP3, 44.1 kHz. A moment with no tracks ticked uses all of them.</div>
   <table><thead><tr><th>Track</th>${SLOTS.map(x=>`<th>${x[1]}</th>`).join('')}<th>Length</th><th></th></tr></thead><tbody>`;
   S.music.forEach((c,i)=>{const id=reg({kind:'one',c,del:()=>S.music.splice(S.music.indexOf(c),1),imp:x=>{S.music[S.music.indexOf(c)]=Object.assign(x,{orig:false,use:c.use});}});
-    h+=`<tr class="${c.orig?'':'new'}"><td>${c.orig?'Track '+(i+1):`<input class="phrase" type="text" data-phr="${id}" value="${esc(c.text)}" placeholder="Track name" aria-label="Track name">`}</td>
-     ${SLOTS.map(([k,lab])=>`<td><input type="checkbox" data-use="${id}:${k}" ${c.use.includes(k)?'checked':''} aria-label="${lab}"></td>`).join('')}
+    const tm=c.use.split('@')[1];h+=`<tr class="${c.orig?'':'new'}"><td>${tm?`<span class="tag">${esc(S.teams[tm]?S.teams[tm].city+' '+S.teams[tm].nick:tm)} home games</span> `:''}${c.orig?'Track '+(i+1):`<input class="phrase" type="text" data-phr="${id}" value="${esc(c.text)}" placeholder="Track name" aria-label="Track name">`}</td>
+     ${SLOTS.map(([k,lab])=>`<td><input type="checkbox" data-use="${id}:${k}" ${c.use.split('@')[0].includes(k)?'checked':''} aria-label="${lab}"></td>`).join('')}
      <td class="len" data-len="${id}" data-lk="${c.use.includes('t')?'musicL':'musicS'}">…</td><td class="act"><button data-play="${id}">Play</button><button data-stop="1">Stop</button><button class="del" data-del="${id}">Delete</button><button data-imp="${id}">Import</button></td></tr>`;});
   h+=`</tbody></table><button data-add="${reg({add:x=>S.music.push(Object.assign(x,{orig:false,use:'b'}))})}">+ Add a track</button>`;
   return h;};
@@ -429,7 +431,7 @@ function wire(){const m=$('main');
   m.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>pickAudio(x=>{ROWS[b.dataset.add].add(x);render();toast('Added. Write the phrase so the game knows where the names go.');}));
   m.querySelectorAll('[data-phr]').forEach(i=>i.onchange=()=>{ROWS[i.dataset.phr].c.text=i.value;});
   m.querySelectorAll('[data-cut]').forEach(i=>i.onchange=()=>{ROWS[i.dataset.cut].c.cut=i.value;});
-  m.querySelectorAll('[data-use]').forEach(cb=>cb.onchange=()=>{const[id,k]=cb.dataset.use.split(':'),c=ROWS[id].c;c.use=SLOTS.map(x=>x[0]).filter(x=>x===k?cb.checked:c.use.includes(x)).join('');});
+  m.querySelectorAll('[data-use]').forEach(cb=>cb.onchange=()=>{const[id,k]=cb.dataset.use.split(':'),c=ROWS[id].c,[sl,tm]=c.use.split('@');c.use=SLOTS.map(x=>x[0]).filter(x=>x===k?cb.checked:sl.includes(x)).join('')+(tm?'@'+tm:'');});
   m.querySelectorAll('[data-tf]').forEach(i=>i.onchange=()=>{const[k,f]=i.dataset.tf.split(':');S.teams[k][f]=i.value;if(f==='city'||f==='nick')render();});
   m.querySelectorAll('[data-kit]').forEach(i=>i.oninput=()=>{const[k,s,n]=i.dataset.kit.split(':');S.teams[k].kit[s][+n]=i.value;const card=i.closest('.card');card.querySelector('.kits').innerHTML=kitSVG(S.teams[k].kit.h,S.teams[k].nick)+kitSVG(S.teams[k].kit.a,S.teams[k].city);});
   m.querySelectorAll('[data-ldel]').forEach(b=>b.onclick=()=>{const[k,i]=b.dataset.ldel.split(':');S.teams[k].logos.splice(+i,1);render();});
@@ -494,7 +496,7 @@ function resetPage(v){const keep=S;initState();const F=S;S=keep;
   switch(v){case'look':S.look=F.look;break;case'teams':S.teams=F.teams;break;case'music':S.music=F.music;break;
     case'names':obj('city','nick','team','jt','ti');meta('ti');for(const k in S.teams)S.teams[k].voiced=F.teams[k].voiced;break;
     case'story':obj('tn','jn','jx');meta('tn','jn','jx');break;case'pb':obj('pb');meta('pb');break;
-    case'moments':arrG(['Fouls','Moments','Team play','Game flow','Arena announcer']);break;case'arena':arrG(['Crowd','Arena']);break;
+    case'moments':arrG(['Characters','Fouls','Moments','Team play','Game flow','Arena announcer']);break;case'arena':arrG(['Crowd','Arena']);break;
     case'players':obj('pn','pnum','pbn','ppos');break;case'horns':obj('th');break;}}
 /* ============ the setup file ============ */
 function teamDirty(k){const T=S.teams[k],row=G.LEAGUE.find(r=>r[0]===k);if(!row)return true;
