@@ -108,7 +108,10 @@
                 <span class="font-medium">Aihe: <strong id="step-count" class="text-amber-400 font-bold text-sm">1</strong> / <span id="step-total">10</span></span>
                 <span id="followup-badge" class="hidden px-1.5 py-0.5 rounded bg-emerald-700/60 text-emerald-200 text-[10px] font-bold uppercase tracking-wide">jatkokysymys</span>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
+                <button id="play-btn" onclick="togglePlayMode()" class="text-xs font-bold flex items-center gap-1.5 px-2.5 py-0.5 rounded border bg-emerald-700/70 hover:bg-emerald-600 border-emerald-500 text-white" title="Soittomoodi: kone valitsee vastaukset itse ja keskustelu etenee automaattisesti (P)">
+                    <i id="play-icon" class="fa-solid fa-play"></i> <span id="play-status">Soitto</span>
+                </button>
                 <div class="font-medium"><i class="fa-solid fa-code-branch text-amber-400 mr-1"></i> <span id="nodes-explored" class="font-bold text-white">0</span> valintaa</div>
                 <button onclick="toggleHistory()" class="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 bg-slate-700/60 px-2 py-0.5 rounded border border-slate-600">
                     <i class="fa-solid fa-clock-rotate-left"></i> Historia
@@ -144,7 +147,7 @@
                             <i class="fa-solid fa-repeat"></i> Kertaus · kuuntele ja lue
                             <span id="drill-tense" class="px-1.5 py-0.5 rounded bg-emerald-700/60 text-white normal-case tracking-normal text-xs"></span>
                         </div>
-                        <div id="drill-list" class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 max-h-[34vh] overflow-y-auto pr-1"></div>
+                        <div id="drill-list" class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1"></div>
                     </div>
 
                     <!-- Seuraava kysymys -->
@@ -161,8 +164,15 @@
             </div>
         </div>
 
+        <!-- Kertaussivun jatkopainike -->
+        <div id="continue-bar" class="hidden shrink-0">
+            <button id="continue-btn" onclick="continueToQuestion()" class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-base sm:text-lg rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                <span id="continue-label">Jatka seuraavaan kysymykseen</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
         <!-- Options -->
-        <div class="flex-1 flex flex-col justify-end bg-slate-800/90 p-2.5 sm:p-3 rounded-xl border border-slate-700 shadow-xl min-h-0 overflow-hidden">
+        <div id="options-panel" class="flex-1 flex flex-col justify-end bg-slate-800/90 p-2.5 sm:p-3 rounded-xl border border-slate-700 shadow-xl min-h-0 overflow-hidden">
             <div class="flex items-center justify-between mb-1.5 px-1 shrink-0">
                 <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                     <i class="fa-regular fa-comments text-amber-400"></i> Valitse vastaus <span class="normal-case font-normal text-slate-400">(tai paina numeroa)</span>:
@@ -1400,6 +1410,11 @@
             currentOptions: [],
             currentQuestionEs: "",
             currentItems: [],
+            currentOnDone: null,
+            pendingNext: null,
+            view: 'question',
+            playMode: false,
+            playTimer: null,
             busy: false,
             history: []
         };
@@ -1549,6 +1564,8 @@
 
         function initGame() {
             stopSpeech();
+            clearPlayTimer();
+            state.pendingNext = null;
             state.nodesExplored = 0;
             state.history = [];
             state.visited = {};
@@ -1557,7 +1574,7 @@
             state.topicNumber = 1;
             state.topicTotal = state.mainQueue.length + 2; // aloitus + pääaiheet + lopetus
 
-            goToNode(START_NODE, null, false);
+            goToNode(START_NODE, null, state.playMode);
             updateHistoryUI();
         }
 
@@ -1582,8 +1599,8 @@
             state.visited[nodeId] = true;
             if (option && !node.followup) state.topicNumber++;
 
-            renderScreen(option, node.q, node.qFi, speakIt);
             setOptions(node.opts);
+            showQuestion(node.q, node.qFi, speakIt);
 
             var badge = document.getElementById('followup-badge');
             if (badge) badge.classList.toggle('hidden', !node.followup);
@@ -1592,20 +1609,21 @@
 
         function finishGame(option) {
             state.currentNodeId = null;
-            renderScreen(option,
+            setOptions([]);
+            showQuestion(
                 "¡Excelente trabajo! Has completado esta conversación. ¡Sigue practicando!",
                 "Hienoa työtä! Olet suorittanut tämän keskustelun. Jatka harjoittelua!",
                 true
             );
-            setOptions([]);
             var badge = document.getElementById('followup-badge');
             if (badge) badge.classList.add('hidden');
             updateStats();
         }
 
         function selectOption(option, btn) {
-            if (state.busy) return;
+            if (state.busy || state.view !== 'question') return;
             state.busy = true;
+            clearPlayTimer();
 
             state.nodesExplored++;
             state.history.push({ q: state.currentQuestionEs, ans: option.es, fi: option.fi });
@@ -1623,12 +1641,15 @@
 
             var proceed = function() {
                 var nextId = pickNextNodeId(option);
-                if (nextId) goToNode(nextId, option, true);
-                else finishGame(option);
+                var goNext = function() {
+                    if (nextId) goToNode(nextId, option, true);
+                    else finishGame(option);
+                };
                 state.busy = false;
+                showReview(option, goNext);
             };
 
-            if (state.readMyAnswers) {
+            if (state.readMyAnswers || state.playMode) {
                 stopSpeech();
                 speakQueue([{ text: option.es, role: 'user', el: btn, pause: 250 }], proceed);
             } else {
@@ -1717,71 +1738,151 @@
             if (el) el.textContent = text || '';
         }
 
-        // Näyttää: kuittaus -> verbikertaus (yo / tú) -> seuraava kysymys
-        function renderScreen(option, qEsText, qFiText, speakIt) {
-            state.currentQuestionEs = qEsText;
-            var ackBlock = document.getElementById('ack-block');
-            var drillBlock = document.getElementById('drill-block');
-            var qBlock = document.getElementById('question-block');
+        function shouldSpeak() { return state.autoAudio || state.playMode; }
+
+        function setView(view) {
+            state.view = view;
+            var review = view === 'review';
             var box = document.getElementById('ai-box');
-            var items = [];
+            document.getElementById('ack-block').classList.toggle('hidden', !review);
+            document.getElementById('drill-block').classList.toggle('hidden', !review || !document.getElementById('drill-list').children.length);
+            document.getElementById('question-block').classList.toggle('hidden', review);
+            document.getElementById('continue-bar').classList.toggle('hidden', !review);
+            document.getElementById('options-panel').classList.toggle('hidden', review);
+            // Kertaussivulla laatikko saa koko korkeuden ja vierittyy
+            box.classList.toggle('flex-1', review);
+            box.classList.toggle('min-h-0', review);
+            box.classList.toggle('overflow-y-auto', review);
+            box.classList.toggle('shrink-0', !review);
+            box.scrollTop = 0;
+            box.classList.remove('fade-in'); void box.offsetWidth; box.classList.add('fade-in');
+        }
 
-            if (option && option.ack) {
-                setText('ack-es', option.ack);
-                setText('ack-fi', option.ackFi);
-                ackBlock.classList.remove('hidden');
-                items.push({ text: option.ack, role: 'ai', el: ackBlock, pause: 450 });
-            } else {
-                ackBlock.classList.add('hidden');
-            }
-
-            var drills = option && option.drills;
+        // SIVU 1: kuittaus + 10 kertausparia. Sen jälkeen vaihdetaan kysymyssivulle.
+        function showReview(option, goNext) {
+            var ackBlock = document.getElementById('ack-block');
             var list = document.getElementById('drill-list');
+            var items = [];
             list.innerHTML = '';
-            if (drills && drills.length) {
-                setText('drill-tense', TENSE_LABELS[option.tense] || option.tense);
-                drills.forEach(function(d) {
-                    var row = document.createElement('div');
-                    row.className = 'border-l-2 border-emerald-700/60 pl-2';
-                    row.innerHTML =
-                        '<div class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">' + escapeHtml(d.verb) +
-                        ' <span class="normal-case tracking-normal text-emerald-200/70">· ' + escapeHtml(d.forms[0]) + ' / ' + escapeHtml(d.forms[1]) + '</span></div>' +
-                        '<div class="drill-yo speak-line cursor-pointer rounded px-1 -mx-1">' +
-                            '<p class="text-sm sm:text-base font-bold text-emerald-100 leading-snug">' + escapeHtml(d.es1) + '</p>' +
-                            '<p class="translation-hint text-xs text-emerald-200/60 italic leading-tight">' + escapeHtml(d.fi1) + '</p></div>' +
-                        '<div class="drill-tu speak-line cursor-pointer rounded px-1 -mx-1">' +
-                            '<p class="text-sm sm:text-base font-bold text-amber-200 leading-snug">' + escapeHtml(d.es2) + '</p>' +
-                            '<p class="translation-hint text-xs text-amber-200/60 italic leading-tight">' + escapeHtml(d.fi2) + '</p></div>';
-                    var yo = row.querySelector('.drill-yo'), tu = row.querySelector('.drill-tu');
-                    yo.onclick = function() { say(d.es1, 'user'); };
-                    tu.onclick = function() { say(d.es2, 'ai'); };
-                    list.appendChild(row);
-                    items.push({ text: d.es1, role: 'user', el: yo, pause: 300 });
-                    items.push({ text: d.es2, role: 'ai', el: tu, pause: 500 });
-                });
-                list.scrollTop = 0;
-                drillBlock.classList.remove('hidden');
-            } else {
-                drillBlock.classList.add('hidden');
-            }
 
+            setText('ack-es', option.ack);
+            setText('ack-fi', option.ackFi);
+            ackBlock.onclick = function() { say(option.ack, 'ai'); };
+            items.push({ text: option.ack, role: 'ai', el: ackBlock, pause: 450 });
+
+            (option.drills || []).forEach(function(d) {
+                var row = document.createElement('div');
+                row.className = 'border-l-2 border-emerald-700/60 pl-2';
+                row.innerHTML =
+                    '<div class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">' + escapeHtml(d.verb) +
+                    ' <span class="normal-case tracking-normal text-emerald-200/70">· ' + escapeHtml(d.forms[0]) + ' / ' + escapeHtml(d.forms[1]) + '</span></div>' +
+                    '<div class="drill-yo speak-line cursor-pointer rounded px-1 -mx-1">' +
+                        '<p class="text-sm sm:text-base font-bold text-emerald-100 leading-snug">' + escapeHtml(d.es1) + '</p>' +
+                        '<p class="translation-hint text-xs text-emerald-200/60 italic leading-tight">' + escapeHtml(d.fi1) + '</p></div>' +
+                    '<div class="drill-tu speak-line cursor-pointer rounded px-1 -mx-1">' +
+                        '<p class="text-sm sm:text-base font-bold text-amber-200 leading-snug">' + escapeHtml(d.es2) + '</p>' +
+                        '<p class="translation-hint text-xs text-amber-200/60 italic leading-tight">' + escapeHtml(d.fi2) + '</p></div>';
+                var yo = row.querySelector('.drill-yo'), tu = row.querySelector('.drill-tu');
+                yo.onclick = function() { say(d.es1, 'user'); };
+                tu.onclick = function() { say(d.es2, 'ai'); };
+                list.appendChild(row);
+                items.push({ text: d.es1, role: 'user', el: yo, pause: 300 });
+                items.push({ text: d.es2, role: 'ai', el: tu, pause: 500 });
+            });
+            setText('drill-tense', TENSE_LABELS[option.tense] || option.tense);
+
+            state.pendingNext = goNext;
+            state.currentItems = items;
+            state.currentOnDone = function() { setTimeout(continueToQuestion, 700); };
+            setText('continue-label', goNext ? 'Jatka seuraavaan kysymykseen' : 'Jatka');
+            setView('review');
+            applyHintVisibility();
+
+            if (shouldSpeak()) speakQueue(items, state.currentOnDone);
+        }
+
+        // Siirtyy kertaussivulta seuraavaan kysymykseen
+        function continueToQuestion() {
+            if (state.view !== 'review' || !state.pendingNext) return;
+            var go = state.pendingNext;
+            state.pendingNext = null;
+            stopSpeech();
+            go();
+        }
+
+        // SIVU 2: pelkkä kysymys ja vastauspainikkeet
+        function showQuestion(qEsText, qFiText, speakIt) {
+            state.currentQuestionEs = qEsText;
+            var qBlock = document.getElementById('question-block');
             setText('ai-question-es', qEsText);
             setText('ai-question-fi', qFiText);
-            items.push({ text: qEsText, role: 'ai', el: qBlock });
-
-            if (option && option.ack) ackBlock.onclick = function() { say(option.ack, 'ai'); };
             qBlock.onclick = function(e) {
                 if (e.target.closest('#speak-btn')) return;
                 say(qEsText, 'ai');
             };
-            var speakBtn = document.getElementById('speak-btn');
-            if (speakBtn) speakBtn.onclick = function(e) { e.stopPropagation(); speakQueue(state.currentItems); };
-
+            var items = [{ text: qEsText, role: 'ai', el: qBlock }];
             state.currentItems = items;
+            state.currentOnDone = schedulePlayStep;
+            setView('question');
             applyHintVisibility();
-            if (box) { box.classList.remove('fade-in'); void box.offsetWidth; box.classList.add('fade-in'); }
 
-            if (speakIt && state.autoAudio) speakQueue(items);
+            if (speakIt && shouldSpeak()) speakQueue(items, state.currentOnDone);
+            else if (state.playMode) schedulePlayStep();
+        }
+
+        // ------------------------------------------------------------------
+        //  SOITTOMOODI: kone valitsee vastaukset ja keskustelu etenee itsestään
+        // ------------------------------------------------------------------
+        var wakeLock = null;
+        function clearPlayTimer() {
+            if (state.playTimer) { clearTimeout(state.playTimer); state.playTimer = null; }
+        }
+        function schedulePlayStep() {
+            clearPlayTimer();
+            if (!state.playMode || state.view !== 'question') return;
+            state.playTimer = setTimeout(function() {
+                state.playTimer = null;
+                if (!state.playMode || state.view !== 'question' || state.busy) return;
+                var opts = state.currentOptions || [];
+                if (!opts.length) { initGame(); return; }      // keskustelu loppui -> uusi alkaa
+                var idx = Math.floor(Math.random() * opts.length);
+                var container = document.getElementById('options-container');
+                selectOption(opts[idx], container ? container.children[idx] : null);
+            }, (state.currentOptions && state.currentOptions.length ? 1800 : 5000) / state.rate);
+        }
+        function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then(function(l) { wakeLock = l; }).catch(function() {});
+            } catch (e) {}
+        }
+        function releaseWakeLock() {
+            try { if (wakeLock) wakeLock.release(); } catch (e) {}
+            wakeLock = null;
+        }
+        document.addEventListener('visibilitychange', function() {
+            if (state.playMode && document.visibilityState === 'visible') requestWakeLock();
+        });
+
+        function togglePlayMode() {
+            state.playMode = !state.playMode;
+            stopSpeech();
+            clearPlayTimer();
+            applyPlayUI();
+            if (state.playMode) {
+                requestWakeLock();
+                // Jatketaan siitä, missä ollaan: luetaan sivu ja edetään
+                if (state.busy) return;
+                speakQueue(state.currentItems || [], state.currentOnDone);
+            } else {
+                releaseWakeLock();
+            }
+        }
+        function applyPlayUI() {
+            var btn = document.getElementById('play-btn');
+            setText('play-status', state.playMode ? 'Pysäytä' : 'Soitto');
+            document.getElementById('play-icon').className = state.playMode ? 'fa-solid fa-stop' : 'fa-solid fa-play';
+            btn.className = 'text-xs font-bold flex items-center gap-1.5 px-2.5 py-0.5 rounded border text-white ' +
+                (state.playMode ? 'bg-rose-700/80 hover:bg-rose-600 border-rose-500 animate-pulse' : 'bg-emerald-700/70 hover:bg-emerald-600 border-emerald-500');
         }
 
         function applyHintVisibility() {
@@ -1860,17 +1961,25 @@
         document.addEventListener('keydown', function(e) {
             if (e.target && (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT')) return;
             var n = parseInt(e.key, 10);
-            if (!isNaN(n) && n >= 1 && n <= state.currentOptions.length) {
+            if (e.key === 'p' || e.key === 'P') { togglePlayMode(); return; }
+            if (e.key === 'Enter' && state.view === 'review') { e.preventDefault(); continueToQuestion(); return; }
+            if (state.view === 'question' && !isNaN(n) && n >= 1 && n <= state.currentOptions.length) {
                 var container = document.getElementById('options-container');
                 selectOption(state.currentOptions[n - 1], container ? container.children[n - 1] : null);
             } else if (e.key === ' ') {
                 e.preventDefault();
-                speakQueue(state.currentItems || []);
+                speakQueue(state.currentItems || [], shouldSpeak() ? state.currentOnDone : null);
             }
         });
 
+        document.getElementById('speak-btn').onclick = function(e) {
+            e.stopPropagation();
+            speakQueue(state.currentItems || [], shouldSpeak() ? state.currentOnDone : null);
+        };
+
         loadSettings();
         applySettingsUI();
+        applyPlayUI();
         initGame();
     </script>
 </body>
