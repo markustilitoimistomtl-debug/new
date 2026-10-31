@@ -58,6 +58,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hi
 .brow{display:flex;align-items:center;gap:8px;height:26px}
 .brow .chip{min-width:44px;text-align:center;box-sizing:border-box}
 .tlogo{height:1.6em;width:auto;vertical-align:middle;margin:0 .1em}
+.tlogos{display:flex;justify-content:center;align-items:center;gap:.6em;margin-bottom:.3em;font-size:.8em}
 .chip.logo{background:transparent!important;box-shadow:none!important;padding:0 9px}
 .bnote{font-family:var(--f-body);font-size:13px;font-weight:700;color:#fff;white-space:nowrap;letter-spacing:.02em}
 .bnote:empty{display:none}
@@ -206,7 +207,9 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeri
 .lu .lc.hi b{color:#fff}.lu .lc.hi i{color:#fff}
 .lu .lc.warn b{color:var(--hot)}
 #luHint .hk{display:inline-block;width:1.4em;height:.9em;vertical-align:-.1em;border-radius:2px;border:1px solid #fff;box-sizing:border-box;margin-right:.4em}
-#luHint{font-family:var(--f-disp);font-size:10px;color:var(--dim);letter-spacing:.12em}
+#luHint,#luHint2{font-family:var(--f-disp);font-size:10px;color:var(--dim);letter-spacing:.12em}
+.lu .lsub{font-size:.8em;color:var(--dim);margin-top:.35em;line-height:1.25;white-space:normal}
+.lu .lsub b{display:block;font-size:.8em;letter-spacing:.12em;color:var(--dim);opacity:.75;font-weight:400}
 /* stat panels: text 40% larger, 90s sport numerals for the big yellow figures (scoreboard unchanged) */
 #side{width:380px}
 #side .pk,#lower .pk{font-family:var(--f-body);font-weight:700;font-size:15px;letter-spacing:.1em}
@@ -272,7 +275,7 @@ input[type=file]{font-family:var(--f-body);font-size:13px;color:var(--ink);max-w
       <canvas id="cv"></canvas>
       <div id="banner" hidden><div id="bTitle">SLAM!</div><div id="bText"></div></div>
       <div id="pbar" hidden><span class="pk" id="pbK"></span><span id="pbT"></span></div>
-      <div id="lineupOv" hidden><div id="luHead"></div><div id="luCourt"><canvas id="luCv"></canvas><div id="luBoxes"></div></div><div id="luHint"><span class="hk"></span>KEY STATS FOR EACH POSITION &nbsp;·&nbsp; PAUSED · TAP OR PRESS P TO RESUME</div></div>
+      <div id="lineupOv" hidden><div id="luHead"></div><div id="luCourt"><canvas id="luCv"></canvas><div id="luBoxes"></div></div><div id="luHint"><span class="hk"></span>KEY STATS FOR EACH POSITION &nbsp;·&nbsp; PAUSED · TAP OR PRESS P TO RESUME</div><div id="luHint2" hidden>TAP TO TIP OFF</div></div>
       <div id="lower" hidden><div class="pk" id="loK">LATE · 1ST QTR</div><div class="pt" id="loT">TOP 3</div><div id="loB"></div></div>
       <div id="touch" hidden>
         <div id="joy"><div id="knobBase" hidden><div id="knob" style="left:55px;top:55px"></div></div></div>
@@ -427,6 +430,12 @@ const VBF=typeof window!=='undefined'&&window.VBF&&window.VBF.format==='VBF'?win
 if(VBF&&VBF.teams)for(const row of LEAGUE){const t=VBF.teams[row[0]];if(!t)continue;
   if(t.city)row[1]=t.city;if(t.nick)row[2]=t.nick;row[4]=[t.pri||row[4][0],t.sec||row[4][1],t.numc||row[4][2]];
   if(t.kit)KITS[row[0]]=t.kit;if(t.abbr)ABBR[row[0]]=t.abbr;if(t.voiced)delete LEAGUE_REC[row[0]];}
+// Vintage Builder look: theme colours and fonts, panel text sizes
+const LOOK=VBF&&VBF.look?VBF.look:null;
+if(LOOK){const R=document.documentElement;for(const k in LOOK.vars||{})R.style.setProperty(k,LOOK.vars[k]);
+  if(LOOK.fonts&&LOOK.fonts.length){const l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?'+LOOK.fonts.map(f=>'family='+encodeURIComponent(f).replace(/%2B/g,'+')).join('&')+'&display=swap';document.head.appendChild(l);}
+  const z=LOOK.scale||{},sel={score:'#bug',side:'#side',lower:'#lower',box:'#inter .card,#final .card',banner:'#banner',tip:'#preCard'},css=[];
+  for(const k in sel)if(z[k]&&z[k]!==1)css.push(`${sel[k]}{zoom:${z[k]}}`);const st=document.createElement('style');st.textContent=css.join('\n');document.head.appendChild(st);}
 const ORG={};
 const NP={
  US:{w:72,f:['Darnell','Tyrone','Marcus','Jamal','Derrick','Kenny','Shawn','Reggie','Terrell','Lamont','Andre','Cedric','Dwayne','Byron','Kendall','Rodney','Clarence','Otis','Vernon','Jerome','Antonio','Greg','Brian','Mike','Scott','Chris','Kevin','Todd','Matt','Eric','Brent','Danny','Rex','Monty','Bo','Calvin','Lionel','Rasheed','Travis','Duane','Keith','Corey','Willie','Sherman'],
@@ -633,7 +642,7 @@ function doShot(p,timing){
   // fouls and blocks
   let foul=null,blocked=null;
   if(nd.p&&cont<3.2&&G.state==='play'){
-    const fp=(kind==='jump'?0.13:0.3)*(nd.p.id.f.includes('!')?1.5:1);
+    const fp=(kind==='jump'?0.13:0.3)*(nd.p.id.f.includes('!')?1.5:1)*(stratOf(nd.p.t)==='bigLead'?1.5:1);
     if(Math.random()<fp)foul=nd.p;
     else{let bp=Math.max(0,(nd.p.id.def-55)/220+(nd.p.id.ht-p.id.ht)/70)*(kind==='jump'?0.55:1)*(kind==='dunk'?0.45:1)*boostF(nd.p)/boostF(p);
       if(G.mom[nd.p.t]>0)bp*=1.3;if(ladder)bp*=0.35;if(duoPartner(p)||isStar(p))bp=0;
@@ -994,6 +1003,7 @@ function defPos(p){
 }
 function offTarget(p){
   const t=p.t,b=G.ball,owner=b.owner;
+  if(b.mode==='shot'&&b.shot&&b.shot.t===t&&p.s>=1&&stratOf(t)==='chase')return[hoopX(t)-dirOf(t)*rnd(3,5),HY+(p.s-2.5)*2.5,1];   // everybody but the point guard goes for the rebound
   if(b.mode==='shot'&&b.shot&&b.shot.t===t){if(p.s>=3)return[hoopX(t)-dirOf(t)*rnd(3,6)*0+(-dirOf(t))*4,HY+(p.s===3?-4:4),1];if(p.s===0)return[xAt(t,36),HY,0.7];}
   if(owner&&owner.t===t&&!front(t,owner.x)){const B=G.bring;
     // the shape holds while the ball is walked up; once the handler goes, the others run to their spots ahead of him
@@ -1169,7 +1179,7 @@ function carrierAI(p,dt){
     return[hx,HY,0.35];}
   const inSet=!!(G.play&&G.play.t===t);
   if(front(t,p.x)&&!inSet&&!p.postDone&&(p.id.pos==='C'||p.id.pos==='PF')&&d>6&&d<15&&cont<5&&G.shotClock>5){p.postDone=true;if(Math.random()<0.4){p.post={t:0,T:rnd(1.6,2.5)};return[hx,HY,0.35];}}
-  if(cont<3.5&&G.human!==t&&Math.random()<0.0018*dt*(85/Math.max(50,p.id.pas))*G.rk){p.pickT=0.85;return[p.x,p.y,0];}
+  if(cont<2.2&&p.hold>1.2&&!(p.pump>0)&&G.human!==t&&Math.random()<0.0012*dt*(85/Math.max(50,p.id.pas))*G.rk){p.pickT=0.85;return[p.x,p.y,0];}   // only a tightly guarded dribbler loses the handle
   if(!(p.btl>0)&&(cont<5)&&Math.random()<0.35*dt){p.btl=0.7;emit('handle',p);}
   if(p.iso){const I=p.iso;I.t+=dt;
     for(const f of I.fk)if(!f.done&&I.t>=f.at){f.done=true;if(p.dribbled)continue;p.pump=0.45;I.dead=true;emit('fake');const n2=nearestDef(p);if(n2.p&&n2.d<4.5&&n2.p.z<=0&&Math.random()<0.45){n2.p.vz=11;p.fakeT=G.time+1.0;pop('BIT ON THE FAKE',n2.p.x,n2.p.y);}}
@@ -1204,19 +1214,28 @@ function carrierAI(p,dt){
   const B=G.bring;if(B&&B.t===t&&B.f&&G.human!==t){const ready=teamPl(t).filter(q=>q!==p&&dep(t,q.x)<33).length;
     if(ready<3&&G.shotClock>7&&d>14)return[xAt(t,clamp(dp,25,38)),p.y+(HY-p.y)*0.15,0.45];B.f=null;p.lookT=G.time+1.6;}
   const look=G.time<(p.lookT||0);   // set up: the first look is a pass
+  const md=G.human!==t?stratOf(t):null,arc3=()=>{const a=Math.atan2(p.y-HY,p.x-hx),r=24.6;return[clamp(hx+Math.cos(a)*r,1,CW-1),clamp(HY+Math.sin(a)*r,3,CH-3),0.8];};
+  // hold for the last shot of the quarter when the game clock is shorter than the shot clock
+  if(G.human!==t&&G.clock<G.shotClock&&G.clock<20&&G.clock>5&&md!=='hurry'&&md!=='chase'&&d>16){G.play=null;return[xAt(t,30)+Math.sin(G.time*0.8)*2,HY+Math.sin(G.time*0.6+p.phase)*5,0.35];}
+  if((md==='chase'||md==='hurry')&&!three&&d>6&&!G.play){if(cont>2.8&&Math.random()<1.5*dt){const m=choosePass(p,0,0);if(m&&is3(t,m.x,m.y)){doPass(p,m);return null;}}return arc3();}   // get behind the line
   // run a set play on most half-court possessions
   if(!G.playTried&&G.human!==t&&G.shotClock>=11&&d>14){G.playTried=true;if(Math.random()<clamp(0.4+0.2*G.pace.v,0.1,0.7))playStart(p);}   // fewer sets when the game runs behind NBA pace
   if(G.play&&G.play.t===t){const r=playCarrier(p,dt,{d,cont,three});if(r!==undefined)return r;}
-  if(G.mom[t]>0&&d<24&&cont>2&&Math.random()<3*rk*dt){doShot(p,null);return null;}
+  if(G.mom[t]>0&&d<24&&cont>2&&md!=='clock'&&md!=='bigLead'&&Math.random()<3*rk*dt){doShot(p,null);return null;}
   if(d<5.5&&cont>1.0&&Math.random()<6*dt){doShot(p,null);return null;}
   const sc=G.shotClock;let pm=shotBonus(p,expFG(p,d,cont,three));const val=pm*(three?2.45:2);
   let hz=val>1.12?3:val>1.0?1.6:val>0.9?0.6:0.12;
+  if(md==='chase'||md==='hurry'){if(three)hz=cont>2.2?4:1.4;else if(d>5.5)hz*=0.15;}
+  else if(md==='finish'&&three)hz*=1.6;
+  else if(md==='bigLead'){if(cont<4&&d>5.5)hz*=0.15;if(sc>10)hz*=0.45;}
+  else if(md==='clock'&&sc>8&&!(d<5.5&&cont>3))hz*=0.08;
   if(sc<4)hz=6;else if(sc<8)hz*=2.2;
   if(p.hold<0.25/rk)hz*=0.25;
   if(Math.random()<hz*rk*hzK()*(look?0.35:1)*dt){doShot(p,null);return null;}
   // drive
   if(p.drive){if(!laneOpen(p.x,p.y,hx,HY,t,1.6)&&cont<2.2&&Math.random()<1.5*dt)p.drive=false;else return[hx,HY,1];}
-  if(laneOpen(p.x,p.y,hx,HY,t,2.6)&&d<30&&Math.random()<(0.6+(p.id.ins-70)/40)*rk*hzK()*dt){p.drive=true;return[hx,HY,1];}
+  const dk=md==='bigLead'?(cont>4&&laneOpen(p.x,p.y,hx,HY,t,4)?0.6:0):md==='clock'&&sc>8?0.2:md==='chase'||md==='hurry'?0.25:1;   // no drives into traffic when far ahead
+  if(dk&&laneOpen(p.x,p.y,hx,HY,t,2.6)&&d<30&&Math.random()<(0.6+(p.id.ins-70)/40)*rk*hzK()*dt*dk){p.drive=true;return[hx,HY,1];}
   // pass
   const hzP=(cont<3?1.8:1.0)*rk*(look?2.5:1);
   if(Math.random()<hzP*dt){const m=choosePass(p,0,0);if(m&&passValue(p,m)>val-0.05+rnd(-0.1,0.15)){if(Math.random()<0.18&&nearestDef(m).d>5){p.pointT=0.5;p.pointTo=m;return[p.x,p.y,0.15];}if(Math.random()<0.1&&G.human!==t){p.ohHold=rnd(0.6,1.1);p.ohTo=m;return[p.x,p.y,0];}doPass(p,m);return null;}}
@@ -1246,7 +1265,7 @@ function stealTry(d,human){
   d.stealCd=human?0.5:1.2;
   const pr=(0.07+(d.id.def-(o.id.pas+o.id.spd)/2)/300)*keepF(o)*boostF(d)*(human?1.5:1);
   const r=Math.random();
-  if(r<0.16*(d.id.f.includes('!')?1.5:1)){foulNonShooting(d,o,'reach-in');return;}
+  if(r<0.16*(d.id.f.includes('!')?1.5:1)*(stratOf(d.t)==='bigLead'?1.7:1)){foulNonShooting(d,o,'reach-in');return;}
   if(r<0.16+pr){b.owner=null;b.mode='loose';b.x=o.x;b.y=o.y;b.z=2;b.vx=(d.x-o.x)*1.2+randn()*2.5;b.vy=(d.y-o.y)*1.2+randn()*2.5;b.vz=3;b.last=o;b.stealBy=d;o.noPick=0.5;emit('poke');}
 }
 function foulNonShooting(f,victim,kind){
@@ -1367,7 +1386,7 @@ function ballPhys(dt){
     if(!P.duo&&!isStar(P.from)&&!isStar(P.to))for(const q of G.pl){if(q.t===P.from.t||q.down>0||P.tried.has(q))continue;if(hyp(q.x-b.x,q.y-b.y)<1.7&&b.z<8+q.z){P.tried.add(q);
       if(Math.random()<0.17*(q.id.def/80)*boostF(q)*(P.bounce?0.6:1)){b.last=P.from;giveBall(q,'steal');emit('intercept',q);return;}}}
     const m=P.to;
-    if(hyp(m.x-b.x,m.y-b.y)<2.1&&u>0.3){
+    if(hyp(m.x-b.x,m.y-b.y)<2.6&&u>0.3){
       if(P.lob&&hdist(m.t,m.x,m.y)<8){giveBall(m,'pass');m.vz=13;m.oneT=G.time+1;doShot(m,0.1);emit('alleyoop',m);return;}
       giveBall(m,'pass');if(P.duo||isDuoPair(P.from,m))m.oneT=G.time+1.4;return;}
     if(u>=1.25){b.mode='loose';b.vx=(P.x1-P.x0)/P.T*0.45;b.vy=(P.y1-P.y0)/P.T*0.45;b.vz=0;b.pass=null;b.last=P.from;}
@@ -1415,14 +1434,25 @@ function turnoverOOB(lt){
   pop('OUT OF BOUNDS',clamp(x,10,CW-10),clamp(y,4,CH-4));
   G.state='dead';G.stateT=1.0;G.after=()=>setInbound(1-lt,x,y,false);
 }
+// what the score and the clock ask of a team (for its offense and its defense)
+function stratOf(t){if(!G||G.q==null)return null;const L=G.teams[t].score-G.teams[1-t].score,q=G.q,c=G.clock;
+  if(q>=4&&c<60&&L<0&&L>=-10)return'hurry';      // behind late: quick threes, foul to stop the clock
+  if(q>=3&&L<=-13)return'chase';                  // behind big in the second half: threes and offensive boards
+  if(L>=20)return'bigLead';                       // far ahead: only open looks, no traffic, fouls don't matter
+  if(q>=4&&c<150&&L>0&&L<=12)return'clock';       // ahead late: run the shot clock down
+  if(q>=3&&L>=13)return'finish';                  // ahead big: a few more threes to put it away
+  return null;}
 function defenseActions(dt){
   const b=G.ball,o=b.owner;if(!o)return;
+  if(G.state==='play'&&G.human!==1-o.t&&stratOf(1-o.t)==='hurry'&&G.clock>2){const f=G.pl.filter(q=>q.t!==o.t&&q.down<=0&&hyp(q.x-o.x,q.y-o.y)<3.4)[0];
+    if(f&&Math.random()<1.4*dt){pop('FOUL TO STOP THE CLOCK',o.x,o.y);foulNonShooting(f,o,'reach-in');return;}}
   for(const d of G.pl){if(d.t===o.t||d.down>0)continue;if(G.human===d.t&&G.ctrl===d)continue;
-    if(hyp(d.x-o.x,d.y-o.y)<3.2&&Math.random()<0.12*G.rk*dt*(d.id.def/75))stealTry(d,false);if(G.state!=='play')return;}
+    const busy=o.pump>0||o.ohHold>0||o.shotWind>0||o.ponder;   // faking or holding the ball up: only a defender right on him can reach it
+    if(hyp(d.x-o.x,d.y-o.y)<(busy?2:3.2)&&Math.random()<0.12*G.rk*dt*(d.id.def/75)*(stratOf(d.t)==='bigLead'?1.4:1))stealTry(d,false);if(G.state!=='play')return;}
   // rare violations
   if(o&&front(o.t,o.x))G.inFront=true;
   if(G.inFront&&o&&!front(o.t,o.x)&&o.hold>0.2){turnover(o.t,'BACKCOURT');return;}
-  if(Math.random()<0.004*G.rk*dt*60/60&&hyp(o.vx,o.vy)>10&&G.human!==o.t){turnover(o.t,'TRAVELING');return;}
+  if(Math.random()<0.0015*G.rk*dt&&hyp(o.vx,o.vy)>10&&G.human!==o.t){turnover(o.t,'TRAVELING');return;}
   for(const p of teamPl(o.t))if(p.laneT>3.4){p.laneT=0;turnover(o.t,'3 SECONDS');return;}
 }
 function playStep(dt,gd){
@@ -2884,9 +2914,13 @@ function luAssign(pl){const left=LU_ORD.slice(),out=[],rest=[];
   for(const p of pl){const i=left.indexOf(p.id.pos);if(i>=0){out.push([p,left[i]]);left.splice(i,1);}else rest.push(p);}
   for(const p of rest){const pi=POSN.indexOf(p.id.pos);left.sort((a,b)=>Math.abs(POSN.indexOf(a)-pi)-Math.abs(POSN.indexOf(b)-pi));out.push([p,left.shift()]);}
   return out;}
-function showLineup(){if(!G||!G.pl||!G.pl.some(p=>p.id))return;const ov=$('lineupOv');ov.hidden=false;
+function luSubs(t){const T=G.teams[t],on=new Set(G.pl.filter(q=>q.t===t&&q.id).map(q=>q.id.n)),bench=T.R.P.filter(p=>!on.has(p.n)),grp={PG:'G',SG:'G',SF:'F',PF:'F',C:'C'},out={PG:[],SG:[],SF:[],PF:[],C:[]};
+  for(const p of bench){const k=out[p.pos]?p.pos:'SF';const alt=Object.keys(out).filter(x=>grp[x]===grp[k]).sort((a,b)=>out[a].length-out[b].length);(out[k].length<=out[alt[0]].length?out[k]:out[alt[0]]).push(p);}
+  return out;}
+function showLineup(intro){if(!G||!G.pl||!G.pl.some(p=>p.id))return;const ov=$('lineupOv');ov.hidden=false;
+  $('luHint').hidden=!!intro;$('luHint2').hidden=!intro;const SUB=intro?[luSubs(0),luSubs(1)]:null;
   const A=G.teams[1],Hm=G.teams[0];
-  $('luHead').innerHTML=`<span class="chip" style="background:${A.R.pri};color:${A.R.sec}">${A.ab}</span><span class="pt">${A.score} – ${Hm.score}</span><span class="chip" style="background:${Hm.R.pri};color:${Hm.R.sec}">${Hm.ab}</span><span>${G.state==='pregame'?'PREGAME':(QN(G.q)||'')+' · '+$('clock').textContent}</span>`;
+  $('luHead').innerHTML=`<span class="chip" style="background:${A.R.pri};color:${A.R.sec}">${A.ab}</span><span class="pt">${A.score} – ${Hm.score}</span><span class="chip" style="background:${Hm.R.pri};color:${Hm.R.sec}">${Hm.ab}</span><span>${intro?'STARTING LINEUPS':G.state==='pregame'?'PREGAME':(QN(G.q)||'')+' · '+$('clock').textContent}</span>`;
   const hd=$('luHead').offsetHeight,hn=$('luHint').offsetHeight,W=Math.max(200,innerWidth-16),Hh=Math.max(150,innerHeight-hd-hn-28),g=0.4;
   const box=$('luCourt'),bx=$('luBoxes');box.style.width=W+'px';box.style.height=Hh+'px';box.style.fontSize='10px';
   const items=[];for(const t of[1,0])for(const[p,sp]of luAssign(G.pl.filter(q=>q.t===t&&q.id)))items.push({t,p,sp});
@@ -2894,7 +2928,7 @@ function showLineup(){if(!G||!G.pl||!G.pl.some(p=>p.id))return;const ov=$('lineu
     const sur=id.n.split(' ').slice(1).join(' ')||id.n,d=(hsh(id.n,3)%30)/10,L=sur.length,nf=tall?(L>11?.66:L>9?.76:L>7?.88:1):(L>11?.8:L>9?.9:1);
     return`<div class="lu${tall?' tall':''}" style="--tc:${T.R.pri};--tc2:${T.R.sec};animation-delay:-${d}s"><img src="${portrait(id,t)}" alt="">
       <div class="fb"><div class="nm"><span style="font-size:${nf*1.36}em">${esc(sur.toUpperCase())}</span>${st.pf?`<span class="pfm" title="${st.pf} personal fouls">${'<i></i>'.repeat(Math.min(6,st.pf))}</span>`:''}</div><div class="ps">${LU_POS[id.pos]||id.pos}</div>
-      ${luStats(st,id.pos,tall)}</div></div>`;};
+      ${SUB?`<div class="lsub"><b>BENCH</b>${(SUB[t][it.sp]||[]).map(q=>esc(q.n.split(' ').slice(1).join(' ')||q.n)).join(' · ')||'–'}</div>`:luStats(st,id.pos,tall)}</div></div>`;};
   const dims={};for(const tall of[false,true]){bx.innerHTML=items.map(it=>card(it,tall)).join('');let w=0,h=0;for(const e of bx.children){w=Math.max(w,e.offsetWidth);h=Math.max(h,e.offsetHeight);}dims[tall]=[w/10,h/10];}
   const LAY=[{c:4,r:3,s:{PF:[0,0],C:[0,1],SF:[0,2],PG:[1,.5],SG:[1,1.5]}},{c:6,r:2,s:{C:[0,0],PF:[0,1],SF:[1,.5],PG:[2,0],SG:[2,1]}}];
   let best=null;for(const tall of[false,true])for(const L of LAY)for(const tr of[false,true]){const[BW,BH]=dims[tall],nc=tr?L.r:L.c,nr=tr?L.c:L.r,em=Math.min(W/nc/(BW+g),Hh/nr/(BH+g));if(!best||em>best.em)best={tall,L,tr,nc,nr,em};}
@@ -2913,7 +2947,7 @@ function luStats(st,pos,tall){const hi=LU_HI[pos]||[],tpm=st.tpm||0,twm=Math.max
   return`<div class="lrow">${cell('pts',st.pts,'PTS')}${cell('twm',twm,'2PM')}${cell('tpm',tpm,'3PM')}</div>
   <div class="lrow">${cell('reb',st.reb,'REB')}${cell('ast',st.ast,'AST')}${cell('stl',st.stl||0,'STL')}${cell('blk',st.blk||0,'BLK')}</div>`;}
 function hideLineup(){$('lineupOv').hidden=true;}
-setTimeout(()=>{const o=$('lineupOv');if(o)o.onclick=()=>{if(paused)$('tPause').click();};},0);
+setTimeout(()=>{const o=$('lineupOv');if(o)o.onclick=()=>{if(G&&G.luIntro){endLuIntro();return;}if(paused)$('tPause').click();};},0);
 function boxHTML(t){const T=G.teams[t];const rows=T.R.P.map((p,i)=>[p,G.stats[p.n],i]).filter(r=>r[1]&&r[1].min>0.05).sort((a,b)=>b[1].pts-a[1].pts);
   return`<div class="tw"><table class="tbl"><caption>${T.R.city} ${T.R.nick}</caption><tr><th>Player</th><th>MIN</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>FG</th><th>3P</th><th>FT</th><th>PF</th></tr>${rows.map(([p,s,i])=>`<tr><td>#${p.no} ${p.n}${T.out[i]&&T.pf[i]>=6?' (DQ)':T.out[i]?' (EJ)':''}</td><td>${Math.round(s.min)}</td><td><b>${s.pts}</b></td><td>${s.reb}</td><td>${s.ast}</td><td>${s.stl}</td><td>${s.blk}</td><td>${s.fgm}-${s.fga}</td><td>${s.tpm}-${s.tpa}</td><td>${s.ftm}-${s.fta}</td><td>${s.pf}</td></tr>`).join('')}</table></div>`;}
 function lineScore(){const n=Math.max(4,G.q);let h='<div class="tw"><table class="tbl"><tr><th>Team</th>';for(let q=1;q<=n;q++)h+=`<th>${q>4?'OT'+(q>5?q-4:''):q}</th>`;h+='<th>T</th></tr>';
@@ -3031,8 +3065,8 @@ function startGame(x){
   $('tSub').hidden=false;
   buildCourt();chip($('c0'),1);chip($('c1'),0);
   $('tSpeed').hidden=hum>=0;$('tTO').hidden=hum<0;tc('tSpeed','1×');tc('tPause','II');
-  const H0=G.teams[0],A0=G.teams[1],lg=T=>LOGO_DATA[T.key]?` <img class="tlogo" src="${LOGO_DATA[T.key]}" alt="">`:'';   // team names with this game's logos
-  $('preTitle').innerHTML=`${esc(A0.R.city+' '+A0.R.nick)}${lg(A0)} at ${esc(H0.R.city+' '+H0.R.nick)}${lg(H0)}`;
+  const H0=G.teams[0],A0=G.teams[1],TL=LOOK&&LOOK.tip||{logo:1.6,layout:'inline'},lg=T=>LOGO_DATA[T.key]?`<img class="tlogo" src="${LOGO_DATA[T.key]}" alt="" style="height:${TL.logo}em">`:'',nm=T=>esc(T.R.city+' '+T.R.nick);   // team names with this game's logos
+  $('preTitle').innerHTML=TL.layout==='above'?`<span class="tlogos">${lg(A0)}<span>at</span>${lg(H0)}</span>${nm(A0)} at ${nm(H0)}`:TL.layout==='before'?`${lg(A0)} ${nm(A0)} at ${lg(H0)} ${nm(H0)}`:TL.layout==='none'?`${nm(A0)} at ${nm(H0)}`:`${nm(A0)} ${lg(A0)} at ${nm(H0)} ${lg(H0)}`;
   const lu=T=>`<div><b>${T.ab} · ${T.home?'HOME':'AWAY'}</b>${T.R.P.slice(0,5).map(p=>`${p.pos} #${p.no} ${p.n}`).join('<br>')}</div>`;
   $('preLine').innerHTML=lu(A0)+lu(H0);$('preGo').textContent=hum>=0?'TIP OFF':'TIP OFF (AUTO)';
   $('pre').hidden=false;$('pre').classList.remove('clear');$('preCard').hidden=false;$('preSkip').hidden=true;
@@ -3040,7 +3074,10 @@ function startGame(x){
   if(G.pre.kind==='mascot')G.pre.anim=G.teams[0].key==='BAL'||Math.random()<0.5;   // Baltimore always has Bigfoot's act; others sometimes the recoloured act
   Music.play();try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{});}catch(e){}
 }
-function dropFirst(){if(!G||G.state!=='pregame')return;stopShowAudio(G.pre);G.pre=null;$('preSkip').hidden=true;$('pre').classList.remove('clear');$('pre').hidden=true;Music.stop();
+// after the tip-off card: the starting lineups on the court, then the jump ball
+function endLuIntro(){if(!G||!G.luIntro)return;G.luIntro=false;hideLineup();dropFirst();}
+function dropFirst(){if(!G||G.state!=='pregame')return;
+  if(!G.luDone){G.luDone=true;G.luIntro=true;$('pre').hidden=true;showLineup(true);setTimeout(endLuIntro,G.human<0?5500:9000);return;}stopShowAudio(G.pre);G.pre=null;$('preSkip').hidden=true;$('pre').classList.remove('clear');$('pre').hidden=true;Music.stop();
   $('touch').hidden=!(G.human>=0&&coarse());setTip();
   // the city intro a moment before the tip; the jump ball waits for it
   try{const d=introLine();if(d>0){G.stateT=Math.max(G.stateT,d+0.4);VOX.st.tiDone=true;}}catch(e){}}

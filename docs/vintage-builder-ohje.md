@@ -9,6 +9,7 @@ jonka peli lukee käynnistyessään.
 1. Avaa `vintage-builder.html` selaimessa (Chrome, Edge tai Firefox).
 2. Valitse **OPEN GAME FILE** ja avaa pelin `index.html`. Builder lukee siitä nykyiset äänet, logot ja joukkueet.
 3. Käy osiot läpi vasemmasta valikosta:
+   - **Look & layout**: pelin yleisilme 20 teemasta (värit ja fontit), paneelien tekstikoot ja tip off -kortin logot
    - **Teams, logos & kits**: nimet, lyhenteet, värit, koti- ja vierasasut sekä logot
    - **Music**: ottelun alun pitkät kappaleet ja taukomusiikki
    - **Team names & intros**: miten selostajat sanovat joukkueen nimen, ja kotikaupungin esittelyt
@@ -21,6 +22,16 @@ jonka peli lukee käynnistyessään.
    **+ Add a line** lisää uuden lauseen tilanteeseen. Kun tilanteessa on useita lauseita, peli arpoo yhden.
 5. Palaa **Start**-sivulle ja valitse **SAVE SETUP (.VBF)**. Siirrä `vintage.vbf` samaan kansioon pelin
    `index.html`-tiedoston kanssa. Jos selain nimesi tiedoston uudelleen (esim. `vintage(1).vbf`), korjaa nimi.
+
+## Ulkoasu (Look & layout)
+
+- **Theme**: 20 teemaa eri aikojen peleistä ja tv-lähetyksistä, esim. Jam Session, Network '80s, Cable Sports '90s,
+  Hardwood Classics, Handheld, Amber Scoreboard ja Box Score Print. Valinta muuttaa valikoiden, tulostaulun ja paneelien
+  värit ja fontit.
+- **Text size**: jokaisen paneelin tekstikoko erikseen (tulostaulu, sivupaneeli, pelaajatiedot, erätauon ja lopun
+  pöytäkirjat, bannerit, tip off -kortti).
+- **Tip-off card logos**: logojen koko ja paikka (nimen perässä, ennen nimeä, isot logot nimien yläpuolella tai ei logoja).
+  Esikatselu näyttää kortin heti.
 
 ## Lauseiden merkinnät
 
