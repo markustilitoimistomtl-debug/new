@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vintage Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Chakra+Petch:wght@400;600;700&display=swap">
+<style>
+/* Layout: a workbench for the Vintage Basket game. Left rail of sections, right pane of tables. Same dark arcade look as the game. */
+:root{
+  --bg:#0d0b14; --panel:#1a1522; --panel2:#262033; --ink:#f1ece4; --dim:#a39cad; --line:#3a3049;
+  --led:#ffb21e; --hot:#ff5a36; --ok:#5fd38a; --warn:#ffcc4d;
+  --f-disp:'Silkscreen','Courier New',monospace; --f-body:'Chakra Petch',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--f-body)}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:5px 10px;cursor:pointer}
+button:hover{border-color:var(--led)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--led);outline-offset:1px}
+button.big{background:var(--hot);border-color:var(--hot);color:#fff;font-family:var(--f-disp);padding:10px 16px}
+button.del{color:#ff8a7a}
+button[disabled]{opacity:.45;cursor:default}
+input[type=text],input[type=number],select{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:5px 8px;min-width:0}
+input[type=color]{width:34px;height:28px;border:1px solid var(--line);background:none;padding:0;border-radius:4px}
+#app{display:grid;grid-template-columns:230px minmax(0,1fr);height:100%}
+nav{background:var(--panel);border-right:1px solid var(--line);padding:16px 10px;overflow:auto;display:flex;flex-direction:column;gap:4px}
+nav h1{font-family:var(--f-disp);font-size:18px;margin:0 6px 12px;color:var(--led);line-height:1.2}
+nav button{text-align:left;background:none;border:0;border-radius:4px;padding:7px 10px;color:var(--dim)}
+nav button[aria-current=page]{background:var(--panel2);color:var(--ink)}
+nav .grp{font-family:var(--f-disp);font-size:10px;letter-spacing:.12em;color:var(--dim);margin:12px 10px 2px}
+main{overflow:auto;padding:20px max(16px,2vw) 60px}
+h2{font-family:var(--f-disp);font-size:20px;margin:0 0 4px;color:var(--led)}
+h3{font-family:var(--f-disp);font-size:13px;letter-spacing:.06em;margin:22px 0 6px}
+.lead{color:var(--dim);margin:0 0 14px;max-width:80ch}
+.guide{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--led);border-radius:4px;padding:8px 12px;margin:6px 0 10px;color:var(--dim);font-size:13px;max-width:90ch}
+.guide b{color:var(--ink)}
+table{border-collapse:collapse;width:100%;max-width:1100px}
+th{font-family:var(--f-disp);font-size:10px;letter-spacing:.1em;color:var(--dim);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-weight:400}
+td{padding:5px 8px;border-bottom:1px solid #241e30;vertical-align:middle}
+td.sit{color:var(--dim);width:24%}
+td.len{font-variant-numeric:tabular-nums;color:var(--dim);white-space:nowrap;width:70px}
+td.len.bad{color:var(--warn)}
+td.act{white-space:nowrap;width:1%}
+td.act button{margin-right:4px}
+tr.new td{background:#1d2a1f}
+tr.changed td{background:#2a2414}
+.tag{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-left:6px;color:var(--dim)}
+.phrase{width:100%}
+.cut{width:64px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:12px;max-width:1300px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;display:grid;gap:10px;min-width:0}
+.card h4{margin:0;font-size:15px}
+.kv{display:grid;grid-template-columns:90px minmax(0,1fr);gap:6px 8px;align-items:center}
+.kv label{color:var(--dim);font-size:12px}
+.logos{display:flex;flex-wrap:wrap;gap:8px}
+.logo{position:relative;width:72px;height:72px;background:#2b2436;border-radius:4px;display:grid;place-items:center}
+.logo img{max-width:64px;max-height:64px}
+.logo button{position:absolute;top:-6px;right:-6px;padding:0 5px;font-size:11px}
+.kits{display:flex;gap:8px;align-items:flex-end}
+.kits svg{width:70px;height:auto}
+.kitcols{display:flex;gap:4px}
+.stat{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0}
+.stat div{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 14px;min-width:120px}
+.stat b{display:block;font-family:var(--f-disp);font-size:22px;color:var(--led)}
+.drop{border:2px dashed var(--line);border-radius:8px;padding:22px;text-align:center;color:var(--dim);max-width:640px}
+.drop.on{border-color:var(--led);color:var(--ink)}
+.toast{position:fixed;bottom:16px;right:16px;background:var(--panel2);border:1px solid var(--led);border-radius:6px;padding:10px 14px;max-width:420px;z-index:5}
+.muted{color:var(--dim)}
+.warn{color:var(--warn)}
+.ok{color:var(--ok)}
+.filter{margin:6px 0 10px}
+@media (max-width:760px){#app{grid-template-columns:1fr;grid-template-rows:auto 1fr}nav{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--line)}nav .grp{display:none}td.sit{width:auto}}
+</style>
+</head>
+<body>
+<div id="app">
+  <nav id="nav" aria-label="Sections"></nav>
+  <main id="main"></main>
+</div>
+<input type="file" id="pickGame" accept=".html,.htm" hidden>
+<input type="file" id="pickVbf" accept=".vbf,.js,.json" hidden>
+<input type="file" id="pickAudio" accept="audio/mpeg,.mp3" hidden>
+<input type="file" id="pickImage" accept="image/png,image/jpeg,image/webp" hidden>
+<script>
+'use strict';
+/* ============ catalogue: what each recording is for, how long it should be ============ */
+const LEN={name:[0.3,1.6],num:[0.3,1.2],pb:[0.6,3.2],line:[1.2,4.5],story:[2,8],intro:[3,10],crowd:[1,6],arena:[1,12],musicL:[30,180],musicS:[8,45]};
+const LEN_TXT=k=>`${LEN[k][0]}–${LEN[k][1]} s`;
+// fills in a phrase: X = the team the line is about, Y = the other team, P / P2 = players, # = a number
+const STORY=[
+ ['Team on a big run','run',['jn:j_tear','jn:j_falling']],['Hot from three','threes',['jn:j_rain','jn:j_another','tn:t_conn']],
+ ['Team in the penalty','penalty',['jn:j_penalty']],['Turnover trouble','tofouls',['jn:j_tofouls','jn:j_coach']],
+ ['Rough quarter for the trailing team','rough',['jn:j_rough']],['Chipping away at a deficit','comeback',['jn:j_chip','tn:t_mom']],
+ ['Lead slipping away','slowing',['jn:j_firing','jn:j_early','jn:j_weather']],['Bench production','bench',['jn:j_second']],
+ ['Bad free-throw shooting','ftbad',['jn:j_trip','jn:j_despite']],['Inside-out game','inout',['jn:j_vibes','jn:j_fires','jn:j_inout']],
+ ['Cold shooting game','cold',['jn:j_dry','jn:j_tov','tn:t_stroke']],['Low-scoring grind','grind',['jn:j_points','jn:j_battle']],
+ ['Lockdown defense','lockdown',['jn:j_locks','jn:j_forced','tn:t_pound']],['Lots of whistles','whistles',['jn:j_refs','jn:j_halt']],
+ ['Run-and-gun pace','rungun',['jn:j_fast','jn:j_push','jn:j_nohalf']],['Lead keeps changing','seesaw',['jn:j_seesaw']],
+ ['Coaching chess','chess',['jn:j_adjust','jn:j_zone']],['Answer basket after a lead change','answer',['tn:t_answer']],
+ ['Comeback completed','storm',['jn:j_storm']],['Buzzer beater','horn',['tn:t_horn','tn:t_finish']],
+ ['Steal turned into points','steal2',['tn:t_leaps','tn:t_stolen']],['Bench player scores','benchshot',['tn:t_bench','tn:t_spark']],
+ ['Star takes over','star',['tn:t_takeover','tn:t_giveball','tn:t_noanswer']],['Struggling shooter','goodlook',['tn:t_goodlook']],
+ ['Full-court press','press',['jn:j_press']],['Trap forces a turnover','trap',['jn:j_trap']],['Quick early foul','quickfoul',['tn:t_quickfoul']],
+ ['Technical foul','tech',['jn:j_tech','jn:j_temper']],['Flagrant foul','physical',['jn:j_phys']],['Players exchange words','words',['tn:t_words']],
+ ['Player hurt','medical',['tn:t_medical']],['Timeout','break',['jn:j_break']],['Shot denied at the rim','denied',['jn:j_denied']],
+ ['Big men on the boards','bigs',['tn:t_bigs','jn:j_pound']],['Shot clock running down','clock',['tn:t_clock','jn:j_clock']],
+ ['Quarter summary','summary',Array.from({length:20},(_,i)=>'tn:s'+(i+1))]];
+const PB_LAB={num:'"Number" before a jersey number',loft:'Long three in the air',settle:'Settles for a jumper',pass:'Pass',sinks3:'Sinks a three',miss:'Missed shot',
+ rim:'Off the rim',tov:'Turnover',steal:'Steal',reb:'Rebound',lob:'Alley-oop lob',crush:'Dunk finish',spin:'Spin move',pick:'Picked his pocket, breakaway',
+ xsteal:'Steal (extra)',xpass:'Pass (extra)',wt1:'First foul warning',wt2:'Second foul warning',wt3:'Third foul warning',wt4:'Fourth foul warning',
+ wg1:'First foul (other take)',wg2:'Second foul (other take)',wg3:'Third foul (other take)',wg4:'Fourth foul (other take)',wn2:'Two fouls now',wn3:'Three fouls now',
+ wn4:'Four fouls now',wn5:'Five fouls now',charge:'Charge taken',oreb:'Offensive rebound',min1:'One minute left',final:'Final buzzer',td:'Long touchdown pass',
+ fire:'On fire',roof:'Raises the roof',rhythm:'Finding his rhythm',loose:'Loose ball',pts3:'Three points',pts2:'Two points'};
+// array categories: prefix = who is named before the clip (player or team)
+const ARR=[
+ ['Fouls','foul','Foul warning','P','line'],['Fouls','trouble','Foul trouble (fifth foul)','P','line'],['Fouls','out','Fouled out','P','line'],
+ ['Moments','scorer','New leading scorer','P','line'],['Moments','boards','New leading rebounder','P','line'],['Moments','jam','Dunk','P','line'],
+ ['Moments','ddrib','Double dribble','P','line'],['Moments','handle','Ball handling','P','line'],['Moments','brk','Breakaway','P','line'],
+ ['Moments','trip','Triple-double','P','line'],['Moments','dbl','Double-double','P','line'],['Moments','show','Showtime play','P','line'],
+ ['Team play','lead','Big lead','X','line'],['Team play','cold','Offense goes cold','X','line'],['Team play','wall','Defense holds','X','line'],
+ ['Team play','coldx','Offense goes cold (no team)','','line'],['Team play','wallx','Defense holds (no team)','','line'],
+ ['Team play','clinicA','Defensive clinic, first half','','line'],['Team play','clinicB','Defensive clinic, second half','','line'],
+ ['Game flow','drought','Scoring drought','','line'],['Game flow','streak','Scoring streak','','line'],['Game flow','hundred','100 points','','line'],
+ ['Game flow','hype','Pregame hype','','line'],['Arena announcer','an','Arena announcer','','line'],
+ ['Arena announcer','atm1a','Atmosphere 1, before the city','','line'],['Arena announcer','atm1b','Atmosphere 1, after the city','','line'],
+ ['Arena announcer','atm2','Atmosphere 2','','line'],['Arena announcer','atm3','Atmosphere 3','','line'],['Arena announcer','atm4','Atmosphere 4','','line'],
+ ['Arena announcer','atm5a','Atmosphere 5, before the city','','line'],['Arena announcer','atm6a','Atmosphere 6, before the city','','line'],
+ ['Arena announcer','atm6b','Atmosphere 6, after the city','','line'],
+ ['Crowd','duo','Crowd chant: duo','','crowd'],['Crowd','mom','Crowd chant: momentum','','crowd'],['Crowd','cheer','Crowd cheer','','crowd'],
+ ['Crowd','bed','Crowd background','','arena'],['Arena','horn','Period horn','','arena'],['Arena','halftime','Half-time fanfare','','arena'],
+ ['Arena','fanfare','Quarter-break fanfare','','arena'],['Arena','finale','Final fanfare','','arena']];
+const ABC=i=>{let s='';i++;while(i>0){i--;s=String.fromCharCode(97+i%26)+s;i=Math.floor(i/26);}return s;};
+
+/* ============ state ============ */
+let G=null;        // data read from the game file
+let S=null;        // what the builder edits
+let gameName='';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+let view='home',filterTxt='';
+
+function toast(msg,ms=3500){let t=document.querySelector('.toast');if(!t){t=document.createElement('div');t.className='toast';t.setAttribute('role','status');document.body.appendChild(t);}
+  t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,ms);}
+
+/* ============ read the game file ============ */
+function readGame(text){
+  const lines=text.split('\n');
+  const want=/^(const (VOX_DATA|SFX_DATA|MUSIC_LONG|TM_KEY|NAMEOFF|HEMAP|PB|TN_META|JX_META|LINE_META|ABBR|LEAGUE_REC|KITS)\b|let MUSIC_LONG\b|Object\.assign\((VOX|SFX)_DATA|VOX_DATA\.|SFX_DATA\.)/;
+  let code='';for(const l of lines)if(want.test(l))code+=l+'\n';
+  const a=text.indexOf('const LEAGUE=[\n');const b=text.indexOf(']];',a);if(a<0||b<0)throw new Error('This does not look like the Vintage Basket game file (no team list found).');
+  code+=text.slice(a,b+3)+'\n';
+  const ls=lines.find(l=>l.startsWith('const LOGO_SETS='));if(ls)code+=ls.slice(0,ls.indexOf(';const LOGO_DATA'))+';\n';
+  code+='return{VOX_DATA,SFX_DATA,MUSIC_LONG,HEMAP,PB,TN_META,JN_META,TI_META,JT_META,JX_META,LEAGUE,ABBR:typeof ABBR!=="undefined"?ABBR:{},LEAGUE_REC:typeof LEAGUE_REC!=="undefined"?LEAGUE_REC:{},KITS:typeof KITS!=="undefined"?KITS:{},LOGO_SETS:typeof LOGO_SETS!=="undefined"?LOGO_SETS:{}};';
+  const D=(new Function(code))();
+  if(!D.VOX_DATA||!D.PB)throw new Error('The game file has no commentary data.');
+  return D;}
+
+function clip(src,o={}){return Object.assign({src,orig:true,text:'',cut:'',len:null},o);}
+function initState(){
+  const V=G.VOX_DATA;S={teams:{},arr:{},obj:{},meta:{},music:[],notes:{}};
+  for(const[k,city,nick,,cols]of G.LEAGUE){const L=G.LOGO_SETS[k]||[];
+    S.teams[k]={key:k,city,nick,abbr:G.ABBR[k]||k,pri:cols[0],sec:cols[1],numc:cols[2],kit:JSON.parse(JSON.stringify(G.KITS[k]||{h:['#f4f1ea',cols[0],cols[0],cols[1]],a:[cols[0],cols[2],cols[1],cols[1]]})),
+      logos:L.slice(),orig:{city,nick},voiced:!G.LEAGUE_REC[k]};}
+  for(const[, c]of ARR)if(Array.isArray(V[c]))S.arr[c]=V[c].map((src,i)=>clip(src,{i}));
+  for(const v of['pb','tn','jn','jx','ti','city','nick','team','jt','pn','pnum','pbn','ppos','th','tmx']){S.obj[v]={};for(const k in V[v]||{})S.obj[v][k]=clip(V[v][k]);}
+  S.meta={pb:clone(G.PB),tn:clone(G.TN_META),jn:clone(G.JN_META),jx:clone(G.JX_META),ti:clone(G.TI_META)};
+  S.music=(G.SFX_DATA.music||[]).map((src,i)=>clip(src,{long:i<G.MUSIC_LONG}));
+  S.hemap=clone(G.HEMAP);}
+const clone=o=>JSON.parse(JSON.stringify(o||{}));
+
+/* ============ audio ============ */
+let AC=null;const BUF=new Map();let playing=[];
+async function dec(src){if(BUF.has(src))return BUF.get(src);AC=AC||new AudioContext();const ab=await (await fetch(src)).arrayBuffer();const b=await AC.decodeAudioData(ab);BUF.set(src,b);return b;}
+function stopAll(){for(const s of playing)try{s.stop();}catch(e){}playing=[];}
+async function playParts(parts){stopAll();AC=AC||new AudioContext();if(AC.state==='suspended')await AC.resume();let t=AC.currentTime+0.05;
+  for(const p of parts){if(p.pause){t+=p.pause;continue;}if(!p.src)continue;const b=await dec(p.src);const off=p.off||0,dur=p.dur!=null?p.dur:b.duration-off;
+    const s=AC.createBufferSource();s.buffer=b;s.connect(AC.destination);s.start(t,off,Math.max(0.01,dur));playing.push(s);t+=dur+(p.gap!=null?p.gap:0.03);}}
+async function lenOf(c){if(c.len==null){try{c.len=(await dec(c.src)).duration;}catch(e){c.len=-1;}}return c.len;}
+
+// a random team / player for the fills, the way the game says them
+const rnd=a=>a[(Math.random()*a.length)|0];
+// like the game: a renamed team without new name clips is called by its city (if that stayed) or not named at all
+function teamParts(key,form){const o=S.obj,T=S.teams[key],f=form||rnd(['city','nick','team']);const ok=T.voiced?[f,'city','team','nick']:T.city===T.orig.city?['city']:[];const pick=ok.find(x=>o[x]&&o[x][key]);
+  if(!pick)return{parts:[],label:'(no recorded name)'};return{parts:[{src:o[pick][key].src}],label:`${pick==='city'?S.teams[key].city:pick==='nick'?S.teams[key].nick:S.teams[key].city+' '+S.teams[key].nick} (${pick==='team'?'city + name':pick==='city'?'city':'name'})`};}
+function randomTeam(){const ks=Object.keys(S.teams).filter(k=>S.obj.city[k]||S.obj.team[k]||S.obj.nick[k]);return rnd(ks.length?ks:Object.keys(S.teams));}
+function playerParts(){const ks=Object.keys(S.obj.pn);if(!ks.length)return{parts:[],label:''};const n=rnd(ks);return{parts:[{src:S.obj.pn[n].src}],label:n};}
+function numParts(){const ks=Object.keys(S.obj.pnum).filter(k=>+k>0&&+k<20);const n=rnd(ks.length?ks:['7']);return S.obj.pnum[n]?{parts:[{src:S.obj.pnum[n].src}],label:'#'+n}:{parts:[],label:''};}
+
+/* ============ phrase markers → game metadata ============ */
+const MARK={X:'A',Y:'B',P:'P',P2:'P2','#':'X'};
+function tokens(text){return String(text||'').trim().split(/\s+/).filter(Boolean);}
+// where the fills go: returns [{f,pos:'start'|'end'|'mid'}] in order
+function fillsOf(text){const t=tokens(text).map(w=>w.replace(/[.,!?;:'’"]+$/,'').replace(/^['"]+/,''));const out=[];
+  t.forEach((w,i)=>{const m=w.replace(/'s$/,'');if(MARK[m])out.push({f:MARK[m]+(w.endsWith("'s")&&MARK[m]!=='P'&&MARK[m]!=='P2'&&MARK[m]!=='X'?'n':''),pos:i===0?'start':i===t.length-1?'end':'mid'});});return out;}
+function metaFor(c,len){const F=fillsOf(c.text),cuts=String(c.cut||'').split(/[,;\s]+/).map(Number).filter(x=>x>0&&x<len);let ci=0;const p=[];let at=0;
+  for(const f of F){if(f.pos==='start'){p.push({f:f.f});continue;}if(f.pos==='end')continue;const cut=cuts[ci++];if(cut==null)return{err:'Mark where the name goes: give a cut time in seconds.'};p.push([at,cut],{f:f.f});at=cut;}
+  p.push([at,len]);for(const f of F)if(f.pos==='end')p.push({f:f.f});return{p,len};}
+
+/* ============ what a row sounds like in the game ============ */
+async function rowParts(kind,c,ctx){const len=await lenOf(c);let label=[];const out=[];
+  const team=randomTeam(),other=rnd(Object.keys(S.teams).filter(k=>k!==team));
+  const fill=f=>{if(f==='A'||f==='An'){const r=teamParts(team);label.push(r.label);return r.parts;}if(f==='B'||f==='Bn'||f==='V'){const r=teamParts(other);label.push(r.label);return r.parts;}
+    if(f==='P'||f==='P2'){const r=playerParts();label.push(r.label);return r.parts;}if(f==='X'){const r=numParts();label.push(r.label);return r.parts;}return[];};
+  if(kind==='tpl'){const M=c.orig?S.meta[ctx.v][ctx.key]:metaFor(c,len);if(!M||M.err){toast(M&&M.err||'No timing for this line yet.');return[{src:c.src}];}
+    for(const p of M.p){if(Array.isArray(p))out.push({src:c.src,off:p[0],dur:p[1]-p[0],gap:0});else out.push({pause:0.03},...fill(p.f));}}
+  else if(kind==='pb'){const m=c.orig?S.meta.pb[ctx.key]:(fillsOf(c.text)[0]?.pos==='start'?{he:0}:{});
+    if(m&&m.he!=null&&Math.random()<0.6){out.push(...fill('P'),{pause:0.06},{src:c.src,off:m.he});}else out.push({src:c.src});}
+  else if(kind==='arr'){const pre=ctx.pre;const H=c.orig?S.hemap[ctx.cat+c.i]:null;
+    if(pre==='P'){const nm=fill('P');if(H&&H[0]==='rep')out.push({src:c.src,dur:H[1]},...nm,{src:c.src,off:H[2]});else if(H&&H[0]==='ins')out.push({src:c.src,dur:H[1]},{pause:0.06},...nm,{src:c.src,off:H[1]});
+      else{const F=c.orig?[]:fillsOf(c.text);const cut=+c.cut;if(F[0]&&F[0].pos==='mid'&&cut>0)out.push({src:c.src,dur:cut},...nm,{src:c.src,off:cut});else out.push(...nm,{pause:0.15},{src:c.src});}}
+    else if(pre==='X'){out.push(...fill('A'),{pause:0.05},{src:c.src});}
+    else if(ctx.cat==='atm1a'||ctx.cat==='atm5a'||ctx.cat==='atm6a'){out.push({src:c.src},...fill('A'));}
+    else out.push({src:c.src});}
+  else out.push({src:c.src});
+  return{parts:out,label:label.join(', ')};}
+
+/* ============ navigation ============ */
+const SECTIONS=[['','home','Start'],['League','teams','Teams, logos & kits'],['League','music','Music'],
+ ['Commentary','names','Team names & intros'],['Commentary','story','Game situations'],['Commentary','pb','Play-by-play'],['Commentary','moments','Players & moments'],
+ ['Commentary','players','Player names & numbers'],['Arena','arena','Crowd & arena sounds'],['Arena','horns','Home-arena horns']];
+function renderNav(){let h='<h1>VINTAGE<br>BUILDER</h1>',g=null;for(const[grp,id,lab]of SECTIONS){if(grp!==g){g=grp;if(grp)h+=`<div class="grp">${grp.toUpperCase()}</div>`;}
+  h+=`<button data-v="${id}" ${view===id?'aria-current="page"':''} ${!G&&id!=='home'?'disabled':''}>${lab}</button>`;}
+  $('nav').innerHTML=h;$('nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{view=b.dataset.v;filterTxt='';render();});}
+function render(){renderNav();const m=$('main');m.innerHTML=(VIEWS[view]||VIEWS.home)();m.scrollTop=0;wire();fillLens();}
+
+/* ============ views ============ */
+const VIEWS={};
+VIEWS.home=()=>{let h=`<h2>VINTAGE BUILDER</h2><p class="lead">Pick the music, logos, kits and commentary for Vintage Basket, listen to every line, then save a setup file (<b>vintage.vbf</b>). Put the setup file in the same folder as the game and the game uses it the next time it is opened.</p>`;
+  if(!G)return h+`<div class="drop" id="drop"><p><b>1.</b> Open the game file (<b>index.html</b>) so the builder can read the current sounds, logos and teams.</p><button class="big" id="openGame">OPEN GAME FILE</button><p class="muted">You can also drag the file here.</p></div>`;
+  const cnt=countClips();
+  h+=`<div class="stat"><div><b>${Object.keys(S.teams).length}</b>teams</div><div><b>${S.music.length}</b>music tracks</div><div><b>${cnt.all}</b>commentary &amp; arena clips</div><div><b>${cnt.changed}</b>changes</div></div>
+  <p class="muted">Game file: ${esc(gameName)}</p>
+  <div class="row"><button class="big" id="saveVbf">SAVE SETUP (.VBF)</button><button id="openVbf">Open a saved setup</button><button id="openGame">Open another game file</button><button id="resetAll" class="del">Undo all changes</button></div>
+  <div class="guide"><b>How the setup reaches the game.</b> Save the file as <b>vintage.vbf</b> in the folder where the game's index.html is. The game reads it on start. If your browser saves it as vintage(1).vbf, rename it.</div>
+  <div class="guide"><b>Sizes.</b> Logos: square PNG with a transparent background, at least 256 × 256 px (the game shows them at 96 px). Clip lengths are shown on each page; lines that are too long or short are marked in yellow.<br>
+  <b>Fills.</b> In a phrase, write <b>X</b> where the team's name goes, <b>Y</b> for the other team, <b>P</b> for a player and <b>#</b> for a number. In the 1st quarter the game says the full name (city + nickname) one time in three; otherwise the city or the nickname. If the name goes in the middle of the recording, give the cut time in seconds.<br>
+  <b>Check with Claude.</b> When everything is in place, bring the .vbf to Claude to check that every clip cuts in correctly.</div>`;
+  return h;};
+function countClips(){let all=0,changed=0;const chk=c=>{all++;if(!c.orig||c.dirty)changed++;};
+  for(const c in S.arr)S.arr[c].forEach(chk);for(const v in S.obj)Object.values(S.obj[v]).forEach(chk);
+  changed+=delCount();for(const k in S.teams)if(teamDirty(k))changed++;if(musicDirty())changed++;return{all,changed};}
+function delCount(){let n=0;for(const c in S.arr){const kept=new Set(S.arr[c].filter(x=>x.orig).map(x=>x.i));n+=(G.VOX_DATA[c]||[]).filter((_,i)=>!kept.has(i)).length;}
+  for(const v in S.obj)for(const k in G.VOX_DATA[v]||{})if(!S.obj[v][k])n++;return n;}
+
+// one table row
+function rowHTML(id,sit,name,c,o={}){const cls=!c.orig?'new':c.dirty?'changed':'';
+  const phrase=c.orig&&!c.dirty?`<span>${esc(name)}</span>${o.tags||''}`:`<input class="phrase" type="text" data-phr="${id}" value="${esc(c.text)}" placeholder="${esc(o.ph||'Write the line, e.g. X needs to speed up their offense')}" aria-label="Phrase">${o.cutOK?` <input class="cut" type="text" data-cut="${id}" value="${esc(c.cut)}" placeholder="cut s" title="Where the name goes, in seconds (only for a name in the middle)" aria-label="Cut time">`:''}`;
+  return`<tr class="${cls}"><td class="sit">${esc(sit)}</td><td>${phrase}</td><td class="len" data-len="${id}" data-lk="${o.lk||''}">…</td>
+   <td class="act"><button data-play="${id}">Play</button><button class="del" data-del="${id}">Delete</button><button data-imp="${id}">Import</button></td></tr>`;}
+const TABLE_HEAD='<table><thead><tr><th>Situation</th><th>Phrase</th><th>Length</th><th></th></tr></thead><tbody>';
+// registry of the rows on screen: id -> handlers
+let ROWS={};let rid=0;
+function reg(o){const id='r'+(rid++);ROWS[id]=o;return id;}
+
+VIEWS.story=()=>{ROWS={};let h=`<h2>GAME SITUATIONS</h2><p class="lead">Storylines from Tony (play-by-play) and Jeni (analyst). The game picks one line from the situation when it happens, once a quarter at most.</p>
+  <div class="guide">Length <b>${LEN_TXT('story')}</b>. X = the team the line is about, Y = the other team, P = a player, # = a number (points).</div>${filterBox()}`;
+  for(const[lab,cat,keys]of STORY){const rows=[];let n=0;
+    for(const vk of keys){const[v,key]=vk.split(':');const all=Object.keys(S.obj[v]).filter(k=>k===key||k.startsWith(key+'~')).sort((a,b)=>S.obj[v][a].orig===S.obj[v][b].orig?0:S.obj[v][a].orig?-1:1);
+      for(const k of all){const c=S.obj[v][k];const nm=c.orig?`${lab} ${ABC(n++)}`:'';if(!match(lab+' '+nm+' '+c.text))continue;
+        rows.push(rowHTML(reg({kind:'tpl',ctx:{v,key:k},c,del:()=>delete S.obj[v][k],imp:x=>{S.obj[v][k]=Object.assign(x,{orig:false});}}),lab,nm,c,{tags:fillTags(S.meta[v][k]),cutOK:true,lk:'story'}));}}
+    const first=keys[0].split(':');
+    h+=`<h3>${esc(lab.toUpperCase())}</h3>${TABLE_HEAD}${rows.join('')}</tbody></table><button data-add="${reg({add:x=>addVariant(first[0],first[1],x)})}">+ Add a line</button>`;}
+  const used=new Set(STORY.flatMap(s=>s[2]));const rest=[];let n=0;
+  for(const v of['tn','jn'])for(const k of Object.keys(S.obj[v]).sort()){const base=k.split('~')[0];if(used.has(v+':'+base))continue;const c=S.obj[v][k];const nm=`${v==='tn'?'Tony':'Jeni'} storyline ${ABC(n++)}`;
+    if(!match(nm+' '+c.text))continue;rest.push(rowHTML(reg({kind:'tpl',ctx:{v,key:k},c,del:()=>delete S.obj[v][k],imp:x=>{S.obj[v][k]=Object.assign(x,{orig:false});}}),'Other storyline',nm,c,{tags:fillTags(S.meta[v][k]),cutOK:true,lk:'story'}));}
+  if(rest.length)h+=`<h3>OTHER STORYLINES</h3>${TABLE_HEAD}${rest.join('')}</tbody></table>`;
+  const jx=Object.keys(S.obj.jx).sort().map((k,i)=>{const c=S.obj.jx[k];return rowHTML(reg({kind:'tpl',ctx:{v:'jx',key:k},c,del:()=>delete S.obj.jx[k],imp:x=>{S.obj.jx[k]=Object.assign(x,{orig:false});}}),'Jeni one-liner (once a game)',`One-liner ${ABC(i)}`,c,{tags:fillTags(S.meta.jx[k]),cutOK:true,lk:'story'});});
+  h+=`<h3>JENI ONE-LINERS</h3>${TABLE_HEAD}${jx.join('')}</tbody></table>`;
+  return h;};
+function fillTags(M){if(!M||!M.p)return'';const f=M.p.filter(p=>!Array.isArray(p)).map(p=>({A:'X',An:"X's",B:'Y',Bn:"Y's",V:'visitors',P:'P',P2:'P2',X:'#'}[p.f]||p.f));return f.length?`<span class="tag">${esc(f.join(' · '))}</span>`:'';}
+function addVariant(v,key,x){let n=2;while(S.obj[v][key+'~'+n])n++;S.obj[v][key+'~'+n]=Object.assign(x,{orig:false});}
+
+VIEWS.pb=()=>{ROWS={};let h=`<h2>PLAY-BY-PLAY</h2><p class="lead">Tony's short calls during play. A line can start with the player's name (write P first), with "He", or with no name.</p>
+  <div class="guide">Length <b>${LEN_TXT('pb')}</b>. With several lines for one call, the game picks one at random.</div>${filterBox()}<table><thead><tr><th>Situation</th><th>Phrase</th><th>Length</th><th></th></tr></thead><tbody>`;
+  const bases=Object.keys(PB_LAB).concat(Object.keys(S.obj.pb).map(k=>k.split('~')[0]).filter(k=>!PB_LAB[k]));
+  for(const base of[...new Set(bases)]){const lab=PB_LAB[base]||base;let n=0;
+    for(const k of Object.keys(S.obj.pb).filter(k=>k===base||k.startsWith(base+'~')).sort((a,b)=>S.obj.pb[a].orig===S.obj.pb[b].orig?0:S.obj.pb[a].orig?-1:1)){const c=S.obj.pb[k];const nm=`${lab} ${ABC(n++)}`;if(!match(lab+nm+c.text))continue;
+      h+=rowHTML(reg({kind:'pb',ctx:{key:k},c,del:()=>delete S.obj.pb[k],imp:x=>{S.obj.pb[k]=Object.assign(x,{orig:false});}}),lab,nm,c,{ph:'e.g. P sinks it from downtown',lk:'pb',tags:S.meta.pb[k]&&S.meta.pb[k].he!=null?'<span class="tag">P / He</span>':''});}
+    h+=`<tr><td></td><td colspan="3"><button data-add="${reg({add:x=>{let n=2;while(S.obj.pb[base+'~'+n])n++;S.obj.pb[base+'~'+n]=Object.assign(x,{orig:false});}})}">+ Add a line for “${esc(lab)}”</button></td></tr>`;}
+  return h+'</tbody></table>';};
+
+function arrSection(groups,title,lead){ROWS={};let h=`<h2>${title}</h2><p class="lead">${lead}</p>${filterBox()}`;let g0=null;
+  for(const[grp,cat,lab,pre,lk]of ARR){if(!groups.includes(grp)||!S.arr[cat])continue;if(grp!==g0){g0=grp;h+=`<h3>${esc(grp.toUpperCase())}</h3>`;}
+    const rows=S.arr[cat].map((c,i)=>{const nm=`${lab} ${ABC(i)}`;if(!match(lab+nm+c.text))return'';
+      return rowHTML(reg({kind:'arr',ctx:{cat,pre},c,del:()=>S.arr[cat].splice(S.arr[cat].indexOf(c),1),imp:x=>{S.arr[cat][S.arr[cat].indexOf(c)]=Object.assign(x,{orig:false});}}),lab,nm,c,{cutOK:pre==='P',lk,ph:pre==='P'?'e.g. P takes his first warning':pre==='X'?'e.g. X has gone ice cold':'Write the line'});}).join('');
+    h+=`<div class="guide">${esc(lab)}: ${pre==='P'?'the player is named before the line (write P first, or P in the middle with a cut time).':pre==='X'?'the team is named before the line.':'played as it is.'} Length <b>${LEN_TXT(lk)}</b>.</div>${TABLE_HEAD}${rows}</tbody></table><button data-add="${reg({add:x=>S.arr[cat].push(Object.assign(x,{orig:false}))})}">+ Add a line</button>`;}
+  return h;}
+VIEWS.moments=()=>arrSection(['Fouls','Moments','Team play','Game flow','Arena announcer'],'PLAYERS &amp; MOMENTS','Lines for fouls, milestones, team runs and the arena announcer.');
+VIEWS.arena=()=>arrSection(['Crowd','Arena'],'CROWD &amp; ARENA SOUNDS','Chants, cheers, the crowd bed and the arena horns and fanfares.');
+
+VIEWS.names=()=>{ROWS={};let h=`<h2>TEAM NAMES &amp; INTROS</h2><p class="lead">How the commentators say each team. Every phrase with X uses these. A team with a new name needs new name clips; until then the game says only the city, or no name at all if the city changed too.</p>
+  <div class="guide">Names <b>${LEN_TXT('name')}</b>, city intros <b>${LEN_TXT('intro')}</b> (played for the home team before tip-off).</div>${filterBox()}`;
+  for(const k of Object.keys(S.teams).sort((a,b)=>(S.teams[a].city+S.teams[a].nick).localeCompare(S.teams[b].city+S.teams[b].nick))){const T=S.teams[k];const nm=`${T.city} ${T.nick}`;if(!match(nm))continue;
+    const fresh=T.city!==T.orig.city||T.nick!==T.orig.nick;
+    h+=`<h3>${esc(nm.toUpperCase())} <span class="tag">${esc(T.abbr)}</span>${!T.voiced?' <span class="tag warn">recorded as '+esc((G.LEAGUE_REC[k]||[]).join(' '))+'</span>':''}</h3>${TABLE_HEAD}`;
+    for(const[v,lab]of[['city','City'],['nick','Nickname'],['team','City + nickname (Tony)'],['jt','City + nickname (Jeni)']]){const c=S.obj[v][k];
+      const old=c&&c.orig&&(T.city!==T.orig.city||(v!=='city'&&T.nick!==T.orig.nick));
+      if(c)h+=rowHTML(reg({kind:'one',c,del:()=>delete S.obj[v][k],imp:x=>{S.obj[v][k]=Object.assign(x,{orig:false});T.voiced=true;}}),lab,`${lab}`,c,{lk:'name',ph:lab,tags:old?`<span class="tag warn">${T.voiced?'old name: replace or delete':'old name, not used'}</span>`:''});
+      else h+=`<tr><td class="sit">${lab}</td><td class="muted">no recording${v==='city'&&k==='ANC'?' (uses the Kansas City clip)':''}</td><td></td><td class="act"><button data-add="${reg({add:x=>{S.obj[v][k]=Object.assign(x,{orig:false});T.voiced=true;}})}">Import</button></td></tr>`;}
+    const intros=Object.keys(S.obj.ti).filter(x=>x.startsWith(k+'_')).sort();
+    intros.forEach((x,i)=>{const c=S.obj.ti[x];h+=rowHTML(reg({kind:'tpl',ctx:{v:'ti',key:x},c,del:()=>delete S.obj.ti[x],imp:y=>{S.obj.ti[x]=Object.assign(y,{orig:false});}}),'Home city intro',`City intro ${ABC(i)}`,c,{lk:'intro',cutOK:true,tags:fillTags(S.meta.ti[x]),ph:'e.g. Welcome to Baltimore, tonight Y comes to town'});});
+    h+=`</tbody></table><button data-add="${reg({add:x=>{let n=0;while(S.obj.ti[k+'_'+n])n++;S.obj.ti[k+'_'+n]=Object.assign(x,{orig:false});}})}">+ Add a city intro</button>`;
+    if(fresh&&!T.voiced)h+=`<p class="warn">New name: import the city, nickname and full-name clips so the commentators can say “${esc(nm)}”.</p>`;}
+  return h;};
+
+VIEWS.players=()=>{ROWS={};let h=`<h2>PLAYER NAMES &amp; NUMBERS</h2><p class="lead">Player names, jersey numbers and positions as the commentators say them.</p><div class="guide">Names and numbers <b>${LEN_TXT('num')}</b>.</div>${filterBox('Search a player')}`;
+  const sec=(v,title,lab)=>{const ks=Object.keys(S.obj[v]).sort((a,b)=>isNaN(a)?a.localeCompare(b):a-b);const rows=ks.filter(k=>match(k)).slice(0,filterTxt?400:120).map(k=>rowHTML(reg({kind:'one',c:S.obj[v][k],del:()=>delete S.obj[v][k],imp:x=>{S.obj[v][k]=Object.assign(x,{orig:false});}}),lab,v==='pbn'?'Number '+k:k,S.obj[v][k],{lk:'num'})).join('');
+    return`<h3>${title} (${ks.length})</h3>${TABLE_HEAD}${rows}</tbody></table>${!filterTxt&&ks.length>120?'<p class="muted">Showing the first 120. Search to find others.</p>':''}`;};
+  h+=sec('pn','PLAYER NAMES','Player name')+sec('pbn','“NUMBER …” PHRASES','Jersey number')+sec('pnum','NUMBERS','Number')+sec('ppos','POSITIONS','Position');
+  return h;};
+
+VIEWS.horns=()=>{ROWS={};let h=`<h2>HOME-ARENA HORNS</h2><p class="lead">Each arena's own sound when the home team reaches 25, 50 and 75 points with the lead.</p><div class="guide">Length <b>${LEN_TXT('arena')}</b>.</div>${TABLE_HEAD}`;
+  for(const k of Object.keys(S.teams)){const T=S.teams[k],c=S.obj.th[k];
+    h+=c?rowHTML(reg({kind:'one',c,del:()=>delete S.obj.th[k],imp:x=>{S.obj.th[k]=Object.assign(x,{orig:false});}}),`${T.city} ${T.nick}`,'Arena horn',c,{lk:'arena'})
+      :`<tr><td class="sit">${esc(T.city+' '+T.nick)}</td><td class="muted">none</td><td></td><td class="act"><button data-add="${reg({add:x=>{S.obj.th[k]=Object.assign(x,{orig:false});}})}">Import</button></td></tr>`;}
+  return h+'</tbody></table>';};
+
+VIEWS.music=()=>{ROWS={};let h=`<h2>MUSIC</h2><p class="lead">The game picks tip-off music from the long tracks and plays the rest at random in timeouts and between quarters.</p>
+  <div class="guide">Tip-off tracks <b>${LEN_TXT('musicL')}</b> (faded out after 40 s), break music <b>${LEN_TXT('musicS')}</b>. MP3, 44.1 kHz.</div>`;
+  for(const long of[true,false]){h+=`<h3>${long?'TIP-OFF (LONG TRACKS)':'BREAKS AND TIMEOUTS'}</h3><table><thead><tr><th>Track</th><th>Use</th><th>Length</th><th></th></tr></thead><tbody>`;
+    S.music.forEach((c,i)=>{if(c.long!==long)return;const id=reg({kind:'one',c,del:()=>S.music.splice(S.music.indexOf(c),1),imp:x=>{S.music[S.music.indexOf(c)]=Object.assign(x,{orig:false,long:c.long});}});
+      h+=`<tr class="${c.orig?'':'new'}"><td>${c.orig?'Track '+(i+1):`<input class="phrase" type="text" data-phr="${id}" value="${esc(c.text)}" placeholder="Track name" aria-label="Track name">`}</td>
+       <td><select data-long="${id}" aria-label="Use"><option value="1" ${long?'selected':''}>Tip-off</option><option value="0" ${!long?'selected':''}>Breaks</option></select></td>
+       <td class="len" data-len="${id}" data-lk="${long?'musicL':'musicS'}">…</td><td class="act"><button data-play="${id}">Play</button><button data-stop="1">Stop</button><button class="del" data-del="${id}">Delete</button><button data-imp="${id}">Import</button></td></tr>`;});
+    h+=`</tbody></table><button data-add="${reg({add:x=>S.music.push(Object.assign(x,{orig:false,long}))})}">+ Add a track</button>`;}
+  return h;};
+
+VIEWS.teams=()=>{ROWS={};let h=`<h2>TEAMS, LOGOS &amp; KITS</h2><p class="lead">Names, colours, home and away kits and logos. A team with several logos shows one of them at random in each game.</p>
+  <div class="guide">Logos: square PNG with a transparent background, at least <b>256 × 256 px</b>; the game scales it to 96 px. Kit colours: base, lettering, trim, second trim.</div><div class="cards">`;
+  for(const k of Object.keys(S.teams).sort((a,b)=>(S.teams[a].city).localeCompare(S.teams[b].city))){const T=S.teams[k];
+    h+=`<div class="card"><h4>${esc(T.city+' '+T.nick)} <span class="tag">${esc(k)}</span></h4>
+    <div class="kv"><label for="c_${k}">City</label><input type="text" id="c_${k}" data-tf="${k}:city" value="${esc(T.city)}">
+    <label for="n_${k}">Nickname</label><input type="text" id="n_${k}" data-tf="${k}:nick" value="${esc(T.nick)}">
+    <label for="a_${k}">Abbreviation</label><input type="text" id="a_${k}" data-tf="${k}:abbr" value="${esc(T.abbr)}" maxlength="4">
+    <label>Colours</label><div class="kitcols"><input type="color" data-tf="${k}:pri" value="${T.pri}" aria-label="Primary"><input type="color" data-tf="${k}:sec" value="${T.sec}" aria-label="Secondary"><input type="color" data-tf="${k}:numc" value="${T.numc}" aria-label="Number"></div>
+    <label>Home kit</label><div class="kitcols">${T.kit.h.map((c,i)=>`<input type="color" data-kit="${k}:h:${i}" value="${c}" aria-label="Home ${i}">`).join('')}</div>
+    <label>Away kit</label><div class="kitcols">${T.kit.a.map((c,i)=>`<input type="color" data-kit="${k}:a:${i}" value="${c}" aria-label="Away ${i}">`).join('')}</div></div>
+    <div class="kits">${kitSVG(T.kit.h,T.nick)}${kitSVG(T.kit.a,T.city)}</div>
+    <div class="logos">${T.logos.map((src,i)=>`<div class="logo"><img src="${src}" alt="${esc(T.nick)} logo ${i+1}"><button class="del" data-ldel="${k}:${i}" aria-label="Remove logo">×</button></div>`).join('')}<button data-ladd="${k}">+ Logo</button></div></div>`;}
+  return h+'</div>';};
+function kitSVG(c,word){return`<svg viewBox="0 0 100 130" aria-hidden="true"><path d="M21,4 L37,4 Q50,32 63,4 L79,4 Q81,31 97,41 L97,90 L3,90 L3,41 Q19,31 21,4Z" fill="${c[0]}" stroke="#555" stroke-width=".6"/>
+  <path d="M37,4 Q50,32 63,4" fill="none" stroke="${c[2]}" stroke-width="4"/><path d="M21,4 Q19,31 3,41 M79,4 Q81,31 97,41" fill="none" stroke="${c[2]}" stroke-width="4"/>
+  <text x="50" y="52" text-anchor="middle" font-size="${Math.min(13,90/Math.max(4,word.length))}" font-family="Silkscreen,monospace" fill="${c[1]}">${esc(word.toUpperCase())}</text>
+  <text x="50" y="80" text-anchor="middle" font-size="22" font-family="Silkscreen,monospace" fill="${c[1]}" stroke="${c[2]}" stroke-width=".8">23</text>
+  <path d="M5,94 L95,94 L97,128 L56,128 L50,118 L44,128 L3,128Z" fill="${c[0]}" stroke="#555" stroke-width=".6"/><rect x="5" y="94" width="90" height="5" fill="${c[2]}"/><rect x="3" y="124" width="94" height="3" fill="${c[3]}"/></svg>`;}
+
+function filterBox(ph='Search the situations and phrases'){return`<div class="filter"><input type="text" id="flt" value="${esc(filterTxt)}" placeholder="${ph}" aria-label="Search" style="width:min(420px,100%)"></div>`;}
+const match=s=>!filterTxt||String(s).toLowerCase().includes(filterTxt.toLowerCase());
+
+/* ============ events ============ */
+let pending=null;
+function wire(){const m=$('main');
+  const f=$('flt');if(f){f.oninput=()=>{filterTxt=f.value;const pos=f.selectionStart;render();const g=$('flt');g.focus();g.setSelectionRange(pos,pos);};}
+  m.querySelectorAll('[data-play]').forEach(b=>b.onclick=async()=>{const R=ROWS[b.dataset.play];const r=await rowParts(R.kind,R.c,R.ctx);await playParts(r.parts);if(r.label)toast('Filled with: '+r.label,2500);});
+  m.querySelectorAll('[data-stop]').forEach(b=>b.onclick=stopAll);
+  m.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ROWS[b.dataset.del].del();render();});
+  m.querySelectorAll('[data-imp]').forEach(b=>b.onclick=()=>pickAudio(x=>{const R=ROWS[b.dataset.imp];x.text=R.c.text;R.imp(x);render();}));
+  m.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>pickAudio(x=>{ROWS[b.dataset.add].add(x);render();toast('Added. Write the phrase so the game knows where the names go.');}));
+  m.querySelectorAll('[data-phr]').forEach(i=>i.onchange=()=>{ROWS[i.dataset.phr].c.text=i.value;});
+  m.querySelectorAll('[data-cut]').forEach(i=>i.onchange=()=>{ROWS[i.dataset.cut].c.cut=i.value;});
+  m.querySelectorAll('[data-long]').forEach(s=>s.onchange=()=>{ROWS[s.dataset.long].c.long=s.value==='1';render();});
+  m.querySelectorAll('[data-tf]').forEach(i=>i.onchange=()=>{const[k,f]=i.dataset.tf.split(':');S.teams[k][f]=i.value;if(f==='city'||f==='nick')render();});
+  m.querySelectorAll('[data-kit]').forEach(i=>i.oninput=()=>{const[k,s,n]=i.dataset.kit.split(':');S.teams[k].kit[s][+n]=i.value;const card=i.closest('.card');card.querySelector('.kits').innerHTML=kitSVG(S.teams[k].kit.h,S.teams[k].nick)+kitSVG(S.teams[k].kit.a,S.teams[k].city);});
+  m.querySelectorAll('[data-ldel]').forEach(b=>b.onclick=()=>{const[k,i]=b.dataset.ldel.split(':');S.teams[k].logos.splice(+i,1);render();});
+  m.querySelectorAll('[data-ladd]').forEach(b=>b.onclick=()=>pickImage(src=>{S.teams[b.dataset.ladd].logos.push(src);render();}));
+  const og=$('openGame');if(og)og.onclick=()=>$('pickGame').click();
+  const ov=$('openVbf');if(ov)ov.onclick=()=>$('pickVbf').click();
+  const sv=$('saveVbf');if(sv)sv.onclick=saveVbf;
+  const ra=$('resetAll');if(ra)ra.onclick=()=>{if(ra.dataset.armed){initState();render();toast('Back to the game file as it is.');}else{ra.dataset.armed=1;ra.textContent='Click again to undo everything';}};
+  const d=$('drop');if(d){d.ondragover=e=>{e.preventDefault();d.classList.add('on');};d.ondragleave=()=>d.classList.remove('on');d.ondrop=e=>{e.preventDefault();d.classList.remove('on');const f=e.dataTransfer.files[0];if(f)loadGameFile(f);};}}
+async function fillLens(){for(const td of $('main').querySelectorAll('[data-len]')){const R=ROWS[td.dataset.len];if(!R)continue;const l=await lenOf(R.c);if(!td.isConnected)return;
+  if(l<0){td.textContent='?';continue;}td.textContent=l.toFixed(1)+' s';const r=LEN[td.dataset.lk];if(r&&(l<r[0]-0.05||l>r[1]+0.05)){td.classList.add('bad');td.title=`Recommended ${r[0]}–${r[1]} s`;}}}
+function pickAudio(cb){pending=cb;$('pickAudio').value='';$('pickAudio').click();}
+function pickImage(cb){pending=cb;$('pickImage').value='';$('pickImage').click();}
+$('pickAudio').onchange=e=>{const f=e.target.files[0];if(!f||!pending)return;const r=new FileReader();r.onload=async()=>{const x=clip(r.result,{orig:false,text:f.name.replace(/\.mp3$/i,'').replace(/[_-]+/g,' ')});const l=await lenOf(x);if(l<0){toast('That file could not be read as audio.');return;}pending(x);pending=null;};r.readAsDataURL(f);};
+$('pickImage').onchange=e=>{const f=e.target.files[0];if(!f||!pending)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{
+  if(Math.min(im.width,im.height)<256)toast(`The logo is ${im.width}×${im.height} px; 256 px or more looks better.`,5000);
+  const S2=96,c=document.createElement('canvas');c.width=c.height=S2;const g=c.getContext('2d');const k=S2/Math.max(im.width,im.height);g.imageSmoothingQuality='high';
+  g.drawImage(im,(S2-im.width*k)/2,(S2-im.height*k)/2,im.width*k,im.height*k);pending(c.toDataURL('image/png'));pending=null;};im.src=r.result;};r.readAsDataURL(f);};
+$('pickGame').onchange=e=>{const f=e.target.files[0];if(f)loadGameFile(f);};
+$('pickVbf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{applyVbfToState(parseVbf(String(r.result)));render();toast('Setup opened: '+f.name);}catch(err){toast('Could not read the setup: '+err.message,6000);}};r.readAsText(f);};
+function loadGameFile(f){toast('Reading '+f.name+' …',8000);const r=new FileReader();r.onload=()=>{try{G=readGame(String(r.result));gameName=f.name;initState();BUF.clear();view='home';render();toast('Game file read: '+f.name);}
+  catch(err){toast(err.message,8000);}};r.readAsText(f);}
+
+/* ============ the setup file ============ */
+function teamDirty(k){const T=S.teams[k],row=G.LEAGUE.find(r=>r[0]===k);if(!row)return true;
+  return T.city!==row[1]||T.nick!==row[2]||T.abbr!==(G.ABBR[k]||k)||T.pri!==row[4][0]||T.sec!==row[4][1]||T.numc!==row[4][2]||JSON.stringify(T.kit)!==JSON.stringify(G.KITS[k])||JSON.stringify(T.logos)!==JSON.stringify(G.LOGO_SETS[k]||[])||T.voiced!==!G.LEAGUE_REC[k];}
+function musicDirty(){const o=G.SFX_DATA.music||[];return S.music.length!==o.length||S.music.some((c,i)=>c.src!==o[i]||c.long!==(i<G.MUSIC_LONG));}
+function buildVbf(){const V={format:'VBF',version:1,saved:new Date().toISOString(),teams:{},arr:{},hemap:{},obj:{},meta:{},notes:{},problems:[]};
+  for(const k in S.teams)if(teamDirty(k)){const T=S.teams[k];V.teams[k]={city:T.city,nick:T.nick,abbr:T.abbr,pri:T.pri,sec:T.sec,numc:T.numc,kit:T.kit,logos:T.logos,voiced:T.voiced};}
+  for(const c in S.arr){const o=G.VOX_DATA[c]||[],L=S.arr[c];const same=L.length===o.length&&L.every((x,i)=>x.orig&&x.i===i);if(same)continue;
+    V.arr[c]=L.map(x=>x.src);L.forEach((x,i)=>{if(x.orig&&S.hemap[c+x.i])V.hemap[c+i]=S.hemap[c+x.i];else if(!x.orig){const F=fillsOf(x.text);const cut=parseFloat(x.cut);if(F[0]&&F[0].pos==='mid'&&cut>0)V.hemap[c+i]=['ins',cut];if(x.text)V.notes['arr.'+c+'.'+i]=x.text;}});}
+  for(const v in S.obj){const o=G.VOX_DATA[v]||{},O={set:{},del:[]};
+    for(const k in o)if(!S.obj[v][k])O.del.push(k);
+    for(const k in S.obj[v]){const x=S.obj[v][k];if(x.orig)continue;O.set[k]=x.src;if(x.text)V.notes[v+'.'+k]=x.text;
+      if(['tn','jn','jx','ti'].includes(v)){const M=metaFor(x,x.len||0);if(M.err)V.problems.push(`${v}.${k}: ${M.err}`);else(V.meta[v]=V.meta[v]||{})[k]=M;}
+      if(v==='pb'){const F=fillsOf(x.text);(V.meta.pb=V.meta.pb||{})[k]=Object.assign({len:+(x.len||0).toFixed(3)},F[0]&&F[0].pos==='start'?{he:0}:{});}}
+    if(Object.keys(O.set).length||O.del.length)V.obj[v]=O;}
+  if(musicDirty()){const L=S.music.filter(x=>x.long).concat(S.music.filter(x=>!x.long));V.music={list:L.map(x=>x.src),long:L.filter(x=>x.long).length};}
+  return V;}
+function saveVbf(){const V=buildVbf();const txt='/* Vintage Builder setup: keep this file next to the game (index.html) as vintage.vbf */\nwindow.VBF='+JSON.stringify(V)+';\n';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/octet-stream'}));a.download='vintage.vbf';document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
+  toast(V.problems.length?`Saved, but ${V.problems.length} line(s) need a cut time: ${V.problems.slice(0,3).join('; ')}`:'Saved vintage.vbf. Put it in the game folder.',7000);}
+function parseVbf(txt){const i=txt.indexOf('{'),j=txt.lastIndexOf('}');const V=JSON.parse(txt.slice(i,j+1));if(V.format!=='VBF')throw new Error('not a Vintage Builder file');return V;}
+function applyVbfToState(V){if(!G)throw new Error('open the game file first');initState();
+  for(const k in V.teams||{}){const T=S.teams[k];if(!T)continue;const t=V.teams[k];Object.assign(T,{city:t.city,nick:t.nick,abbr:t.abbr,pri:t.pri,sec:t.sec,numc:t.numc,kit:t.kit,logos:t.logos||T.logos,voiced:!!t.voiced});}
+  for(const c in V.arr||{}){const o=G.VOX_DATA[c]||[];S.arr[c]=V.arr[c].map((src,i)=>{const j=o.indexOf(src);return j>=0?clip(src,{i:j}):clip(src,{orig:false,text:(V.notes||{})['arr.'+c+'.'+i]||'',cut:(V.hemap[c+i]&&V.hemap[c+i][0]==='ins')?String(V.hemap[c+i][1]):''});});}
+  for(const v in V.obj||{}){const O=V.obj[v];S.obj[v]=S.obj[v]||{};for(const k of O.del||[])delete S.obj[v][k];
+    for(const k in O.set||{}){const M=(V.meta[v]||{})[k];const cut=M&&M.p?M.p.filter(Array.isArray).slice(0,-1).map(p=>p[1]).join(','):'';S.obj[v][k]=clip(O.set[k],{orig:false,text:(V.notes||{})[v+'.'+k]||'',cut});}}
+  if(V.music){S.music=V.music.list.map((src,i)=>{const j=(G.SFX_DATA.music||[]).indexOf(src);return clip(src,{orig:j>=0,long:i<V.music.long});});}}
+
+render();
+</script>
+</body>
+</html>
