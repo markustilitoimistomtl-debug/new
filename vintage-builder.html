@@ -247,7 +247,7 @@ const SECTIONS=[['','home','Start'],['League','look','Look & layout'],['League',
 function renderNav(){let h='<h1>VINTAGE<br>BUILDER</h1>',g=null;for(const[grp,id,lab]of SECTIONS){if(grp!==g){g=grp;if(grp)h+=`<div class="grp">${grp.toUpperCase()}</div>`;}
   h+=`<button data-v="${id}" ${view===id?'aria-current="page"':''} ${!G&&id!=='home'?'disabled':''}>${lab}</button>`;}
   $('nav').innerHTML=h;$('nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{view=b.dataset.v;filterTxt='';render();});}
-function render(){renderNav();const m=$('main');m.innerHTML=(VIEWS[view]||VIEWS.home)();m.scrollTop=0;wire();fillLens();}
+function render(){renderNav();const m=$('main');m.innerHTML=(G&&view!=='home'?'<div class="row" style="justify-content:flex-end;max-width:1100px"><button id="resetPage" class="del">Restore this page’s defaults</button></div>':'')+(VIEWS[view]||VIEWS.home)();m.scrollTop=0;wire();fillLens();}
 
 /* ============ views ============ */
 const VIEWS={};
@@ -258,7 +258,7 @@ VIEWS.home=()=>{let h=`<h2>VINTAGE BUILDER</h2><p class="lead">Pick the music, l
   const cnt=countClips();
   h+=`<div class="stat"><div><b>${Object.keys(S.teams).length}</b>teams</div><div><b>${S.music.length}</b>music tracks</div><div><b>${cnt.all}</b>commentary &amp; arena clips</div><div><b>${cnt.changed}</b>changes</div></div>
   <p class="muted">Game file: ${esc(gameName)}</p>
-  <div class="row">${FS_OK?`<button class="big" id="updateGame">UPDATE GAME</button><button id="saveVbf">Save setup as a file</button>`:`<button class="big" id="saveVbf">SAVE SETUP (.VBF)</button>`}<button id="openVbf">Open a saved setup</button>${FS_OK?'<button id="openFolder">Open another game folder</button>':''}<button id="openGame">Open another game file</button><button id="resetAll" class="del">Undo all changes</button></div>
+  <div class="row">${FS_OK?`<button class="big" id="updateGame">UPDATE GAME</button><button id="saveVbf">Save setup as a file</button>`:`<button class="big" id="saveVbf">SAVE SETUP (.VBF)</button>`}<button id="openVbf">Open a saved setup</button>${FS_OK?'<button id="openFolder">Open another game folder</button>':''}<button id="openGame">Open another game file</button><button id="resetAll" class="del">Restore game defaults</button></div>
   <div class="guide"><b>How the setup reaches the game.</b> ${FS_OK?`<b>UPDATE GAME</b> writes <b>vintage.vbf</b> into the game folder${gameDir?` (“${esc(gameDir.name)}”)`:''}; reload the game to see the changes. `:''}A saved setup file must be named <b>vintage.vbf</b> and sit in the same folder as the game's index.html. If your browser saves it as vintage(1).vbf, rename it.</div>
   <div class="guide"><b>Sizes.</b> Logos: square PNG with a transparent background, at least 256 × 256 px (the game shows them at up to 160 px). Clip lengths are shown on each page; lines that are too long or short are marked in yellow.<br>
   <b>Fills.</b> In a phrase, write <b>X</b> where the team's name goes, <b>Y</b> for the other team, <b>P</b> for a player and <b>#</b> for a number. In the 1st quarter the game says the full name (city + nickname) one time in three; otherwise the city or the nickname. If the name goes in the middle of the recording, give the cut time in seconds.<br>
@@ -449,7 +449,11 @@ function wire(){const m=$('main');
   const ug=$('updateGame');if(ug)ug.onclick=updateGame;
   const of=$('openFolder');if(of)of.onclick=pickFolder;
   const rf=$('reopenFolder');if(rf)rf.onclick=()=>useFolder(lastDir).catch(e=>toast('Could not open the folder: '+e.message,6000));
-  const ra=$('resetAll');if(ra)ra.onclick=()=>{if(ra.dataset.armed){initState();render();toast('Back to the game file as it is.');}else{ra.dataset.armed=1;ra.textContent='Click again to undo everything';}};
+  const ra=$('resetAll');if(ra)ra.onclick=async()=>{if(!ra.dataset.armed){ra.dataset.armed=1;ra.textContent='Click again: back to the game’s defaults';return;}
+    initState();render();let msg='Back to the game’s defaults.';
+    if(gameDir){try{if(await gameDir.requestPermission({mode:'readwrite'})==='granted'){await gameDir.removeEntry('vintage.vbf');msg+=` vintage.vbf removed from “${gameDir.name}”; reload the game.`;}}catch(e){if(e.name==='NotFoundError')msg+=' The game folder had no setup file.';}}
+    else msg+=' If a vintage.vbf is in the game folder, delete it (or save this empty setup over it).';toast(msg,8000);};
+  const rp=$('resetPage');if(rp)rp.onclick=()=>{if(!rp.dataset.armed){rp.dataset.armed=1;rp.textContent='Click again to restore this page';return;}resetPage(view);render();toast('This page is back to the game’s defaults. Update the game to use them.',5000);};
   const d=$('drop');if(d){d.ondragover=e=>{e.preventDefault();d.classList.add('on');};d.ondragleave=()=>d.classList.remove('on');d.ondrop=e=>{e.preventDefault();d.classList.remove('on');const f=e.dataTransfer.files[0];if(f)loadGameFile(f);};}}
 async function fillLens(){for(const td of $('main').querySelectorAll('[data-len]')){const R=ROWS[td.dataset.len];if(!R)continue;const l=await lenOf(R.c);if(!td.isConnected)return;
   if(l<0){td.textContent='?';continue;}td.textContent=l.toFixed(1)+' s';const r=LEN[td.dataset.lk];if(r&&(l<r[0]-0.05||l>r[1]+0.05)){td.classList.add('bad');td.title=`Recommended ${r[0]}–${r[1]} s`;}}}
@@ -483,6 +487,15 @@ lastDirLoad();
 function loadGameFile(f){toast('Reading '+f.name+' …',8000);const r=new FileReader();r.onload=()=>{try{G=readGame(String(r.result));gameName=f.name;initState();BUF.clear();view='home';render();toast('Game file read: '+f.name);}
   catch(err){toast(err.message,8000);}};r.readAsText(f);}
 
+// put one page back to what the game file has (the other pages keep their changes)
+function resetPage(v){const keep=S;initState();const F=S;S=keep;
+  const obj=(...ks)=>ks.forEach(k=>S.obj[k]=F.obj[k]),meta=(...ks)=>ks.forEach(k=>S.meta[k]=F.meta[k]);
+  const arrG=gs=>{for(const[g,c]of ARR)if(gs.includes(g)&&F.arr[c])S.arr[c]=F.arr[c];};
+  switch(v){case'look':S.look=F.look;break;case'teams':S.teams=F.teams;break;case'music':S.music=F.music;break;
+    case'names':obj('city','nick','team','jt','ti');meta('ti');for(const k in S.teams)S.teams[k].voiced=F.teams[k].voiced;break;
+    case'story':obj('tn','jn','jx');meta('tn','jn','jx');break;case'pb':obj('pb');meta('pb');break;
+    case'moments':arrG(['Fouls','Moments','Team play','Game flow','Arena announcer']);break;case'arena':arrG(['Crowd','Arena']);break;
+    case'players':obj('pn','pnum','pbn','ppos');break;case'horns':obj('th');break;}}
 /* ============ the setup file ============ */
 function teamDirty(k){const T=S.teams[k],row=G.LEAGUE.find(r=>r[0]===k);if(!row)return true;
   return T.city!==row[1]||T.nick!==row[2]||T.abbr!==(G.ABBR[k]||k)||T.pri!==row[4][0]||T.sec!==row[4][1]||T.numc!==row[4][2]||JSON.stringify(T.kit)!==JSON.stringify(G.KITS[k])||JSON.stringify(T.logos)!==JSON.stringify(G.LOGO_SETS[k]||[])||T.voiced!==!G.LEAGUE_REC[k];}

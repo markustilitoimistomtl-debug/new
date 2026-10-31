@@ -314,6 +314,7 @@ input[type=file]{font-family:var(--f-body);font-size:13px;color:var(--ink);max-w
         <button class="big" id="start">TIP OFF</button>
         <button class="ghost" id="seasonBtn">VBL SEASON MODE</button>
         <button class="ghost" id="rosterBtn" hidden>ROSTERS &amp; LOGOS · IMPORT</button>
+        <button class="ghost" id="vbfBtn" hidden></button>
         <div class="help">Touch: left thumb moves. On offense hold SHOOT to jump and release at the top for a better shot; near the rim it lays up or dunks. PASS throws to the teammate you point at. On defense the buttons become JUMP (block) and STEAL.<br>Keyboard: arrows/WASD, Space = shoot/jump, X = pass/steal, T = timeout, P = pause.</div>
       </div>
     </div>
@@ -426,7 +427,10 @@ const LEAGUE_REC={"BAL":["Baltimore","Shipwrights"],"HFD":["Hartford","Underwrit
 // home and away kits from the uniform plan: [base, lettering, trim, second trim]
 const KITS={"BAL":{"h":["#f6f4f8","#4b3b6e","#111015","#d9d2e6"],"a":["#4b3b6e","#d9d2e6","#111015","#d9d2e6"]},"PRO":{"h":["#f8f5fa","#5a1e7c","#9f41bf","#e195ed"],"a":["#5a1e7c","#f8f5fa","#9f41bf","#e195ed"]},"HFD":{"h":["#f6f4f4","#0b1a33","#9f2226","#b9b4bd"],"a":["#0b1a33","#f6f4f4","#9f2226","#b9b4bd"]},"BUF":{"h":["#f5f6f6","#2b3d55","#9a6028","#2b3d55"],"a":["#2b3d55","#f5f6f6","#9a6028","#c9d3dc"]},"MTL":{"h":["#f7f5f3","#d21b2a","#4a1512","#e16714"],"a":["#d21b2a","#f7f5f3","#4a1512","#e16714"]},"RIC":{"h":["#f7efe3","#e26d0e","#5f331f","#1d0e0a"],"a":["#e26d0e","#f7efe3","#5f331f","#1d0e0a"]},"RAL":{"h":["#f6f2f0","#a8352a","#3c302c","#e0b4ad"],"a":["#a8352a","#f6f2f0","#3c302c","#e0b4ad"]},"PIT":{"h":["#f6efdc","#c0101c","#141012","#e8620c"],"a":["#141012","#c0101c","#e8620c","#f6efdc"]},"CIN":{"h":["#f6f9fb","#4f8fc0","#e2690f","#141012"],"a":["#4f8fc0","#f6f9fb","#e2690f","#141012"]},"COL":{"h":["#f6f4f2","#6a1f22","#bf3c25","#bcbcd0"],"a":["#6a1f22","#f6f4f2","#bf3c25","#bcbcd0"]},"LOU":{"h":["#f5f0e2","#c22622","#5c0f10","#1a0807"],"a":["#c22622","#f5f0e2","#5c0f10","#f5f0e2"]},"NSH":{"h":["#efe2d8","#353130","#d14326","#7a2320"],"a":["#353130","#efe2d8","#d14326","#7a2320"]},"BHM":{"h":["#efe7d6","#3d3a37","#d6b56a","#9a978c"],"a":["#3d3a37","#d6b56a","#9a978c","#d6b56a"]},"JAX":{"h":["#f4fbfb","#2f8f8c","#cd7d2a","#1d5150"],"a":["#2f8f8c","#f4fbfb","#cd7d2a","#1d5150"]},"STL":{"h":["#fbfbfa","#15100e","#c9c8be","#e0861f"],"a":["#15100e","#fbfbfa","#c9c8be","#e0861f"]},"KCK":{"h":["#f3e7d4","#9c3618","#4e1912","#f0a96e"],"a":["#9c3618","#f3e7d4","#4e1912","#f0a96e"]},"OMA":{"h":["#f5f5f3","#24262a","#f2c230","#16171a"],"a":["#24262a","#f2c230","#16171a","#f2c230"]},"TUL":{"h":["#f6efd8","#22110a","#e2b75a","#8f5d23"],"a":["#22110a","#e2b75a","#8f5d23","#e2b75a"]},"AUS":{"h":["#f7f7f5","#0b2545","#b5101a","#0b2545"],"a":["#0b2545","#f7f7f5","#b5101a","#f7f7f5"]},"ELP":{"h":["#f1ead9","#3e2a1c","#c27823","#ecad4d"],"a":["#3e2a1c","#ecad4d","#c27823","#f1ead9"]},"MEX":{"h":["#efeddc","#2f4a1f","#b5552b","#6c7350"],"a":["#2f4a1f","#efeddc","#b5552b","#efeddc"]},"SEA":{"h":["#f7f8fa","#7a3fc2","#2fd3cf","#3f1f6e"],"a":["#7a3fc2","#f7f8fa","#2fd3cf","#f7f8fa"]},"VAN":{"h":["#eaedd2","#123a1d","#5b6b44","#c5a24a"],"a":["#123a1d","#eaedd2","#c5a24a","#5b6b44"]},"ANC":{"h":["#f4f4f2","#0d2e49","#b6893e","#0d2e49"],"a":["#0d2e49","#b6893e","#f4f4f2","#b6893e"]},"HNL":{"h":["#f4f8f4","#0e5e4b","#c9c22a","#13906b"],"a":["#0e5e4b","#f4f8f4","#c9c22a","#13906b"]},"SDG":{"h":["#f4f8fb","#1c78d2","#e67f17","#14457e"],"a":["#14457e","#f4f8fb","#e67f17","#1c78d2"]},"LVS":{"h":["#f6f5f1","#0c1222","#dc981b","#b5b5b4"],"a":["#0c1222","#dc981b","#b5b5b4","#dc981b"]},"ABQ":{"h":["#f7f5ef","#c22225","#1a49b1","#f8bf17"],"a":["#c22225","#f7f5ef","#f8bf17","#1a49b1"]}};
 // Vintage Builder setup (vintage.vbf): team names, colours and kits
-const VBF=typeof window!=='undefined'&&window.VBF&&window.VBF.format==='VBF'?window.VBF:null;
+// the player can switch the setup off from the menu (back to the game's defaults) without deleting the file
+const VBF_FILE=typeof window!=='undefined'&&window.VBF&&window.VBF.format==='VBF'?window.VBF:null;
+const VBF_OFF=(()=>{try{return localStorage.getItem('vbf-off')==='1';}catch(e){return false;}})();
+const VBF=VBF_FILE&&!VBF_OFF?VBF_FILE:null;
 if(VBF&&VBF.teams)for(const row of LEAGUE){const t=VBF.teams[row[0]];if(!t)continue;
   if(t.city)row[1]=t.city;if(t.nick)row[2]=t.nick;row[4]=[t.pri||row[4][0],t.sec||row[4][1],t.numc||row[4][2]];
   if(t.kit)KITS[row[0]]=t.kit;if(t.abbr)ABBR[row[0]]=t.abbr;if(t.voiced)delete LEAGUE_REC[row[0]];}
@@ -3249,6 +3253,8 @@ let toolsT=null;$('momBadge').onclick=()=>$('bug').onclick();$('bug').onclick=()
 $('tools').addEventListener('click',()=>{clearTimeout(toolsT);toolsT=setTimeout(()=>$('tools').classList.remove('open'),6000);});
 addEventListener('pointerdown',()=>{ac();if(!$('menu').hidden||!$('season').hidden)Music.play({slot:'m'});},{once:true});
 $('fAgain').onclick=()=>{if(G&&G.opts.season&&SEASON&&!G.recorded){G.recorded=true;seasonAfterGame();}else openMenu();};
+if(VBF_FILE){const b=$('vbfBtn');b.hidden=false;b.textContent=VBF_OFF?'DEFAULT SETUP IN USE · TAP FOR YOUR SETUP':'YOUR SETUP (VINTAGE.VBF) IN USE · TAP FOR THE DEFAULTS';
+  b.onclick=()=>{try{localStorage.setItem('vbf-off',VBF_OFF?'0':'1');}catch(e){}location.reload();};}
 $('seasonBtn').onclick=openSeason;$('seClose').onclick=openMenu;$('preGo').onclick=dropFirst;$('preSkip').onclick=()=>{if(G&&G.pre)G.pre.T=17.01;};
 $('iNext').onclick=leaveInter;$('iHide').onclick=()=>{interSkip=Math.min(3,interPh+1);};$('iShow').onclick=leaveInter;
 $('tMenu').onclick=openMenu;

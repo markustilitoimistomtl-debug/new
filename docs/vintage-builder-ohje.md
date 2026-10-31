@@ -26,6 +26,16 @@ jonka peli lukee käynnistyessään.
    Päivitä peli selaimessa (F5), niin muutokset näkyvät. Ensimmäisellä kerralla selain kysyy luvan kirjoittaa kansioon.
    Firefoxissa valitse **SAVE SETUP (.VBF)** ja siirrä `vintage.vbf` pelin kansioon (korjaa nimi, jos selain lisäsi `(1)`).
 
+## Oletusten palauttaminen
+
+Pelin nykyiset asetukset ovat oletukset. Jos jokin ääni tai logo ei toimi pelissä hyvin:
+
+- **Restore this page's defaults** (jokaisen sivun oikeassa yläkulmassa) palauttaa vain kyseisen sivun pelin oletuksiin,
+  esim. pelkän musiikin tai pelkät tilannekommentit. Muut muutokset säilyvät. Paina sen jälkeen **UPDATE GAME**.
+- **Restore game defaults** (Start-sivulla) palauttaa kaiken ja poistaa pelikansiosta `vintage.vbf`-tiedoston.
+- Pelin valikossa on nappi, jolla setupin saa pois päältä ilman tiedoston poistamista
+  ("YOUR SETUP (VINTAGE.VBF) IN USE · TAP FOR THE DEFAULTS"), ja samalla napilla takaisin päälle.
+
 ## Ulkoasu (Look & layout)
 
 - **Theme**: 20 teemaa eri aikojen peleistä ja tv-lähetyksistä, esim. Jam Session, Network '80s, Cable Sports '90s,
