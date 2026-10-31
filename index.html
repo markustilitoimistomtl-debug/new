@@ -2365,7 +2365,7 @@ function storyScan(){if(!G||G.state==='pregame'||attract||!AC)return;const S=VOX
     if(S.maxDef&&S.maxDef[t]>=10&&lead<0&&lead>-10&&!S.chip?.[t]){S.chip=S.chip||{};S.chip[t]=1;if(story('comeback',[['jn','j_chip',{A:t}],['tn','t_mom',{A:t}]]))return;}
     if(Q.maxLead[t]>=8&&lead<=3&&lead>-3&&fr<0.8&&story('slowing',[['jn','j_firing',{A:t,B:o}],['jn','j_early',{A:t}],['jn','j_weather',{B:o}]]))return;
     if(qd(t,'bench')>=8&&story('bench',[['jn','j_second',{A:t}]]))return;
-    if(qd(t,'fta')>=6&&qd(t,'ftm')/Math.max(1,qd(t,'fta'))<0.6&&story('ftbad',[['jn','j_trip',{A:t}],['jn','j_despite',{A:t,B:o}]]))return;
+    if(qd(t,'fta')>=6&&qd(t,'ftm')/Math.max(1,qd(t,'fta'))<0.6&&story('ftbad',[['jn','j_trip',{A:t}]].concat(lead>0&&lead<=12?[['jn','j_despite',{A:t,B:o}]]:[])))return;   // "keeping B in this game" only when A leads
     const tpaShare=qd(t,'tpa')/Math.max(1,qd(t,'fga'));if(qd(t,'fga')>=6&&tpaShare>0.55&&Q.paint[o]>=4&&story('inout',[['jn','j_vibes',{A:t,B:o}],['jn','j_fires',{A:t,B:o}],['jn','j_inout',{}]]))return;}
   const fga=qd(0,'fga')+qd(1,'fga'),fgm=qd(0,'fgm')+qd(1,'fgm');
   if(fr>0.35&&fga>=14&&fgm/fga<0.33&&story('cold',[['jn','j_dry',{}],['jn','j_tov',{}],['tn','t_stroke',{}]]))return;
@@ -2423,7 +2423,7 @@ function storyEvent(e,d){if(!G||attract||!AC)return;const S=VOX.st,Q=qState(),no
     case'scuffle':setTimeout(()=>story('words',[['tn','t_words',{P:d.a.id,P2:d.b.id}]],{prio:1}),900);break;
     case'fall':if(d.hurt&&R<0.7)setTimeout(()=>story('medical',[['tn','t_medical',{P:d.id}]],{prio:1}),900);break;
     case'timeout':setTimeout(()=>story('break',[['jn','j_break',{}],['jn','j_adjust',{}]]),2500);S.toAt={t:d,time:G.gameT};break;
-    case'block':if(d.p&&hdist(d.p.t,d.p.x,d.p.y)<9&&R<0.3)setTimeout(()=>story('denied',[['jn','j_denied',{A:d.p.t}]]),700);break;
+    case'block':if(d.p&&d.shooter&&hdist(d.shooter.t,d.shooter.x,d.shooter.y)<9&&R<0.3)setTimeout(()=>story('denied',[['jn','j_denied',{A:d.p.t}]]),700);break;
     case'rebound':{const p=d.p;if(!p||!p.id||(p.id.pos!=='C'&&p.id.pos!=='PF'))break;Q.bigReb[p.id.n]=(Q.bigReb[p.id.n]||0)+1;
       if(Q.bigReb[p.id.n]>=5&&R<0.4)setTimeout(()=>story('bigs',[['tn','t_bigs',{P:p.id}],['jn','j_pound',{}]]),600);break;}
     case'sub':S.subIn=S.subIn||{};S.subIn[d.in.n]=G.gameT;break;}}
