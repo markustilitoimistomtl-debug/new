@@ -57,6 +57,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hi
 #bugTeams{display:flex;flex-direction:column;gap:3px}
 .brow{display:flex;align-items:center;gap:8px;height:26px}
 .brow .chip{min-width:44px;text-align:center;box-sizing:border-box}
+.tlogo{height:1.6em;width:auto;vertical-align:middle;margin:0 .1em}
 .chip.logo{background:transparent!important;box-shadow:none!important;padding:0 9px}
 .bnote{font-family:var(--f-body);font-size:13px;font-weight:700;color:#fff;white-space:nowrap;letter-spacing:.02em}
 .bnote:empty{display:none}
@@ -2471,6 +2472,7 @@ function pbEvent(e,d){if(!AC)return;const now=AC.currentTime,V=VOX.st,R=Math.ran
     case'shot':{V.loft=null;const S=G.ball.shot;if(d.kind==='ft'||!S)break;const id=S.by.id;
       if(d.three&&S.d>=24&&R<0.3){if(pbLine('loft',id))V.loft={id,at:now};}else if(R<0.3)voxName(id);break;}
     case'score':{const id=d.p;
+      if(pbRecent(V.brk,id,8)){V.brk=null;if(!d.three)pbAfter([{k:'pb_pts2'}]);break;}   // finished the breakaway: "two points"
       if(pbRecent(V.loft,id,5)){V.loft=null;pbAfter([{k:'pb_settle'}]);break;}
       if(pbRecent(V.spin,id,4)){V.spin=null;pbLine('spin',id,{prio:1});break;}
       if(pbRecent(V.oop,id,4))break;
@@ -2491,7 +2493,7 @@ function pbEvent(e,d){if(!AC)return;const now=AC.currentTime,V=VOX.st,R=Math.ran
       const m=PB.crush,b=Math.random()<0.5?whoParts(fin):null;
       vxParts([...(a?[...a,{pause:0.05},{k:'pb_lob',off:PB.lob.he}]:[{k:'pb_lob'}]),{pause:0.12},...(b?[...b,{pause:0.05},{k:'pb_crush',off:m.he}]:[{k:'pb_crush'}])],{prio:1});break;}
     case'spinmove':V.spin={id:d.id,at:now};break;
-    case'rebound':{const p=d.p;if(!p||!p.id)break;
+    case'rebound':{V.brk=null;const p=d.p;if(!p||!p.id)break;
       if(d.off&&G.pl.filter(q=>q.t!==p.t&&hyp(q.x-p.x,q.y-p.y)<5).length>=2&&R<0.5)pbLine('oreb',p.id);else if(R<0.1)pbLine('reb',p.id);break;}
     case'foul':{if(d.kind==='flagrant'||d.n>=5||R>0.55)break;const n=d.n,c=[];if(n<=4)c.push('wt'+n,'wg'+n);if(n>=2)c.push('wn'+n);
       const k=c[(Math.random()*c.length)|0];setTimeout(()=>pbLine(k,d.p.id),900);V.warned=now;break;}
@@ -2570,7 +2572,7 @@ function voxIntro(){if(!G||attract)return;VOX.st.introDone=true;let t=0.4;
   if(VOX.st.tiDone)return;   // the city intro already named both teams
   for(const tm of[1,0]){const d=teamVoice(tm,'team',t);if(d)t+=d+0.35;}
   if(AC)VOX.busyUntil=AC.currentTime+t;}
-function voxReset(){const s=VOX.st;s.seen={};s.hist=[];s.hundred=false;s.hypeAt=0;s.poss=null;s.scored=false;s.score=[0,0];s.fails=[0,0];s.lead=[true,true];s.ptsLead=null;s.rebLead=null;s.introDone=false;s.an={};s.anQ=[];s.anU={};s.anLast=-99;s.min1={};s.rh={};s.Q=null;s.sumQ={};s.catQ={};s.maxDef=[0,0];s.chip={};s.storm={};s.clk={};s.subIn={};s.lcAt=null;s.post=null;s.thief=null;s.lastPoss=null;s.tiDone=false;s.jx={};s.m20={};s.thr={};s.tm={};s.cardio=0;s.passN=0;s.loft=s.spin=s.oop=s.steal=null;s.jnUsed={};VOX.busyUntil=0;VOX.lastLine=-99;}
+function voxReset(){const s=VOX.st;s.seen={};s.hist=[];s.hundred=false;s.hypeAt=0;s.poss=null;s.scored=false;s.score=[0,0];s.fails=[0,0];s.lead=[true,true];s.ptsLead=null;s.rebLead=null;s.introDone=false;s.an={};s.anQ=[];s.anU={};s.anLast=-99;s.min1={};s.rh={};s.Q=null;s.sumQ={};s.catQ={};s.maxDef=[0,0];s.chip={};s.storm={};s.clk={};s.subIn={};s.lcAt=null;s.post=null;s.thief=null;s.lastPoss=null;s.tiDone=false;s.jx={};s.m20={};s.thr={};s.tm={};s.cardio=0;s.passN=0;s.loft=s.spin=s.oop=s.steal=null;s.jnUsed={};s.brkUsed=false;s.brk=null;VOX.busyUntil=0;VOX.lastLine=-99;}
 function voxEvent(e,d){if(!G||attract)return;
   try{if(AC)anEvent(e,d,AC.currentTime);}catch(_){}
   try{pbEvent(e,d);}catch(_){}
@@ -2584,7 +2586,9 @@ function voxEvent(e,d){if(!G||attract)return;
     case'foulout':setTimeout(()=>voxSay('out',{prio:2,pid:d.id}),1500);break;
     case'turnover':if(d.msg==='DOUBLE DRIBBLE')setTimeout(()=>voxSay('ddrib',{prio:1,pid:d.who}),600);break;
     case'handle':{VOX.hc=(VOX.hc||0)+1;if(VOX.hc%2===0&&AC&&AC.currentTime>=VOX.busyUntil&&AC.currentTime-VOX.lastLine>=20)voxSay('handle',{key:voxBag('drib',DRIB_POOL),pid:d&&d.id});break;}
-    case'breakaway':if(pbRecent(VOX.st.steal,d.id,2.5)&&Math.random()<0.7){VOX.busyUntil=0;if(pbLine('pick',d.id,{prio:1}))break;}voxSay('brk',{prio:1,pid:d.id});break;
+    case'breakaway':{const V=VOX.st,id=d.id,now=AC?AC.currentTime:0;V.brk={id,at:now};   // the breakaway line once a game, then just the name
+      if(pbRecent(V.steal,id,2.5)&&Math.random()<0.7){VOX.busyUntil=0;if(pbLine('pick',id,{prio:1}))break;}
+      if(!V.brkUsed){if(voxSay('brk',{prio:1,pid:id}))V.brkUsed=1;}else{VOX.busyUntil=0;voxName(id);}break;}
     case'milestone':if(d.txt==='TRIPLE-DOUBLE')setTimeout(()=>voxSay('trip',{prio:2,pid:d.p}),900);else if(d.txt==='DOUBLE-DOUBLE')setTimeout(()=>voxSay('dbl',{prio:1,pid:d.p}),900);break;
     case'score':{if(d.kind==='dunk'&&Math.random()<0.25)setTimeout(()=>voxSay('jam',{pid:d.p}),700);const all=Object.values(G.stats);const top=all.reduce((a,s)=>!a||s.pts>a.pts?s:a,null);
       if(top&&top.pts>=10&&VOX.st.ptsLead!==top.id.n&&all.filter(s=>s.pts===top.pts).length===1){const had=VOX.st.ptsLead;VOX.st.ptsLead=top.id.n;if(had)setTimeout(()=>voxSay('scorer',{pid:top.id}),1600);}
@@ -3008,7 +3012,8 @@ function startGame(x){
   $('tSub').hidden=false;
   buildCourt();chip($('c0'),1);chip($('c1'),0);
   $('tSpeed').hidden=hum>=0;$('tTO').hidden=hum<0;tc('tSpeed','1×');tc('tPause','II');
-  const H0=G.teams[0],A0=G.teams[1];$('preTitle').textContent=`${A0.R.city} ${A0.R.nick} at ${H0.R.city} ${H0.R.nick}`;
+  const H0=G.teams[0],A0=G.teams[1],lg=T=>LOGO_DATA[T.key]?` <img class="tlogo" src="${LOGO_DATA[T.key]}" alt="">`:'';   // team names with this game's logos
+  $('preTitle').innerHTML=`${esc(A0.R.city+' '+A0.R.nick)}${lg(A0)} at ${esc(H0.R.city+' '+H0.R.nick)}${lg(H0)}`;
   const lu=T=>`<div><b>${T.ab} · ${T.home?'HOME':'AWAY'}</b>${T.R.P.slice(0,5).map(p=>`${p.pos} #${p.no} ${p.n}`).join('<br>')}</div>`;
   $('preLine').innerHTML=lu(A0)+lu(H0);$('preGo').textContent=hum>=0?'TIP OFF':'TIP OFF (AUTO)';
   $('pre').hidden=false;$('pre').classList.remove('clear');$('preCard').hidden=false;$('preSkip').hidden=true;
