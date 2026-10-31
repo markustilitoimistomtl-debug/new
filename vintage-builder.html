@@ -190,7 +190,7 @@ function initState(){
   for(const[, c]of ARR)if(Array.isArray(V[c]))S.arr[c]=V[c].map((src,i)=>clip(src,{i}));
   for(const v of['pb','tn','jn','jx','ti','city','nick','team','jt','pn','pnum','pbn','ppos','th','tmx']){S.obj[v]={};for(const k in V[v]||{})S.obj[v][k]=clip(V[v][k]);}
   S.meta={pb:clone(G.PB),tn:clone(G.TN_META),jn:clone(G.JN_META),jx:clone(G.JX_META),ti:clone(G.TI_META)};
-  S.music=(G.SFX_DATA.music||[]).map((src,i)=>clip(src,{long:i<G.MUSIC_LONG}));
+  S.music=(G.SFX_DATA.music||[]).map((src,i)=>clip(src,{use:useDefault(i,i<G.MUSIC_LONG)}));
   S.hemap=clone(G.HEMAP);}
 const clone=o=>JSON.parse(JSON.stringify(o||{}));
 
@@ -381,14 +381,17 @@ VIEWS.horns=()=>{ROWS={};let h=`<h2>HOME-ARENA HORNS</h2><p class="lead">Each ar
       :`<tr><td class="sit">${esc(T.city+' '+T.nick)}</td><td class="muted">none</td><td></td><td class="act"><button data-add="${reg({add:x=>{S.obj.th[k]=Object.assign(x,{orig:false});}})}">Import</button></td></tr>`;}
   return h+'</tbody></table>';};
 
-VIEWS.music=()=>{ROWS={};let h=`<h2>MUSIC</h2><p class="lead">The game picks tip-off music from the long tracks and plays the rest at random in timeouts and between quarters.</p>
-  <div class="guide">Tip-off tracks <b>${LEN_TXT('musicL')}</b> (faded out after 40 s), break music <b>${LEN_TXT('musicS')}</b>. MP3, 44.1 kHz.</div>`;
-  for(const long of[true,false]){h+=`<h3>${long?'TIP-OFF (LONG TRACKS)':'BREAKS AND TIMEOUTS'}</h3><table><thead><tr><th>Track</th><th>Use</th><th>Length</th><th></th></tr></thead><tbody>`;
-    S.music.forEach((c,i)=>{if(c.long!==long)return;const id=reg({kind:'one',c,del:()=>S.music.splice(S.music.indexOf(c),1),imp:x=>{S.music[S.music.indexOf(c)]=Object.assign(x,{orig:false,long:c.long});}});
-      h+=`<tr class="${c.orig?'':'new'}"><td>${c.orig?'Track '+(i+1):`<input class="phrase" type="text" data-phr="${id}" value="${esc(c.text)}" placeholder="Track name" aria-label="Track name">`}</td>
-       <td><select data-long="${id}" aria-label="Use"><option value="1" ${long?'selected':''}>Tip-off</option><option value="0" ${!long?'selected':''}>Breaks</option></select></td>
-       <td class="len" data-len="${id}" data-lk="${long?'musicL':'musicS'}">…</td><td class="act"><button data-play="${id}">Play</button><button data-stop="1">Stop</button><button class="del" data-del="${id}">Delete</button><button data-imp="${id}">Import</button></td></tr>`;});
-    h+=`</tbody></table><button data-add="${reg({add:x=>S.music.push(Object.assign(x,{orig:false,long}))})}">+ Add a track</button>`;}
+// where a track plays: t tip-off, b breaks and timeouts, f final results, m menus (any mix)
+const SLOTS=[['t','Tip-off'],['b','Breaks'],['f','Final results'],['m','Menus']];
+const useDefault=(i,long)=>long?'tbfm':'bfm';
+VIEWS.music=()=>{ROWS={};let h=`<h2>MUSIC</h2><p class="lead">Tick where each track can play. The game picks at random from the tracks ticked for that moment: the tip-off, timeouts and breaks between quarters, the final results, and the menus. Any track can go anywhere.</p>
+  <div class="guide">Tip-off tracks <b>${LEN_TXT('musicL')}</b> (faded out after 40 s), other music <b>${LEN_TXT('musicS')}</b>. MP3, 44.1 kHz. A moment with no tracks ticked uses all of them.</div>
+  <table><thead><tr><th>Track</th>${SLOTS.map(x=>`<th>${x[1]}</th>`).join('')}<th>Length</th><th></th></tr></thead><tbody>`;
+  S.music.forEach((c,i)=>{const id=reg({kind:'one',c,del:()=>S.music.splice(S.music.indexOf(c),1),imp:x=>{S.music[S.music.indexOf(c)]=Object.assign(x,{orig:false,use:c.use});}});
+    h+=`<tr class="${c.orig?'':'new'}"><td>${c.orig?'Track '+(i+1):`<input class="phrase" type="text" data-phr="${id}" value="${esc(c.text)}" placeholder="Track name" aria-label="Track name">`}</td>
+     ${SLOTS.map(([k,lab])=>`<td><input type="checkbox" data-use="${id}:${k}" ${c.use.includes(k)?'checked':''} aria-label="${lab}"></td>`).join('')}
+     <td class="len" data-len="${id}" data-lk="${c.use.includes('t')?'musicL':'musicS'}">…</td><td class="act"><button data-play="${id}">Play</button><button data-stop="1">Stop</button><button class="del" data-del="${id}">Delete</button><button data-imp="${id}">Import</button></td></tr>`;});
+  h+=`</tbody></table><button data-add="${reg({add:x=>S.music.push(Object.assign(x,{orig:false,use:'b'}))})}">+ Add a track</button>`;
   return h;};
 
 VIEWS.teams=()=>{ROWS={};let h=`<h2>TEAMS, LOGOS &amp; KITS</h2><p class="lead">Names, colours, home and away kits and logos. A team with several logos shows one of them at random in each game.</p>
@@ -424,7 +427,7 @@ function wire(){const m=$('main');
   m.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>pickAudio(x=>{ROWS[b.dataset.add].add(x);render();toast('Added. Write the phrase so the game knows where the names go.');}));
   m.querySelectorAll('[data-phr]').forEach(i=>i.onchange=()=>{ROWS[i.dataset.phr].c.text=i.value;});
   m.querySelectorAll('[data-cut]').forEach(i=>i.onchange=()=>{ROWS[i.dataset.cut].c.cut=i.value;});
-  m.querySelectorAll('[data-long]').forEach(s=>s.onchange=()=>{ROWS[s.dataset.long].c.long=s.value==='1';render();});
+  m.querySelectorAll('[data-use]').forEach(cb=>cb.onchange=()=>{const[id,k]=cb.dataset.use.split(':'),c=ROWS[id].c;c.use=SLOTS.map(x=>x[0]).filter(x=>x===k?cb.checked:c.use.includes(x)).join('');});
   m.querySelectorAll('[data-tf]').forEach(i=>i.onchange=()=>{const[k,f]=i.dataset.tf.split(':');S.teams[k][f]=i.value;if(f==='city'||f==='nick')render();});
   m.querySelectorAll('[data-kit]').forEach(i=>i.oninput=()=>{const[k,s,n]=i.dataset.kit.split(':');S.teams[k].kit[s][+n]=i.value;const card=i.closest('.card');card.querySelector('.kits').innerHTML=kitSVG(S.teams[k].kit.h,S.teams[k].nick)+kitSVG(S.teams[k].kit.a,S.teams[k].city);});
   m.querySelectorAll('[data-ldel]').forEach(b=>b.onclick=()=>{const[k,i]=b.dataset.ldel.split(':');S.teams[k].logos.splice(+i,1);render();});
@@ -460,7 +463,7 @@ function loadGameFile(f){toast('Reading '+f.name+' …',8000);const r=new FileRe
 /* ============ the setup file ============ */
 function teamDirty(k){const T=S.teams[k],row=G.LEAGUE.find(r=>r[0]===k);if(!row)return true;
   return T.city!==row[1]||T.nick!==row[2]||T.abbr!==(G.ABBR[k]||k)||T.pri!==row[4][0]||T.sec!==row[4][1]||T.numc!==row[4][2]||JSON.stringify(T.kit)!==JSON.stringify(G.KITS[k])||JSON.stringify(T.logos)!==JSON.stringify(G.LOGO_SETS[k]||[])||T.voiced!==!G.LEAGUE_REC[k];}
-function musicDirty(){const o=G.SFX_DATA.music||[];return S.music.length!==o.length||S.music.some((c,i)=>c.src!==o[i]||c.long!==(i<G.MUSIC_LONG));}
+function musicDirty(){const o=G.SFX_DATA.music||[];return S.music.length!==o.length||S.music.some((c,i)=>c.src!==o[i]||c.use!==useDefault(i,i<G.MUSIC_LONG));}
 function buildVbf(){const V={format:'VBF',version:1,saved:new Date().toISOString(),teams:{},arr:{},hemap:{},obj:{},meta:{},notes:{},problems:[]};
   for(const k in S.teams)if(teamDirty(k)){const T=S.teams[k];V.teams[k]={city:T.city,nick:T.nick,abbr:T.abbr,pri:T.pri,sec:T.sec,numc:T.numc,kit:T.kit,logos:T.logos,voiced:T.voiced};}
   for(const c in S.arr){const o=G.VOX_DATA[c]||[],L=S.arr[c];const same=L.length===o.length&&L.every((x,i)=>x.orig&&x.i===i);if(same)continue;
@@ -472,7 +475,7 @@ function buildVbf(){const V={format:'VBF',version:1,saved:new Date().toISOString
       if(v==='pb'){const F=fillsOf(x.text);(V.meta.pb=V.meta.pb||{})[k]=Object.assign({len:+(x.len||0).toFixed(3)},F[0]&&F[0].pos==='start'?{he:0}:{});}}
     if(Object.keys(O.set).length||O.del.length)V.obj[v]=O;}
   if(JSON.stringify(S.look)!==JSON.stringify(baseLook())){const T=THEMES.find(t=>t[0]===S.look.theme)||THEMES[0];V.look=Object.assign(clone(S.look),{vars:lookVars(T[0]),fonts:[...new Set(T[4])].map(f=>f.replace(/ /g,'+'))});}
-  if(musicDirty()){const L=S.music.filter(x=>x.long).concat(S.music.filter(x=>!x.long));V.music={list:L.map(x=>x.src),long:L.filter(x=>x.long).length};}
+  if(musicDirty())V.music={list:S.music.map(x=>x.src),use:S.music.map(x=>x.use),long:S.music.filter(x=>x.use.includes('t')).length};
   return V;}
 function saveVbf(){const V=buildVbf();const txt='/* Vintage Builder setup: keep this file next to the game (index.html) as vintage.vbf */\nwindow.VBF='+JSON.stringify(V)+';\n';
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/octet-stream'}));a.download='vintage.vbf';document.body.appendChild(a);a.click();
@@ -485,7 +488,7 @@ function applyVbfToState(V){if(!G)throw new Error('open the game file first');in
   for(const c in V.arr||{}){const o=G.VOX_DATA[c]||[];S.arr[c]=V.arr[c].map((src,i)=>{const j=o.indexOf(src);return j>=0?clip(src,{i:j}):clip(src,{orig:false,text:(V.notes||{})['arr.'+c+'.'+i]||'',cut:(V.hemap[c+i]&&V.hemap[c+i][0]==='ins')?String(V.hemap[c+i][1]):''});});}
   for(const v in V.obj||{}){const O=V.obj[v];S.obj[v]=S.obj[v]||{};for(const k of O.del||[])delete S.obj[v][k];
     for(const k in O.set||{}){const M=(V.meta[v]||{})[k];const cut=M&&M.p?M.p.filter(Array.isArray).slice(0,-1).map(p=>p[1]).join(','):'';S.obj[v][k]=clip(O.set[k],{orig:false,text:(V.notes||{})[v+'.'+k]||'',cut});}}
-  if(V.music){S.music=V.music.list.map((src,i)=>{const j=(G.SFX_DATA.music||[]).indexOf(src);return clip(src,{orig:j>=0,long:i<V.music.long});});}}
+  if(V.music){S.music=V.music.list.map((src,i)=>{const j=(G.SFX_DATA.music||[]).indexOf(src);return clip(src,{orig:j>=0,use:V.music.use?V.music.use[i]:useDefault(i,i<V.music.long)});});}}
 
 render();
 </script>

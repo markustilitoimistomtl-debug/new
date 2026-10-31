@@ -2169,10 +2169,11 @@ function drum(k,t,dest){const a=AC;
   const g=a.createGain();const dur=k==='h'?0.04:0.12;g.gain.setValueAtTime(k==='h'?0.08:0.22,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);n.connect(f).connect(g).connect(dest);n.start(t);n.stop(t+dur+0.02);}
 const Music={on:false,gain:null,timer:null,t0:0,loop:0,want:false,tries:0,soft:false,mode:null,src:null,lastTrack:-1,
   play(o){o=o||{};const soft=!!o.soft;this.want=true;if(!AC||!sound)return;
+    const slot=o.slot||'b';if(this.on&&this.mode==='rec'&&this.slot!==slot&&o.slot){this.stop();this.want=true;}   // a new moment with its own music
     if(this.on){if(this.mode==='rec'&&this.soft!==soft){this.soft=soft;this.gain.gain.setTargetAtTime(soft?0.2:0.5,AC.currentTime,0.4);}return;}
     if(!VOX.buf.music0){if(++this.tries<20){setTimeout(()=>{if(this.want&&!this.on)this.play(o);},300);return;}return this.playChip();}
-    this.tries=0;this.on=true;this.soft=soft;this.mode='rec';this.gain=AC.createGain();this.gain.gain.value=0.0001;this.gain.gain.setTargetAtTime(soft?0.2:0.5,AC.currentTime,0.5);this.gain.connect(AC.destination);
-    const n=SFX_DATA.music.length;const next=()=>{if(!this.on||this.mode!=='rec')return;let i=(Math.random()*n)|0;if(i===this.lastTrack)i=(i+1)%n;this.lastTrack=i;const s=AC.createBufferSource();s.buffer=VOX.buf['music'+i];s.connect(this.gain);s.onended=()=>{if(this.src===s)next();};this.src=s;s.start();};
+    this.tries=0;this.on=true;this.soft=soft;this.slot=slot;this.mode='rec';this.gain=AC.createGain();this.gain.gain.value=0.0001;this.gain.gain.setTargetAtTime(soft?0.2:0.5,AC.currentTime,0.5);this.gain.connect(AC.destination);
+    const n=SFX_DATA.music.length;const next=()=>{if(!this.on||this.mode!=='rec')return;const i=musicPick(this.slot,this.lastTrack);this.lastTrack=i;const s=AC.createBufferSource();s.buffer=VOX.buf['music'+i];s.connect(this.gain);s.onended=()=>{if(this.src===s)next();};this.src=s;s.start();};
     next();},
   playChip(){if(!AC||!sound||this.on)return;this.on=true;this.mode='chip';this.gain=AC.createGain();this.gain.gain.value=0.9;this.gain.connect(AC.destination);
     const spb=60/THEME.bpm;this.t0=AC.currentTime+0.1;this.loop=0;const loopLen=THEME.voices[0].seq.len*spb;
@@ -2463,6 +2464,12 @@ if(VBF){
     if(v==='ti')for(const k in O.set||{})TI_NEW[k.split('_')[0]]=1;}
   for(const v in VBF.meta||{}){const M=v==='pb'?PB:LINE_META[v];if(M)Object.assign(M,VBF.meta[v]);}
   if(VBF.music&&VBF.music.list&&VBF.music.list.length){SFX_DATA.music.length=0;SFX_DATA.music.push(...VBF.music.list);MUSIC_LONG=Math.max(1,Math.min(VBF.music.long|0,SFX_DATA.music.length));}}
+// where each music track plays: t tip-off, b breaks and timeouts, f final results, m menus (from the builder; by default the
+// tip-off tracks play everywhere and the rest everywhere but the tip-off). A moment with no tracks set uses all of them.
+const MUSIC_USE=VBF&&VBF.music&&VBF.music.use&&VBF.music.list&&VBF.music.list.length?VBF.music.use:null;
+const musicUse=i=>MUSIC_USE&&MUSIC_USE[i]!=null?MUSIC_USE[i]:i<MUSIC_LONG?'tbfm':'bfm';
+function musicPick(slot,last){const n=SFX_DATA.music.length;let L=[];for(let i=0;i<n;i++)if(musicUse(i).includes(slot))L.push(i);if(!L.length)L=[...Array(n).keys()];
+  if(L.length>1)L=L.filter(i=>i!==last);return L[(Math.random()*L.length)|0];}
 // a line with several takes (key, key~2, key~3 …): one of them at random
 function pickVar(M,v,key){let L=Object.keys(M).filter(k=>(k===key||k.startsWith(key+'~'))&&VOX.buf[v+'_'+k]);
   if(v==='jn'){const U=VOX.st.jnUsed||(VOX.st.jnUsed={});L=L.filter(k=>!U[k]);if(!L.length)return null;}   // Jeni says each line once a game
@@ -2620,7 +2627,7 @@ const DRIB_POOL=['handle0','handle1',...Array.from({length:13},(_,i)=>'show'+i)]
 function failPool(off){const def=1-off,L=[],n=c=>(VOX_DATA[c]||[]).length;for(let i=0;i<n('cold');i++)L.push({id:'c'+i,parts:[{team:off},'cold'+i]});for(let i=0;i<n('wall');i++)L.push({id:'w'+i,parts:[{team:def},'wall'+i]});
   for(let i=0;i<n('coldx');i++)L.push({id:'cx'+i,parts:['coldx'+i]});for(let i=0;i<n('wallx');i++)L.push({id:'wx'+i,parts:['wallx'+i]});L.push({id:'cl',parts:['clinicA0',{team:def},'clinicB0']});return L;}
 function voxIntro(){if(!G||attract)return;VOX.st.introDone=true;let t=0.4;
-  if(SFX_DATA.music&&!Music.on){const n=MUSIC_LONG;let i=(Math.random()*n)|0;if(i===Music.lastTrack)i=(i+1)%n;Music.lastTrack=i;const w=VOX.st.tiDone&&AC?Math.max(0,VOX.busyUntil-AC.currentTime):0;   // after the city intro, not over it
+  if(SFX_DATA.music&&!Music.on){const i=musicPick('t',Music.lastTrack);Music.lastTrack=i;const w=VOX.st.tiDone&&AC?Math.max(0,VOX.busyUntil-AC.currentTime):0;   // after the city intro, not over it
     sfx('music'+i,{when:w,gain:0.42,dur:40,fadeIn:0.8,fadeOut:20});if(AC)VOX.st.hypeAt=AC.currentTime+w+24;}
   if(VOX.st.tiDone)return;   // the city intro already named both teams
   for(const tm of[1,0]){const d=teamVoice(tm,'team',t);if(d)t+=d+0.35;}
@@ -3006,7 +3013,7 @@ function showFinal(){
   $('final').hidden=false;$('touch').hidden=true;
   const w=b>a?0:1;hornFor(G.teams[w].key);if(w===0){SND.crowd(5);for(let i=0;i<60;i++)G.props.push({k:'conf',x:rnd(0,CW),y:rnd(0,CH),a:rnd(6.28),t0:G.time+rnd(0,2),col:['#ffd23a',G.teams[0].R.pri,G.teams[0].R.sec,'#ffffff'][i%4]});}
   sfx('finale0',{when:0.7,gain:0.85});
-  setTimeout(()=>{if(!$('final').hidden)Music.play();},VOX.buf.finale0?10000:1800);
+  setTimeout(()=>{if(!$('final').hidden)Music.play({slot:'f'});},VOX.buf.finale0?10000:1800);
 }
 
 /* ---------- loop ---------- */
@@ -3086,7 +3093,7 @@ function dropFirst(){if(!G||G.state!=='pregame')return;
   $('touch').hidden=!(G.human>=0&&coarse());setTip();
   // the city intro a moment before the tip; the jump ball waits for it
   try{const d=introLine();if(d>0){G.stateT=Math.max(G.stateT,d+0.4);VOX.st.tiDone=true;}}catch(e){}}
-function openMenu(){paused=false;hideLineup();Music.stop();Crowd.stop();Bed.stop();setTimeout(()=>Music.play(),350);if(G&&G.pre)stopShowAudio(G.pre);['inter','final','touch','banner','pre','season','side','lower','pbar','rost','subs'].forEach(i=>$(i).hidden=true);startAttract();$('menu').hidden=false;}
+function openMenu(){paused=false;hideLineup();Music.stop();Crowd.stop();Bed.stop();setTimeout(()=>Music.play({slot:'m'}),350);if(G&&G.pre)stopShowAudio(G.pre);['inter','final','touch','banner','pre','season','side','lower','pbar','rost','subs'].forEach(i=>$(i).hidden=true);startAttract();$('menu').hidden=false;}
 
 /* ---------- VBL season ---------- */
 const DIVS={Atlantic:['BAL','PRO','HFD','BUF','MTL','RIC','RAL'],Central:['PIT','CIN','COL','LOU','NSH','BHM','JAX'],Midwest:['STL','KCK','ANC','OMA','TUL','AUS','ELP'],Pacific:['SEA','VAN','HNL','SDG','LVS','ABQ','MEX']};
@@ -3215,7 +3222,7 @@ function seRender(){
   on('seNew',()=>{SEASON=null;try{localStorage.removeItem(SKEY);}catch(e){}seRender();});
   const q=$('seQuit');let armed=false;q.onclick=()=>{if(!armed){armed=true;q.textContent='TAP AGAIN TO DELETE THIS SEASON';q.style.opacity=1;return;}SEASON=null;try{localStorage.removeItem(SKEY);}catch(e){}seRender();};
 }
-function openSeason(){seLoad();paused=false;Bed.stop();Music.play();['menu','final','inter','pre','touch','banner','rost','subs'].forEach(i=>$(i).hidden=true);if(!attract)startAttract();$('season').hidden=false;seRender();}
+function openSeason(){seLoad();paused=false;Bed.stop();Music.play({slot:'m'});['menu','final','inter','pre','touch','banner','rost','subs'].forEach(i=>$(i).hidden=true);if(!attract)startAttract();$('season').hidden=false;seRender();}
 
 /* ---------- controls ---------- */
 const keysT=Object.keys(TEAMS).sort((a,b)=>(TEAMS[a].city+TEAMS[a].nick).localeCompare(TEAMS[b].city+TEAMS[b].nick));
@@ -3239,7 +3246,7 @@ $('selHome').onchange=()=>pickTeam('home');$('selAway').onchange=()=>pickTeam('a
 $('start').onclick=()=>startGame();
 let toolsT=null;$('momBadge').onclick=()=>$('bug').onclick();$('bug').onclick=()=>{const tl=$('tools');const o=!tl.classList.contains('open');tl.classList.toggle('open',o);clearTimeout(toolsT);if(o)toolsT=setTimeout(()=>tl.classList.remove('open'),6000);};
 $('tools').addEventListener('click',()=>{clearTimeout(toolsT);toolsT=setTimeout(()=>$('tools').classList.remove('open'),6000);});
-addEventListener('pointerdown',()=>{ac();if(!$('menu').hidden||!$('season').hidden)Music.play();},{once:true});
+addEventListener('pointerdown',()=>{ac();if(!$('menu').hidden||!$('season').hidden)Music.play({slot:'m'});},{once:true});
 $('fAgain').onclick=()=>{if(G&&G.opts.season&&SEASON&&!G.recorded){G.recorded=true;seasonAfterGame();}else openMenu();};
 $('seasonBtn').onclick=openSeason;$('seClose').onclick=openMenu;$('preGo').onclick=dropFirst;$('preSkip').onclick=()=>{if(G&&G.pre)G.pre.T=17.01;};
 $('iNext').onclick=leaveInter;$('iHide').onclick=()=>{interSkip=Math.min(3,interPh+1);};$('iShow').onclick=leaveInter;
@@ -3312,7 +3319,7 @@ $('suClose').onclick=closeSubs;$('tSub').onclick=openSubs;
 $('suAuto').onclick=()=>{if(!G)return;G.opts.autoSubs=G.opts.autoSubs===false;opts.autoSubs=G.opts.autoSubs?1:0;save();segSync();suRender();};
 $('suFat').onclick=()=>{if(!G)return;G.opts.fatigue=G.opts.fatigue===false;opts.fatigue=G.opts.fatigue?1:0;save();segSync();suRender();};
 $('tPause').onclick=()=>{if(attract)return;if(!$('subs').hidden){closeSubs();return;}paused=!paused;tc('tPause',paused?'▶':'II');if(paused){$('banner').hidden=true;bannerT=0;showLineup();}else hideLineup();};
-$('tSound').onclick=()=>{sound=!sound;$('tSound').style.opacity=sound?1:0.45;ac();if(!sound){Music.stop();Crowd.stop();Bed.stop();}else if(!$('menu').hidden||!$('season').hidden)Music.play();};
+$('tSound').onclick=()=>{sound=!sound;$('tSound').style.opacity=sound?1:0.45;ac();if(!sound){Music.stop();Crowd.stop();Bed.stop();}else if(!$('menu').hidden||!$('season').hidden)Music.play({slot:'m'});};
 $('tSpeed').onclick=()=>{speed=speed===1?2:speed===2?4:1;tc('tSpeed',speed+'×');};
 $('tTO').onclick=()=>{if(G&&G.human>=0&&G.teams[G.human].to>0){G.toPend[G.human]=true;showInfo('TIMEOUT','Called at the next dead ball',2);}};
 const keys={};

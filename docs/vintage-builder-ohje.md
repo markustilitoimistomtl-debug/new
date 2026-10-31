@@ -11,7 +11,8 @@ jonka peli lukee käynnistyessään.
 3. Käy osiot läpi vasemmasta valikosta:
    - **Look & layout**: pelin yleisilme 20 teemasta (värit ja fontit), paneelien tekstikoot ja tip off -kortin logot
    - **Teams, logos & kits**: nimet, lyhenteet, värit, koti- ja vierasasut sekä logot
-   - **Music**: ottelun alun pitkät kappaleet ja taukomusiikki
+   - **Music**: jokaiselle kappaleelle valitaan, missä se soi: ottelun alku (Tip-off), aikalisät ja erätauot (Breaks),
+     lopputulokset (Final results) ja valikot (Menus). Kappaleen voi siirtää mihin vain tai useaan kohtaan.
    - **Team names & intros**: miten selostajat sanovat joukkueen nimen, ja kotikaupungin esittelyt
    - **Game situations**: Tonyn ja Jenin tilannekommentit
    - **Play-by-play**: lyhyet pelitilannehuudot
