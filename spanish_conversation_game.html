@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="fi" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Hablemos! - Espanjan keskustelupeli</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 3px; }
+        .fade-in { animation: fadeIn 0.25s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Auto-hiding header styles */
+        #main-header {
+            transform: translateY(-85%);
+            transition: transform 0.25s ease-in-out;
+        }
+        #header-hover-trigger:hover #main-header,
+        #main-header:hover,
+        #main-header:focus-within {
+            transform: translateY(0);
+        }
+
+        /* Speaking indicator */
+        .speaking { animation: pulseRing 1s ease-in-out infinite; }
+        @keyframes pulseRing {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.55); }
+            50% { box-shadow: 0 0 0 6px rgba(251, 191, 36, 0); }
+        }
+        .chosen { border-color: rgb(52 211 153) !important; background: rgba(6, 78, 59, 0.55) !important; }
+        .dimmed { opacity: 0.35; }
+        .speak-line { transition: background 0.2s; }
+        .speak-line:hover { background: rgba(255, 255, 255, 0.04); }
+        .reading { background: rgba(251, 191, 36, 0.14) !important; outline: 1px solid rgba(251, 191, 36, 0.5); }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans h-screen flex flex-col overflow-hidden justify-between transition-colors duration-200">
+
+    <!-- Hover Trigger & Auto-Hiding Top Header -->
+    <div id="header-hover-trigger" class="fixed top-0 left-0 w-full z-30 pt-1">
+        <header id="main-header" class="max-w-4xl mx-auto px-3 py-1.5 bg-slate-900/95 border-b border-amber-500/30 rounded-b-xl shadow-2xl backdrop-blur transition-transform duration-300">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+                <div class="flex items-center space-x-2">
+                    <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-white shadow font-bold text-sm">¡H!</div>
+                    <div>
+                        <h1 class="font-bold text-sm leading-none text-white">¡Hablemos!</h1>
+                        <p class="text-[10px] text-slate-400">Vie hiiri yläreunaan nähdäksesi valikon</p>
+                    </div>
+                </div>
+
+                <!-- Header Controls -->
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <button id="toggle-hints-btn" onclick="toggleHints()" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition flex items-center gap-1.5 text-xs font-semibold border border-slate-700" title="Käännösvihjeet päälle/pois">
+                        <i class="fa-solid fa-language text-amber-400 text-sm"></i>
+                        <span id="hints-status">Vihjeet: On</span>
+                    </button>
+
+                    <button id="toggle-my-voice-btn" onclick="toggleReadMyAnswers()" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition flex items-center gap-1.5 text-xs font-semibold border border-slate-700" title="Lue valitsemani vastaus ääneen">
+                        <i id="my-voice-icon" class="fa-solid fa-user text-emerald-400 text-sm"></i>
+                        <span id="my-voice-status">Oma vastaus: On</span>
+                    </button>
+
+                    <button id="toggle-audio-btn" onclick="toggleAutoAudio()" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition flex items-center gap-1.5 text-xs font-semibold border border-slate-700" title="Lue ohjelman puhe automaattisesti">
+                        <i id="audio-icon" class="fa-solid fa-volume-high text-amber-500 text-sm"></i>
+                        <span id="audio-status">Ohjelma: On</span>
+                    </button>
+
+                    <select id="rate-select" onchange="changeRate(this.value)" class="px-1.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs font-semibold border border-slate-700" title="Puhenopeus">
+                        <option value="0.7">🐢 Hidas</option>
+                        <option value="0.9" selected>Normaali</option>
+                        <option value="1.05">🐇 Nopea</option>
+                    </select>
+
+                    <select id="length-select" onchange="changeLength(this.value)" class="px-1.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs font-semibold border border-slate-700" title="Keskustelun pituus (aloittaa alusta)">
+                        <option value="5">Lyhyt</option>
+                        <option value="8" selected>Normaali</option>
+                        <option value="99">Pitkä (kaikki aiheet)</option>
+                    </select>
+
+                    <button onclick="restartGame()" class="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition border border-slate-700" title="Aloita alusta">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+    </div>
+
+    <!-- Main Game Area -->
+    <main class="flex-1 max-w-4xl w-full mx-auto p-2 sm:p-3 flex flex-col justify-between overflow-hidden gap-1.5">
+
+        <!-- Progress Tracker Bar -->
+        <div class="bg-slate-800/80 px-3 py-1 rounded-lg border border-slate-700 flex items-center justify-between text-xs text-slate-300 shrink-0">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="font-medium">Aihe: <strong id="step-count" class="text-amber-400 font-bold text-sm">1</strong> / <span id="step-total">10</span></span>
+                <span id="followup-badge" class="hidden px-1.5 py-0.5 rounded bg-emerald-700/60 text-emerald-200 text-[10px] font-bold uppercase tracking-wide">jatkokysymys</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="font-medium"><i class="fa-solid fa-code-branch text-amber-400 mr-1"></i> <span id="nodes-explored" class="font-bold text-white">0</span> valintaa</div>
+                <button onclick="toggleHistory()" class="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 bg-slate-700/60 px-2 py-0.5 rounded border border-slate-600">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Historia
+                </button>
+            </div>
+        </div>
+
+        <!-- Collapsible History Panel -->
+        <div id="history-panel" class="hidden bg-slate-800 p-2.5 rounded-xl border border-amber-500/50 max-h-44 overflow-y-auto text-xs space-y-1.5 shrink-0">
+            <div class="font-bold text-slate-200 flex justify-between items-center border-b pb-1 border-slate-700">
+                <span>Käyty keskusteluhistoria (klikkaa kuullaksesi)</span>
+                <button onclick="toggleHistory()" class="text-slate-400 hover:text-slate-200 font-bold text-base px-1">&times;</button>
+            </div>
+            <div id="history-content" class="space-y-1 text-slate-300">
+                <p class="italic text-slate-400">Ei vielä aiempia siirtoja.</p>
+            </div>
+        </div>
+
+        <!-- AI Question Box -->
+        <div id="ai-box" class="bg-slate-800/90 p-3 sm:p-4 rounded-xl border border-slate-700 shadow-md shrink-0 fade-in">
+            <div class="flex items-start gap-3">
+                <div id="ai-avatar" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-tr from-amber-500 to-rose-500 flex-shrink-0 flex items-center justify-center text-white text-sm font-bold shadow mt-0.5">¡H!</div>
+                <div class="flex-1 min-w-0 space-y-1.5">
+                    <!-- Kuittaus edelliseen vastaukseen -->
+                    <div id="ack-block" class="hidden speak-line cursor-pointer rounded-lg px-1 -mx-1" title="Klikkaa kuullaksesi">
+                        <p id="ack-es" class="text-base sm:text-lg font-semibold text-slate-200 leading-snug"></p>
+                        <p id="ack-fi" class="translation-hint text-xs sm:text-sm text-amber-300/80 italic"></p>
+                    </div>
+
+                    <!-- Verbikertaus: 1. persoona -> 2. persoonan kysymys -->
+                    <div id="drill-block" class="hidden bg-emerald-950/40 border border-emerald-700/50 rounded-lg px-2.5 py-1.5 space-y-1">
+                        <div class="flex items-center gap-2 text-[11px] uppercase tracking-wider font-bold text-emerald-300">
+                            <i class="fa-solid fa-repeat"></i> Kertaus · verbi
+                            <span id="drill-verb" class="px-1.5 py-0.5 rounded bg-emerald-700/60 text-white normal-case tracking-normal text-xs"></span>
+                            <span id="drill-forms" class="normal-case tracking-normal font-semibold text-emerald-200/80 text-xs"></span>
+                        </div>
+                        <div id="drill-1" class="speak-line cursor-pointer rounded px-1 -mx-1" title="Klikkaa kuullaksesi">
+                            <p class="text-base sm:text-lg font-bold text-emerald-100 leading-snug"><span class="text-emerald-400 text-xs font-bold mr-1">YO</span><span id="drill-1-es"></span></p>
+                            <p id="drill-1-fi" class="translation-hint text-xs sm:text-sm text-emerald-200/70 italic"></p>
+                        </div>
+                        <div id="drill-2" class="speak-line cursor-pointer rounded px-1 -mx-1" title="Klikkaa kuullaksesi">
+                            <p class="text-base sm:text-lg font-bold text-amber-200 leading-snug"><span class="text-amber-400 text-xs font-bold mr-1">TÚ</span><span id="drill-2-es"></span></p>
+                            <p id="drill-2-fi" class="translation-hint text-xs sm:text-sm text-amber-200/70 italic"></p>
+                        </div>
+                    </div>
+
+                    <!-- Seuraava kysymys -->
+                    <div id="question-block" class="speak-line cursor-pointer rounded-lg px-1 -mx-1">
+                        <div class="flex items-start justify-between gap-2">
+                            <p id="ai-question-es" class="text-lg sm:text-xl md:text-2xl font-bold text-white leading-snug tracking-wide"></p>
+                            <button id="speak-btn" class="text-amber-400 hover:text-amber-300 transition p-1 text-lg shrink-0" title="Kuuntele kaikki uudelleen (välilyönti)">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                        </div>
+                        <p id="ai-question-fi" class="translation-hint text-sm sm:text-base text-amber-300/90 border-t border-slate-700/60 pt-1 font-medium italic"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Options -->
+        <div class="flex-1 flex flex-col justify-end bg-slate-800/90 p-2.5 sm:p-3 rounded-xl border border-slate-700 shadow-xl min-h-0 overflow-hidden">
+            <div class="flex items-center justify-between mb-1.5 px-1 shrink-0">
+                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-regular fa-comments text-amber-400"></i> Valitse vastaus <span class="normal-case font-normal text-slate-400">(tai paina numeroa)</span>:
+                </span>
+                <span id="hint-indicator" class="text-xs text-amber-400 font-semibold">💡 Suomennokset mukana</span>
+            </div>
+
+            <div id="options-container" class="grid grid-cols-1 gap-1.5 overflow-y-auto max-h-full pr-0.5"></div>
+        </div>
+    </main>
+
+    <script>
+        // ------------------------------------------------------------------
+        //  KESKUSTELUDATA
+        //  Jokainen vastausvaihtoehto: O(espanjaksi, suomeksi, kuittaus_es, kuittaus_fi, seuraava_noodi?)
+        //  "seuraava_noodi" vie aiheeseen liittyvään jatkokysymykseen.
+        // ------------------------------------------------------------------
+        function O(es, fi, ack, ackFi, next) {
+            return { es: es, fi: fi, ack: ack, ackFi: ackFi, next: next || null };
+        }
+
+        var START_NODE = 'start';
+        var CLOSING_NODE = 'closing';
+
+        // Pääaiheet, joista arvotaan keskustelun runko
+        var MAIN_TOPICS = [
+            'evening', 'hobbies', 'yesterday', 'tomorrow', 'food', 'travel', 'learning',
+            'emotions', 'weather', 'family', 'pets', 'hometown', 'morning', 'seasons',
+            'childhood', 'celebrations', 'tech', 'sleep', 'ideal_weekend'
+        ];
+
+        var NODES = {
+            // ================= ALOITUS =================
+            start: {
+                q: "¿Qué tal ha sido tu día hoy?",
+                qFi: "Millainen päivä sinulla on ollut tänään?",
+                opts: [
+                    O("Es fin de semana y trato de limpiar y relajarme.", "On viikonloppu ja yritän siivota ja rentoutua.",
+                      "¡Ajá! Así que es fin de semana y tratas de limpiar tu casa y relajarte.", "Ahaa! Eli on viikonloppu ja yrität siivota kotiasi ja rentoutua.", 'cleaning'),
+                    O("Hoy fue un día laborable y estuve trabajando.", "Tänään oli arkipäivä, ja olin töissä.",
+                      "¡Entiendo! Así que hoy tuviste un día laborable y estuviste trabajando.", "Ymmärrän! Eli sinulla oli tänään arkipäivä ja olit töissä.", 'work_day'),
+                    O("Hoy es viernes y ya trato de desconectar y descansar.", "Tänään on perjantai ja yritän jo irrottautua ja levätä.",
+                      "¡Qué bien! Así que ya es viernes y tratas de desconectar y descansar.", "Kiva! Eli on jo perjantai ja yrität irrottautua ja levätä.", 'weekend_plans'),
+                    O("Es domingo por la tarde y mañana tengo que trabajar.", "On sunnuntai-ilta ja huomenna on työpäivä.",
+                      "¡Vaya! Así que ya es domingo por la tarde y mañana tienes que trabajar.", "Voi! Eli on jo sunnuntai-ilta ja huomenna sinun täytyy tehdä töitä.", 'monday_mood'),
+                    O("Aunque es fin de semana, he tenido que trabajar bastante.", "Vaikka on viikonloppu, olen joutunut tekemään paljon töitä.",
+                      "¡Vaya esfuerzo! Así que aunque es fin de semana, has tenido que trabajar bastante.", "Melkoinen ponnistus! Eli vaikka on viikonloppu, olet joutunut tekemään paljon töitä.", 'work_day'),
+                    O("Hoy he hecho deporte y me siento genial.", "Tänään olen urheillut ja oloni on mahtava.",
+                      "¡Ajá! Así que hoy has hecho deporte y te sientes genial.", "Ahaa! Eli olet tänään urheillut ja olosi on mahtava.", 'sport_today')
+                ]
+            },
+
+            // ================= JATKOKYSYMYKSET =================
+            cleaning: {
+                followup: true,
+                q: "¿Y qué es lo que menos te gusta limpiar en casa?",
+                qFi: "Ja mitä siivoat kotona kaikkein vastahakoisimmin?",
+                opts: [
+                    O("El baño, sin duda. Es lo más pesado.", "Kylpyhuonetta, ehdottomasti. Se on raskainta.",
+                      "¡Te entiendo! Así que el baño es lo que menos te gusta limpiar, porque es lo más pesado.", "Ymmärrän sinua! Eli kylpyhuone on se, mitä vähiten haluat siivota, koska se on raskainta."),
+                    O("Las ventanas, porque siempre quedan manchas.", "Ikkunoita, koska niihin jää aina tahroja.",
+                      "¡Es verdad! Así que no te gusta limpiar las ventanas porque siempre quedan manchas.", "Totta! Eli et pidä ikkunoiden pesusta, koska niihin jää aina tahroja."),
+                    O("Fregar los platos después de cenar.", "Tiskaamista illallisen jälkeen.",
+                      "¡Ajá! Así que lo que menos te gusta es fregar los platos después de cenar.", "Ahaa! Eli vähiten pidät tiskaamisesta illallisen jälkeen."),
+                    O("Planchar la ropa, ¡lo odio!", "Vaatteiden silittämistä, inhoan sitä!",
+                      "¡Ja, ja! Así que odias planchar la ropa.", "Hah! Eli inhoat vaatteiden silittämistä."),
+                    O("En realidad no me importa limpiar si pongo música.", "Oikeastaan siivoaminen ei haittaa, jos laitan musiikkia soimaan.",
+                      "¡Qué buena idea! Así que no te importa limpiar si pones música.", "Hyvä idea! Eli siivoaminen ei haittaa sinua, jos laitat musiikkia soimaan.")
+                ]
+            },
+            work_day: {
+                followup: true,
+                q: "¿Y qué tal en el trabajo? ¿Ha sido un día estresante?",
+                qFi: "Entä miten töissä meni? Oliko päivä stressaava?",
+                opts: [
+                    O("Sí, he tenido muchas reuniones seguidas.", "Kyllä, minulla oli monta palaveria peräkkäin.",
+                      "¡Uf! Así que has tenido muchas reuniones seguidas.", "Huh! Eli sinulla on ollut monta palaveria peräkkäin."),
+                    O("No, ha sido un día bastante tranquilo.", "Ei, päivä oli melko rauhallinen.",
+                      "¡Menos mal! Así que ha sido un día bastante tranquilo en el trabajo.", "Onneksi! Eli työpäivä on ollut melko rauhallinen."),
+                    O("He terminado un proyecto importante y estoy contento.", "Sain valmiiksi tärkeän projektin ja olen tyytyväinen.",
+                      "¡Enhorabuena! Así que has terminado un proyecto importante y estás contento.", "Onneksi olkoon! Eli sait valmiiksi tärkeän projektin ja olet tyytyväinen."),
+                    O("Mi jefe me ha pedido muchas cosas urgentes.", "Pomoni on pyytänyt minulta paljon kiireellisiä asioita.",
+                      "¡Vaya! Así que tu jefe te ha pedido muchas cosas urgentes.", "Voi ei! Eli pomosi on pyytänyt sinulta paljon kiireellisiä asioita."),
+                    O("He trabajado desde casa y ha ido bien.", "Tein etätöitä kotoa ja se meni hyvin.",
+                      "¡Qué cómodo! Así que has trabajado desde casa y ha ido bien.", "Kuinka kätevää! Eli olet tehnyt etätöitä kotoa ja se on mennyt hyvin.")
+                ]
+            },
+            weekend_plans: {
+                followup: true,
+                q: "¿Y tienes algún plan especial para este fin de semana?",
+                qFi: "Onko sinulla jotain erityistä suunnitelmaa tälle viikonlopulle?",
+                opts: [
+                    O("Voy a ir a la casa de verano con mi familia.", "Menen mökille perheeni kanssa.",
+                      "¡Qué maravilla! Así que vas a ir a la casa de verano con tu familia.", "Ihanaa! Eli menet mökille perheesi kanssa.", 'sauna'),
+                    O("Quiero dormir mucho y no hacer nada.", "Haluan nukkua paljon enkä tehdä mitään.",
+                      "¡Te lo mereces! Así que quieres dormir mucho y no hacer nada.", "Ansaitset sen! Eli haluat nukkua paljon etkä tehdä mitään."),
+                    O("He quedado con unos amigos para cenar.", "Olen sopinut illallisen ystävien kanssa.",
+                      "¡Qué bien! Así que has quedado con unos amigos para cenar.", "Kiva! Eli olet sopinut illallisen ystävien kanssa."),
+                    O("Voy a ver un partido de hockey.", "Aion katsoa jääkiekko-ottelun.",
+                      "¡Qué emoción! Así que vas a ver un partido de hockey.", "Jännittävää! Eli aiot katsoa jääkiekko-ottelun."),
+                    O("Todavía no lo sé, improvisaré.", "En tiedä vielä, improvisoin.",
+                      "¡Me parece bien! Así que todavía no lo sabes y vas a improvisar.", "Hyvältä kuulostaa! Eli et tiedä vielä ja aiot improvisoida.")
+                ]
+            },
+            monday_mood: {
+                followup: true,
+                q: "¿Y cómo te sientes al pensar en el lunes?",
+                qFi: "Ja miltä tuntuu ajatella maanantaita?",
+                opts: [
+                    O("Un poco perezoso, la verdad.", "Vähän laiskalta, totta puhuen.",
+                      "¡Es normal! Así que, la verdad, te sientes un poco perezoso.", "Se on normaalia! Eli totta puhuen olosi on vähän laiska."),
+                    O("Bien, me gusta mi trabajo.", "Hyvältä, pidän työstäni.",
+                      "¡Qué suerte! Así que te sientes bien porque te gusta tu trabajo.", "Onnekasta! Eli olosi on hyvä, koska pidät työstäsi."),
+                    O("Nervioso, porque tengo una semana muy llena.", "Hermostuneelta, koska minulla on todella täysi viikko.",
+                      "¡Ánimo! Así que estás nervioso porque tienes una semana muy llena.", "Tsemppiä! Eli olet hermostunut, koska sinulla on todella täysi viikko."),
+                    O("Tranquilo, prefiero no pensar en eso todavía.", "Rauhalliselta, en halua vielä ajatella sitä.",
+                      "¡Muy sabio! Así que estás tranquilo y prefieres no pensar en eso todavía.", "Viisasta! Eli olet rauhallinen etkä halua vielä ajatella sitä.")
+                ]
+            },
+            sport_today: {
+                followup: true,
+                q: "¡Qué energía! ¿Y qué deporte has hecho?",
+                qFi: "Mikä energia! Ja mitä urheilulajia harrastit?",
+                opts: [
+                    O("He salido a correr por el parque.", "Kävin juoksemassa puistossa.",
+                      "¡Genial! Así que has salido a correr por el parque.", "Mahtavaa! Eli kävit juoksemassa puistossa."),
+                    O("He ido al gimnasio a levantar pesas.", "Kävin salilla nostamassa painoja.",
+                      "¡Qué fuerte! Así que has ido al gimnasio a levantar pesas.", "Vahvaa! Eli kävit salilla nostamassa painoja."),
+                    O("He nadado en la piscina.", "Uin uimahallissa.",
+                      "¡Qué bien! Así que has nadado en la piscina.", "Hienoa! Eli uit uimahallissa."),
+                    O("He montado en bicicleta durante una hora.", "Pyöräilin tunnin.",
+                      "¡Estupendo! Así que has montado en bicicleta durante una hora.", "Loistavaa! Eli pyöräilit tunnin ajan."),
+                    O("He hecho esquí de fondo en el bosque.", "Hiihdin metsässä.",
+                      "¡Qué finlandés! Así que has hecho esquí de fondo en el bosque.", "Kuinka suomalaista! Eli hiihdit metsässä.")
+                ]
+            },
+            books: {
+                followup: true,
+                q: "¿Y qué tipo de libros te gustan más?",
+                qFi: "Ja minkälaisista kirjoista pidät eniten?",
+                opts: [
+                    O("Las novelas de misterio y de crimen.", "Mysteeri- ja rikosromaaneista.",
+                      "¡Qué intriga! Así que te gustan las novelas de misterio y de crimen.", "Jännittävää! Eli pidät mysteeri- ja rikosromaaneista."),
+                    O("Los libros de historia.", "Historiakirjoista.",
+                      "¡Interesante! Así que te gustan los libros de historia.", "Mielenkiintoista! Eli pidät historiakirjoista."),
+                    O("La ciencia ficción y la fantasía.", "Scifistä ja fantasiasta.",
+                      "¡Genial! Así que te gustan la ciencia ficción y la fantasía.", "Mahtavaa! Eli pidät scifistä ja fantasiasta."),
+                    O("Las biografías de personas famosas.", "Kuuluisien ihmisten elämäkerroista.",
+                      "¡Ajá! Así que te gustan las biografías de personas famosas.", "Ahaa! Eli pidät kuuluisien ihmisten elämäkerroista.")
+                ]
+            },
+            sauna: {
+                followup: true,
+                q: "¡La sauna es muy finlandesa! ¿Con qué frecuencia vas a la sauna?",
+                qFi: "Sauna on hyvin suomalainen! Kuinka usein käyt saunassa?",
+                opts: [
+                    O("Casi todos los días.", "Melkein joka päivä.",
+                      "¡Increíble! Así que vas a la sauna casi todos los días.", "Uskomatonta! Eli käyt saunassa melkein joka päivä."),
+                    O("Una vez a la semana, normalmente el sábado.", "Kerran viikossa, yleensä lauantaina.",
+                      "¡Qué tradicional! Así que vas a la sauna una vez a la semana, normalmente el sábado.", "Kuinka perinteistä! Eli käyt saunassa kerran viikossa, yleensä lauantaina."),
+                    O("Solo cuando estoy en la casa de verano.", "Vain silloin, kun olen mökillä.",
+                      "¡Ajá! Así que solo vas a la sauna cuando estás en la casa de verano.", "Ahaa! Eli käyt saunassa vain silloin, kun olet mökillä."),
+                    O("Y después me baño en el lago, aunque esté frío.", "Ja sen jälkeen uin järvessä, vaikka olisi kylmä.",
+                      "¡Qué valiente! Así que después de la sauna te bañas en el lago, aunque esté frío.", "Kuinka rohkeaa! Eli saunan jälkeen uit järvessä, vaikka olisi kylmä.")
+                ]
+            },
+            cooking: {
+                followup: true,
+                q: "¿Y cuál es tu plato estrella, el que mejor te sale?",
+                qFi: "Mikä on bravuuriruokasi, se joka onnistuu sinulta parhaiten?",
+                opts: [
+                    O("La paella, aunque no es perfecta.", "Paella, vaikka se ei olekaan täydellinen.",
+                      "¡Olé! Así que tu plato estrella es la paella, aunque no es perfecta.", "Olé! Eli bravuuriruokasi on paella, vaikka se ei olekaan täydellinen."),
+                    O("La sopa de salmón finlandesa.", "Suomalainen lohikeitto.",
+                      "¡Qué rica! Así que tu plato estrella es la sopa de salmón finlandesa.", "Herkullista! Eli bravuuriruokasi on suomalainen lohikeitto."),
+                    O("La pasta con salsa casera.", "Pasta kotitekoisella kastikkeella.",
+                      "¡Delicioso! Así que lo que mejor te sale es la pasta con salsa casera.", "Herkullista! Eli parhaiten sinulta onnistuu pasta kotitekoisella kastikkeella."),
+                    O("La tortilla de patatas.", "Espanjalainen perunamunakas.",
+                      "¡Muy español! Así que lo que mejor te sale es la tortilla de patatas.", "Hyvin espanjalaista! Eli parhaiten sinulta onnistuu perunamunakas."),
+                    O("Los postres, sobre todo los pasteles.", "Jälkiruoat, varsinkin kakut.",
+                      "¡Qué dulce! Así que lo que mejor te sale son los postres, sobre todo los pasteles.", "Kuinka makeaa! Eli parhaiten sinulta onnistuvat jälkiruoat, varsinkin kakut.")
+                ]
+            },
+            series: {
+                followup: true,
+                q: "¿Y qué serie o película en español me recomiendas?",
+                qFi: "Ja minkä espanjankielisen sarjan tai elokuvan suosittelet minulle?",
+                opts: [
+                    O("La casa de papel, es muy emocionante.", "Rahapaja (La casa de papel), se on todella jännittävä.",
+                      "¡Buena elección! Así que me recomiendas La casa de papel porque es muy emocionante.", "Hyvä valinta! Eli suosittelet Rahapajaa, koska se on todella jännittävä."),
+                    O("Las películas de Almodóvar.", "Almodóvarin elokuvia.",
+                      "¡Qué clásico! Así que me recomiendas las películas de Almodóvar.", "Klassikko! Eli suosittelet Almodóvarin elokuvia."),
+                    O("Una serie de dibujos animados, es más fácil de entender.", "Piirrossarjaa, sitä on helpompi ymmärtää.",
+                      "¡Muy práctico! Así que me recomiendas una serie de dibujos animados porque es más fácil de entender.", "Todella käytännöllistä! Eli suosittelet piirrossarjaa, koska sitä on helpompi ymmärtää."),
+                    O("Todavía no he encontrado ninguna favorita.", "En ole vielä löytänyt suosikkia.",
+                      "¡No pasa nada! Así que todavía no has encontrado ninguna favorita.", "Ei se haittaa! Eli et ole vielä löytänyt suosikkia.")
+                ]
+            },
+            music: {
+                followup: true,
+                q: "¿Y qué tipo de música tocas o escuchas?",
+                qFi: "Ja minkälaista musiikkia soitat tai kuuntelet?",
+                opts: [
+                    O("Rock y pop de los años ochenta.", "80-luvun rockia ja poppia.",
+                      "¡Qué buena época! Así que tocas y escuchas rock y pop de los años ochenta.", "Hieno aikakausi! Eli soitat ja kuuntelet 80-luvun rockia ja poppia."),
+                    O("Flamenco, me encanta la guitarra española.", "Flamencoa, rakastan espanjalaista kitaraa.",
+                      "¡Olé! Así que te gusta el flamenco y te encanta la guitarra española.", "Olé! Eli pidät flamencosta ja rakastat espanjalaista kitaraa."),
+                    O("Música clásica para relajarme.", "Klassista musiikkia rentoutuakseni.",
+                      "¡Qué elegante! Así que escuchas música clásica para relajarte.", "Kuinka tyylikästä! Eli kuuntelet klassista musiikkia rentoutuaksesi."),
+                    O("Heavy metal, ¡como buen finlandés!", "Heavy metallia, kuten kunnon suomalainen!",
+                      "¡Ja, ja! Así que te gusta el heavy metal, como buen finlandés.", "Hah! Eli pidät heavy metallista, kuten kunnon suomalainen."),
+                    O("Un poco de todo, depende del día.", "Vähän kaikkea, riippuu päivästä.",
+                      "¡Muy bien! Así que escuchas un poco de todo, depende del día.", "Hyvä! Eli kuuntelet vähän kaikkea, päivästä riippuen.")
+                ]
+            },
+            shopping: {
+                followup: true,
+                q: "¿Y qué es lo que nunca falta en tu carrito de la compra?",
+                qFi: "Ja mikä ei koskaan puutu ostoskärrystäsi?",
+                opts: [
+                    O("El café, ¡sin café no puedo vivir!", "Kahvi, ilman kahvia en voi elää!",
+                      "¡Lo entiendo perfectamente! Así que nunca falta el café, porque sin café no puedes vivir.", "Ymmärrän täysin! Eli kahvi ei koskaan puutu, koska ilman kahvia et voi elää."),
+                    O("Fruta y verdura fresca.", "Tuoreet hedelmät ja vihannekset.",
+                      "¡Qué sano! Así que en tu carrito nunca falta fruta y verdura fresca.", "Terveellistä! Eli kärrystäsi eivät koskaan puutu tuoreet hedelmät ja vihannekset."),
+                    O("Pan de centeno.", "Ruisleipä.",
+                      "¡Muy típico! Así que nunca falta el pan de centeno.", "Hyvin tyypillistä! Eli ruisleipä ei koskaan puutu."),
+                    O("Chocolate, aunque no debería.", "Suklaa, vaikka ei pitäisi.",
+                      "¡Ja, ja! Así que nunca falta el chocolate, aunque no deberías.", "Hah! Eli suklaa ei koskaan puutu, vaikka ei pitäisi.")
+                ]
+            },
+            beach: {
+                followup: true,
+                q: "¿Y qué harías en la playa durante todo el día?",
+                qFi: "Ja mitä tekisit rannalla koko päivän?",
+                opts: [
+                    O("Nadaría en el mar y tomaría el sol.", "Uisin meressä ja ottaisin aurinkoa.",
+                      "¡Qué relax! Así que nadarías en el mar y tomarías el sol.", "Kuinka rentouttavaa! Eli uisit meressä ja ottaisit aurinkoa."),
+                    O("Leería un libro bajo una sombrilla.", "Lukisin kirjaa aurinkovarjon alla.",
+                      "¡Qué tranquilo! Así que leerías un libro bajo una sombrilla.", "Kuinka rauhallista! Eli lukisit kirjaa aurinkovarjon alla."),
+                    O("Comería marisco en un chiringuito.", "Söisin äyriäisiä rantabaarissa.",
+                      "¡Qué delicia! Así que comerías marisco en un chiringuito.", "Herkullista! Eli söisit äyriäisiä rantabaarissa."),
+                    O("Jugaría al vóley playa.", "Pelaisin rantalentopalloa.",
+                      "¡Qué activo! Así que jugarías al vóley playa.", "Kuinka aktiivista! Eli pelaisit rantalentopalloa.")
+                ]
+            },
+            kids: {
+                followup: true,
+                q: "¿Y cuántos hijos tenéis y qué edad tienen?",
+                qFi: "Ja montako lasta teillä on ja minkä ikäisiä he ovat?",
+                opts: [
+                    O("Tenemos un hijo de cinco años.", "Meillä on viisivuotias poika.",
+                      "¡Qué edad tan bonita! Así que tenéis un hijo de cinco años.", "Ihana ikä! Eli teillä on viisivuotias poika."),
+                    O("Tenemos dos hijas adolescentes.", "Meillä on kaksi teini-ikäistä tytärtä.",
+                      "¡Mucha paciencia! Así que tenéis dos hijas adolescentes.", "Paljon kärsivällisyyttä! Eli teillä on kaksi teini-ikäistä tytärtä."),
+                    O("Tenemos tres hijos, ¡la casa nunca está tranquila!", "Meillä on kolme lasta, talossa ei ole koskaan hiljaista!",
+                      "¡Ja, ja! Así que tenéis tres hijos y la casa nunca está tranquila.", "Hah! Eli teillä on kolme lasta, eikä talossa ole koskaan hiljaista."),
+                    O("Una hija pequeña y un hijo que va al colegio.", "Pieni tytär ja poika, joka käy koulua.",
+                      "¡Qué bonito! Así que tenéis una hija pequeña y un hijo que va al colegio.", "Ihanaa! Eli teillä on pieni tytär ja poika, joka käy koulua.")
+                ]
+            },
+            dog: {
+                followup: true,
+                q: "¡Me encantan los perros! ¿Y cómo es tu perro?",
+                qFi: "Rakastan koiria! Millainen koirasi on?",
+                opts: [
+                    O("Se llama Musti y es muy juguetón.", "Sen nimi on Musti ja se on todella leikkisä.",
+                      "¡Qué nombre tan bonito! Así que se llama Musti y es muy juguetón.", "Kaunis nimi! Eli sen nimi on Musti ja se on todella leikkisä."),
+                    O("Es pequeño, pero ladra muchísimo.", "Se on pieni, mutta haukkuu tosi paljon.",
+                      "¡Ja, ja! Así que es pequeño, pero ladra muchísimo.", "Hah! Eli se on pieni, mutta haukkuu tosi paljon."),
+                    O("Es un perro grande y muy tranquilo.", "Se on iso ja todella rauhallinen koira.",
+                      "¡Qué bueno! Así que es un perro grande y muy tranquilo.", "Mukavaa! Eli se on iso ja todella rauhallinen koira."),
+                    O("Es mayor y duerme casi todo el día.", "Se on jo vanha ja nukkuu melkein koko päivän.",
+                      "¡Qué tierno! Así que es mayor y duerme casi todo el día.", "Kuinka suloista! Eli se on jo vanha ja nukkuu melkein koko päivän.")
+                ]
+            },
+
+            // ================= PÄÄAIHEET =================
+            evening: {
+                q: "¿Y qué piensas hacer esta tarde o esta noche?",
+                qFi: "Entä mitä aiot tehdä tänään iltapäivällä tai illalla?",
+                opts: [
+                    O("Pensaba leer un buen libro en el sofá.", "Ajattelin lukea hyvää kirjaa sohvalla.",
+                      "¡Qué agradable! Así que pensabas leer un buen libro en el sofá.", "Kuinka mukavaa! Eli ajattelit lukea hyvää kirjaa sohvalla.", 'books'),
+                    O("Tengo intención de salir a dar un paseo tranquilo.", "Aion lähteä rauhalliselle kävelylle.",
+                      "¡Muy sano! Así que tienes intención de salir a dar un paseo tranquilo.", "Todella terveellistä! Eli aiot lähteä rauhalliselle kävelylle."),
+                    O("Voy a estudiar un rato y después descansar.", "Opiskelen hetken ja sen jälkeen lepään.",
+                      "¡Muy bien! Así que vas a estudiar un rato y después descansar.", "Hyvä! Eli aiot opiskella hetken ja sitten levätä."),
+                    O("Voy a ir a la sauna.", "Aion mennä saunaan.",
+                      "¡Qué gusto! Así que vas a ir a la sauna.", "Ihanaa! Eli aiot mennä saunaan.", 'sauna'),
+                    O("Tengo que hacer algunos recados si me da tiempo.", "Minun täytyy hoitaa muutama asia, jos ehdin.",
+                      "¡Entiendo! Así que tienes que hacer algunos recados si te da tiempo.", "Ymmärrän! Eli sinun täytyy hoitaa muutama asia, jos ehdit.")
+                ]
+            },
+            hobbies: {
+                q: "Hablando de tu tiempo libre, ¿qué aficiones tienes?",
+                qFi: "Vapaa-ajastasi puheen ollen, mitä harrastuksia sinulla on?",
+                opts: [
+                    O("Me encanta cocinar platos nuevos.", "Rakastan uusien ruokien laittamista.",
+                      "¡Qué rico! Así que te encanta cocinar platos nuevos.", "Herkullista! Eli rakastat uusien ruokien laittamista.", 'cooking'),
+                    O("Prefiero hacer deporte o salir a la naturaleza.", "Urheilen mieluiten tai lähden luontoon.",
+                      "¡Muy sano! Así que prefieres hacer deporte o salir a la naturaleza.", "Todella terveellistä! Eli urheilet mieluiten tai lähdet luontoon."),
+                    O("Suelo ver series y películas en español.", "Katson yleensä sarjoja ja elokuvia espanjaksi.",
+                      "¡Perfecto para aprender! Así que sueles ver series y películas en español.", "Täydellistä oppimiseen! Eli katsot yleensä sarjoja ja elokuvia espanjaksi.", 'series'),
+                    O("Me apasiona la música; toco la guitarra.", "Musiikki on intohimoni; soitan kitaraa.",
+                      "¡Qué guay! Así que te apasiona la música y tocas la guitarra.", "Siistiä! Eli musiikki on intohimosi ja soitat kitaraa.", 'music'),
+                    O("Me gusta quedar con amigos para charlar.", "Tykkään tavata ystäviä ja jutella.",
+                      "¡Qué social! Así que te gusta quedar con amigos para charlar.", "Kuinka sosiaalista! Eli tykkäät tavata ystäviä ja jutella.")
+                ]
+            },
+            yesterday: {
+                q: "Cambiando un poco de tema, ¿qué tal fue tu día de ayer?",
+                qFi: "Aihetta hieman vaihtaen, millainen eilinen päiväsi oli?",
+                opts: [
+                    O("Ayer fue un día bastante tranquilo.", "Eilen oli melko rauhallinen päivä.",
+                      "¡Qué bien! Así que ayer fue un día bastante tranquilo.", "Kiva! Eli eilen oli melko rauhallinen päivä."),
+                    O("Tuve un día muy ajetreado.", "Minulla oli todella kiireinen päivä.",
+                      "¡Vaya! Así que ayer tuviste un día muy ajetreado.", "Voi! Eli sinulla oli eilen todella kiireinen päivä."),
+                    O("Quedé con unos amigos y lo pasamos muy bien.", "Tapasin ystäviä ja meillä oli todella hauskaa.",
+                      "¡Qué divertido! Así que quedaste con unos amigos y lo pasasteis muy bien.", "Hauskaa! Eli tapasit ystäviä ja teillä oli todella hauskaa."),
+                    O("Estuve haciendo tareas de casa.", "Tein kotitöitä.",
+                      "¡Qué productivo! Así que estuviste haciendo tareas de casa.", "Tuotteliasta! Eli teit kotitöitä."),
+                    O("Fue un día normal, ni bueno ni malo.", "Se oli tavallinen päivä, ei hyvä eikä huono.",
+                      "¡Entiendo! Así que fue un día normal, ni bueno ni malo.", "Ymmärrän! Eli se oli tavallinen päivä, ei hyvä eikä huono.")
+                ]
+            },
+            tomorrow: {
+                q: "¿Y qué planes tienes para mañana?",
+                qFi: "Entä mitä suunnitelmia sinulla on huomiselle?",
+                opts: [
+                    O("Mañana me toca madrugar para ir al trabajo.", "Huomenna täytyy herätä aikaisin töihin.",
+                      "¡Ánimo! Así que mañana te toca madrugar para ir al trabajo.", "Tsemppiä! Eli huomenna sinun täytyy herätä aikaisin töihin."),
+                    O("Quiero hacer ejercicio por la mañana.", "Haluan kuntoilla aamulla.",
+                      "¡Qué disciplina! Así que quieres hacer ejercicio por la mañana.", "Mikä kurinalaisuus! Eli haluat kuntoilla aamulla."),
+                    O("Quiero descansar sin horarios fijos.", "Haluan levätä ilman aikatauluja.",
+                      "¡Qué buen plan! Así que quieres descansar sin horarios fijos.", "Hyvä suunnitelma! Eli haluat levätä ilman aikatauluja."),
+                    O("Voy a hacer la compra de la semana.", "Aion tehdä viikon ruokaostokset.",
+                      "¡Muy organizado! Así que vas a hacer la compra de la semana.", "Todella järjestelmällistä! Eli aiot tehdä viikon ruokaostokset.", 'shopping'),
+                    O("Tengo una reunión importante y debo prepararme.", "Minulla on tärkeä kokous, johon täytyy valmistautua.",
+                      "¡Mucha suerte! Así que tienes una reunión importante y debes prepararte.", "Onnea matkaan! Eli sinulla on tärkeä kokous, johon sinun täytyy valmistautua.")
+                ]
+            },
+            food: {
+                q: "Por cierto, ¿qué te apetece comer hoy?",
+                qFi: "Muuten, mitä sinun tekee mieli syödä tänään?",
+                opts: [
+                    O("Me apetece una ensalada fresca y algo ligero.", "Tekisi mieli raikasta salaattia ja jotain kevyttä.",
+                      "¡Qué sano! Así que te apetece una ensalada fresca y algo ligero.", "Terveellistä! Eli sinun tekee mieli raikasta salaattia ja jotain kevyttä."),
+                    O("Tengo ganas de pizza o comida italiana.", "Tekee mieli pizzaa tai italialaista ruokaa.",
+                      "¡Qué rico! Así que tienes ganas de pizza o de comida italiana.", "Herkullista! Eli sinun tekee mieli pizzaa tai italialaista ruokaa."),
+                    O("Voy a cocinar una sopa o un guiso caliente.", "Aion keittää lämmintä keittoa tai pataa.",
+                      "¡Perfecto para el frío! Así que vas a cocinar una sopa o un guiso caliente.", "Täydellistä kylmällä! Eli aiot keittää lämmintä keittoa tai pataa."),
+                    O("Prefiero pedir comida a domicilio para no cocinar.", "Tilaan mieluummin ruokaa kotiin, ettei tarvitse kokata.",
+                      "¡Muy cómodo! Así que prefieres pedir comida a domicilio para no cocinar.", "Kätevää! Eli tilaat mieluummin ruokaa kotiin, ettei tarvitse kokata."),
+                    O("Comeré algo rápido de la nevera.", "Syön jotain nopeaa jääkaapista.",
+                      "¡Ajá! Así que comerás algo rápido de la nevera.", "Ahaa! Eli syöt jotain nopeaa jääkaapista.")
+                ]
+            },
+            travel: {
+                q: "Si pudieras viajar a cualquier lugar ahora mismo, ¿adónde irías?",
+                qFi: "Jos voisit matkustaa mihin tahansa juuri nyt, minne menisit?",
+                opts: [
+                    O("Me iría a una playa en España a tomar el sol.", "Lähtisin rannalle Espanjaan ottamaan aurinkoa.",
+                      "¡Qué envidia! Así que te irías a una playa en España a tomar el sol.", "Kateeksi käy! Eli lähtisit rannalle Espanjaan ottamaan aurinkoa.", 'beach'),
+                    O("Visitaría una ciudad histórica llena de museos.", "Vierailisin historiallisessa kaupungissa, joka on täynnä museoita.",
+                      "¡Qué cultural! Así que visitarías una ciudad histórica llena de museos.", "Kuinka kulttuurista! Eli vierailisit historiallisessa kaupungissa täynnä museoita."),
+                    O("Iría a las montañas a hacer senderismo.", "Menisin vuorille vaeltamaan.",
+                      "¡Qué aire tan puro! Así que irías a las montañas a hacer senderismo.", "Mikä raikas ilma! Eli menisit vuorille vaeltamaan."),
+                    O("Prefiero quedarme en casa, me gusta mi hogar.", "Jään mieluummin kotiin, pidän kodistani.",
+                      "¡Muy bien! Así que prefieres quedarte en casa porque te gusta tu hogar.", "Hyvä! Eli jäät mieluummin kotiin, koska pidät kodistasi."),
+                    O("Me encantaría conocer un país lejano, como Japón o México.", "Haluaisin tutustua kaukaiseen maahan, kuten Japaniin tai Meksikoon.",
+                      "¡Qué aventura! Así que te encantaría conocer un país lejano, como Japón o México.", "Mikä seikkailu! Eli haluaisit tutustua kaukaiseen maahan, kuten Japaniin tai Meksikoon.")
+                ]
+            },
+            learning: {
+                q: "Y dime, ¿qué es lo que más te gusta de aprender español?",
+                qFi: "Ja kerro, mistä pidät eniten espanjan opiskelussa?",
+                opts: [
+                    O("Me encanta cómo suena el idioma.", "Rakastan sitä, miltä kieli kuulostaa.",
+                      "¡Es verdad, es precioso! Así que te encanta cómo suena el idioma.", "Totta, se on kaunista! Eli rakastat sitä, miltä kieli kuulostaa."),
+                    O("Quiero comunicarme sin problemas cuando viaje.", "Haluan pystyä kommunikoimaan ongelmitta, kun matkustan.",
+                      "¡Muy práctico! Así que quieres comunicarte sin problemas cuando viajes.", "Todella käytännöllistä! Eli haluat pystyä kommunikoimaan ongelmitta, kun matkustat."),
+                    O("Me gusta la cultura, la música y la comida hispana.", "Pidän espanjankielisestä kulttuurista, musiikista ja ruoasta.",
+                      "¡Qué bien! Así que te gusta la cultura, la música y la comida hispana.", "Hienoa! Eli pidät espanjankielisestä kulttuurista, musiikista ja ruoasta."),
+                    O("Es un buen ejercicio mental y un reto divertido.", "Se on hyvää aivojumppaa ja hauska haaste.",
+                      "¡Totalmente! Así que para ti es un buen ejercicio mental y un reto divertido.", "Täysin samaa mieltä! Eli sinulle se on hyvää aivojumppaa ja hauska haaste."),
+                    O("Quiero hacer amigos que hablen español.", "Haluan saada espanjaa puhuvia ystäviä.",
+                      "¡Seguro que lo consigues! Así que quieres hacer amigos que hablen español.", "Onnistut varmasti! Eli haluat saada espanjaa puhuvia ystäviä.")
+                ]
+            },
+            emotions: {
+                q: "Y honestamente, ¿cómo te sientes hoy?",
+                qFi: "Ja rehellisesti, miltä sinusta tuntuu tänään?",
+                opts: [
+                    O("Me siento motivado y lleno de energía.", "Olen motivoitunut ja täynnä energiaa.",
+                      "¡Fantástico! Así que te sientes motivado y lleno de energía.", "Fantastista! Eli olet motivoitunut ja täynnä energiaa."),
+                    O("Estoy algo cansado, pero satisfecho.", "Olen vähän väsynyt, mutta tyytyväinen.",
+                      "¡Es comprensible! Así que estás algo cansado, pero satisfecho.", "Ymmärrettävää! Eli olet vähän väsynyt, mutta tyytyväinen."),
+                    O("Me siento tranquilo y en paz.", "Olen rauhallinen ja seesteinen.",
+                      "¡Qué bonito! Así que te sientes tranquilo y en paz.", "Kuinka kaunista! Eli olet rauhallinen ja seesteinen."),
+                    O("Un poco estresado, pero bien.", "Vähän stressaantunut, mutta ihan hyvin.",
+                      "¡Respira hondo! Así que estás un poco estresado, pero bien.", "Hengitä syvään! Eli olet vähän stressaantunut, mutta ihan hyvin."),
+                    O("Tengo ganas de que llegue el fin de semana.", "Odotan, että viikonloppu tulisi jo.",
+                      "¡Ya falta poco! Así que tienes ganas de que llegue el fin de semana.", "Enää vähän aikaa! Eli odotat, että viikonloppu tulisi jo.")
+                ]
+            },
+            weather: {
+                q: "Hablemos del tiempo. ¿Qué tiempo hace hoy donde vives?",
+                qFi: "Puhutaan säästä. Millainen sää tänään on siellä, missä asut?",
+                opts: [
+                    O("Hace frío y está nevando.", "On kylmä ja sataa lunta.",
+                      "¡Brrr! Así que hace frío y está nevando donde vives.", "Brrr! Eli siellä missä asut, on kylmä ja sataa lunta."),
+                    O("Hace sol, pero hace bastante frío.", "On aurinkoista, mutta melko kylmä.",
+                      "¡Qué contraste! Así que hace sol, pero bastante frío.", "Mikä vastakohta! Eli on aurinkoista, mutta melko kylmä."),
+                    O("Está lloviendo todo el día.", "Sataa vettä koko päivän.",
+                      "¡Qué pena! Así que está lloviendo todo el día.", "Harmi! Eli sataa vettä koko päivän."),
+                    O("Hace viento y está nublado.", "Tuulee ja on pilvistä.",
+                      "¡Vaya día! Así que hace viento y está nublado.", "Melkoinen päivä! Eli tuulee ja on pilvistä."),
+                    O("Hace buen tiempo, unos veinte grados.", "On hyvä sää, noin kaksikymmentä astetta.",
+                      "¡Qué suerte! Así que hace buen tiempo, unos veinte grados.", "Onnekas! Eli on hyvä sää, noin kaksikymmentä astetta.")
+                ]
+            },
+            family: {
+                q: "Cuéntame un poco sobre tu familia. ¿Con quién vives?",
+                qFi: "Kerro vähän perheestäsi. Kenen kanssa asut?",
+                opts: [
+                    O("Vivo con mi pareja y nuestros hijos.", "Asun kumppanini ja lastemme kanssa.",
+                      "¡Qué bonito! Así que vives con tu pareja y vuestros hijos.", "Ihanaa! Eli asut kumppanisi ja lastenne kanssa.", 'kids'),
+                    O("Vivo solo y me gusta mi independencia.", "Asun yksin ja pidän itsenäisyydestäni.",
+                      "¡Muy bien! Así que vives solo y te gusta tu independencia.", "Hyvä! Eli asut yksin ja pidät itsenäisyydestäsi."),
+                    O("Vivo con mi pareja.", "Asun kumppanini kanssa.",
+                      "¡Qué bien! Así que vives con tu pareja.", "Kiva! Eli asut kumppanisi kanssa."),
+                    O("De momento vivo con mis padres.", "Tällä hetkellä asun vanhempieni luona.",
+                      "¡Ajá! Así que de momento vives con tus padres.", "Ahaa! Eli tällä hetkellä asut vanhempiesi luona."),
+                    O("Vivo con mi perro, ¡es mi mejor amigo!", "Asun koirani kanssa, se on paras ystäväni!",
+                      "¡Qué tierno! Así que vives con tu perro y es tu mejor amigo.", "Kuinka suloista! Eli asut koirasi kanssa ja se on paras ystäväsi.", 'dog')
+                ]
+            },
+            pets: {
+                q: "¿Te gustan los animales? ¿Tienes alguna mascota?",
+                qFi: "Pidätkö eläimistä? Onko sinulla lemmikkiä?",
+                opts: [
+                    O("Sí, tengo un perro.", "Kyllä, minulla on koira.",
+                      "¡Qué bien! Así que tienes un perro.", "Kiva! Eli sinulla on koira.", 'dog'),
+                    O("Tengo un gato que hace lo que quiere.", "Minulla on kissa, joka tekee mitä haluaa.",
+                      "¡Típico de los gatos! Así que tienes un gato que hace lo que quiere.", "Tyypillistä kissoille! Eli sinulla on kissa, joka tekee mitä haluaa."),
+                    O("No tengo, pero me gustaría tener uno.", "Ei ole, mutta haluaisin sellaisen.",
+                      "¡Quizás pronto! Así que no tienes mascota, pero te gustaría tener una.", "Ehkä pian! Eli sinulla ei ole lemmikkiä, mutta haluaisit sellaisen."),
+                    O("No, soy alérgico a los animales.", "Ei, olen allerginen eläimille.",
+                      "¡Qué pena! Así que no tienes mascota porque eres alérgico a los animales.", "Harmi! Eli sinulla ei ole lemmikkiä, koska olet allerginen eläimille."),
+                    O("Tengo peces en un acuario.", "Minulla on kaloja akvaariossa.",
+                      "¡Qué relajante! Así que tienes peces en un acuario.", "Rentouttavaa! Eli sinulla on kaloja akvaariossa.")
+                ]
+            },
+            hometown: {
+                q: "¿Y cómo es la ciudad o el pueblo donde vives?",
+                qFi: "Millainen on kaupunki tai kylä, jossa asut?",
+                opts: [
+                    O("Es una ciudad grande con mucho movimiento.", "Se on iso ja vilkas kaupunki.",
+                      "¡Qué animado! Así que vives en una ciudad grande con mucho movimiento.", "Kuinka eloisaa! Eli asut isossa ja vilkkaassa kaupungissa."),
+                    O("Es un pueblo pequeño y tranquilo.", "Se on pieni ja rauhallinen kylä.",
+                      "¡Qué paz! Así que vives en un pueblo pequeño y tranquilo.", "Mikä rauha! Eli asut pienessä ja rauhallisessa kylässä."),
+                    O("Vivo cerca del mar y me encanta.", "Asun lähellä merta ja rakastan sitä.",
+                      "¡Qué privilegio! Así que vives cerca del mar y te encanta.", "Mikä etuoikeus! Eli asut lähellä merta ja rakastat sitä."),
+                    O("Vivo en el campo, rodeado de bosques y lagos.", "Asun maalla metsien ja järvien ympäröimänä.",
+                      "¡Qué bonito! Así que vives en el campo, rodeado de bosques y lagos.", "Kuinka kaunista! Eli asut maalla metsien ja järvien ympäröimänä."),
+                    O("Es una ciudad bonita, pero en invierno hay poca luz.", "Se on kaunis kaupunki, mutta talvella on vähän valoa.",
+                      "¡Lo entiendo! Así que vives en una ciudad bonita, pero en invierno hay poca luz.", "Ymmärrän! Eli asut kauniissa kaupungissa, mutta talvella on vähän valoa.")
+                ]
+            },
+            morning: {
+                q: "¿Y cómo son tus mañanas? ¿Qué haces nada más levantarte?",
+                qFi: "Millaisia aamusi ovat? Mitä teet heti herättyäsi?",
+                opts: [
+                    O("Lo primero, me tomo un café bien cargado.", "Ensimmäiseksi juon vahvan kahvin.",
+                      "¡Imprescindible! Así que lo primero que haces es tomarte un café bien cargado.", "Välttämätöntä! Eli ensimmäiseksi juot vahvan kahvin."),
+                    O("Me ducho y desayuno tranquilamente.", "Käyn suihkussa ja syön aamiaisen rauhassa.",
+                      "¡Qué buena rutina! Así que te duchas y desayunas tranquilamente.", "Hyvä rutiini! Eli käyt suihkussa ja syöt aamiaisen rauhassa."),
+                    O("Miro el móvil, aunque sé que no debería.", "Katson puhelinta, vaikka tiedän, ettei pitäisi.",
+                      "¡Nos pasa a todos! Así que miras el móvil, aunque sabes que no deberías.", "Niin käy kaikille! Eli katsot puhelinta, vaikka tiedät, ettei pitäisi."),
+                    O("Salgo a pasear al perro.", "Lähden ulkoiluttamaan koiraa.",
+                      "¡Qué sano! Así que sales a pasear al perro.", "Terveellistä! Eli lähdet ulkoiluttamaan koiraa.", 'dog'),
+                    O("Me levanto tarde y voy corriendo a todas partes.", "Herään myöhään ja juoksen kiireellä joka paikkaan.",
+                      "¡Ja, ja! Así que te levantas tarde y vas corriendo a todas partes.", "Hah! Eli heräät myöhään ja juokset kiireellä joka paikkaan.")
+                ]
+            },
+            seasons: {
+                q: "¿Cuál es tu estación del año favorita y por qué?",
+                qFi: "Mikä on lempivuodenaikasi ja miksi?",
+                opts: [
+                    O("El verano, por las noches sin oscuridad.", "Kesä, koska yöt ovat valoisia.",
+                      "¡Qué mágico! Así que tu favorita es el verano, por las noches sin oscuridad.", "Kuinka maagista! Eli lempivuodenaikasi on kesä valoisien öiden takia."),
+                    O("El invierno, me encanta la nieve.", "Talvi, rakastan lunta.",
+                      "¡Qué bonito! Así que tu favorita es el invierno porque te encanta la nieve.", "Kuinka kaunista! Eli lempivuodenaikasi on talvi, koska rakastat lunta."),
+                    O("La primavera, cuando todo vuelve a la vida.", "Kevät, kun kaikki herää taas eloon.",
+                      "¡Qué poético! Así que tu favorita es la primavera, cuando todo vuelve a la vida.", "Kuinka runollista! Eli lempivuodenaikasi on kevät, kun kaikki herää eloon."),
+                    O("El otoño, por los colores de los árboles.", "Syksy, puiden värien takia.",
+                      "¡Buena elección! Así que tu favorita es el otoño, por los colores de los árboles.", "Hyvä valinta! Eli lempivuodenaikasi on syksy puiden värien takia.")
+                ]
+            },
+            childhood: {
+                q: "Ahora una pregunta sobre el pasado: ¿qué te gustaba hacer en tu infancia?",
+                qFi: "Nyt kysymys menneisyydestä: mitä tykkäsit tehdä lapsuudessasi?",
+                opts: [
+                    O("Jugaba al fútbol con mis amigos.", "Pelasin jalkapalloa ystävieni kanssa.",
+                      "¡Qué recuerdos! Así que jugabas al fútbol con tus amigos.", "Mitä muistoja! Eli pelasit jalkapalloa ystäviesi kanssa."),
+                    O("Pasaba horas leyendo cómics.", "Vietin tunteja sarjakuvia lukien.",
+                      "¡Qué bien! Así que pasabas horas leyendo cómics.", "Kiva! Eli vietit tunteja sarjakuvia lukien."),
+                    O("Construía cabañas en el bosque.", "Rakentelin majoja metsään.",
+                      "¡Qué aventurero! Así que construías cabañas en el bosque.", "Kuinka seikkailunhaluista! Eli rakentelit majoja metsään."),
+                    O("Jugaba a los videojuegos.", "Pelasin videopelejä.",
+                      "¡Ajá! Así que jugabas a los videojuegos.", "Ahaa! Eli pelasit videopelejä."),
+                    O("Iba a patinar sobre hielo en invierno.", "Kävin talvella luistelemassa.",
+                      "¡Qué divertido! Así que ibas a patinar sobre hielo en invierno.", "Hauskaa! Eli kävit talvella luistelemassa.")
+                ]
+            },
+            celebrations: {
+                q: "¿Cuál es tu fiesta favorita del año?",
+                qFi: "Mikä on vuoden lempijuhlasi?",
+                opts: [
+                    O("La Navidad, con toda la familia.", "Joulu, koko perheen kanssa.",
+                      "¡Qué entrañable! Así que tu fiesta favorita es la Navidad, con toda la familia.", "Kuinka lämmintä! Eli lempijuhlasi on joulu koko perheen kanssa."),
+                    O("La noche de San Juan en la casa de verano.", "Juhannus mökillä.",
+                      "¡Qué tradición tan bonita! Así que tu fiesta favorita es la noche de San Juan en la casa de verano.", "Kaunis perinne! Eli lempijuhlasi on juhannus mökillä.", 'sauna'),
+                    O("Mi cumpleaños, ¡me encantan los regalos!", "Syntymäpäiväni, rakastan lahjoja!",
+                      "¡Ja, ja! Así que tu fiesta favorita es tu cumpleaños porque te encantan los regalos.", "Hah! Eli lempijuhlasi on syntymäpäiväsi, koska rakastat lahjoja."),
+                    O("La Nochevieja, con fuegos artificiales.", "Uudenvuodenaatto ilotulituksineen.",
+                      "¡Qué emoción! Así que tu fiesta favorita es la Nochevieja, con fuegos artificiales.", "Jännittävää! Eli lempijuhlasi on uudenvuodenaatto ilotulituksineen.")
+                ]
+            },
+            tech: {
+                q: "Hablando de tecnología, ¿cuántas horas usas el móvil al día?",
+                qFi: "Teknologiasta puheen ollen, montako tuntia käytät puhelinta päivässä?",
+                opts: [
+                    O("Demasiadas, ¡más de cinco horas!", "Liian monta, yli viisi tuntia!",
+                      "¡Uy! Así que usas el móvil demasiadas horas, ¡más de cinco!", "Hups! Eli käytät puhelinta liian monta tuntia, yli viisi!"),
+                    O("Solo un par de horas.", "Vain pari tuntia.",
+                      "¡Muy bien! Así que solo usas el móvil un par de horas.", "Hyvä! Eli käytät puhelinta vain pari tuntia."),
+                    O("Lo uso sobre todo para trabajar.", "Käytän sitä lähinnä töihin.",
+                      "¡Entiendo! Así que usas el móvil sobre todo para trabajar.", "Ymmärrän! Eli käytät puhelinta lähinnä töihin."),
+                    O("Lo uso para aprender idiomas con aplicaciones.", "Käytän sitä kielten opiskeluun sovelluksilla.",
+                      "¡Qué buena idea! Así que usas el móvil para aprender idiomas con aplicaciones.", "Hyvä idea! Eli käytät puhelinta kielten opiskeluun sovelluksilla."),
+                    O("Intento usarlo poco, prefiero la vida real.", "Yritän käyttää sitä vähän, pidän enemmän oikeasta elämästä.",
+                      "¡Qué sabio! Así que intentas usarlo poco porque prefieres la vida real.", "Viisasta! Eli yrität käyttää sitä vähän, koska pidät enemmän oikeasta elämästä.")
+                ]
+            },
+            sleep: {
+                q: "¿Y qué tal duermes normalmente? ¿Cuántas horas?",
+                qFi: "Miten yleensä nukut? Montako tuntia?",
+                opts: [
+                    O("Duermo unas ocho horas, como un bebé.", "Nukun noin kahdeksan tuntia, kuin vauva.",
+                      "¡Qué envidia! Así que duermes unas ocho horas, como un bebé.", "Kateeksi käy! Eli nukut noin kahdeksan tuntia, kuin vauva."),
+                    O("Menos de seis horas, siempre estoy cansado.", "Alle kuusi tuntia, olen aina väsynyt.",
+                      "¡Vaya! Así que duermes menos de seis horas y siempre estás cansado.", "Voi! Eli nukut alle kuusi tuntia ja olet aina väsynyt."),
+                    O("Me cuesta dormirme por las noches.", "Minun on vaikea nukahtaa iltaisin.",
+                      "¡Qué pena! Así que te cuesta dormirte por las noches.", "Harmi! Eli sinun on vaikea nukahtaa iltaisin."),
+                    O("Duermo bien, pero me gusta echarme la siesta.", "Nukun hyvin, mutta tykkään ottaa päiväunet.",
+                      "¡Muy español! Así que duermes bien, pero te gusta echarte la siesta.", "Hyvin espanjalaista! Eli nukut hyvin, mutta tykkäät ottaa päiväunet.")
+                ]
+            },
+            ideal_weekend: {
+                q: "Imagina tu fin de semana ideal. ¿Cómo sería?",
+                qFi: "Kuvittele ihanneviikonloppusi. Millainen se olisi?",
+                opts: [
+                    O("Sería en una cabaña junto a un lago.", "Se olisi mökillä järven rannalla.",
+                      "¡Qué idílico! Así que sería en una cabaña junto a un lago.", "Kuinka idyllistä! Eli se olisi mökillä järven rannalla.", 'sauna'),
+                    O("Sería en una gran ciudad, con tiendas y restaurantes.", "Se olisi suurkaupungissa kauppojen ja ravintoloiden keskellä.",
+                      "¡Qué urbano! Así que sería en una gran ciudad, con tiendas y restaurantes.", "Kuinka urbaania! Eli se olisi suurkaupungissa kauppojen ja ravintoloiden keskellä."),
+                    O("Sería en casa, con películas y comida rica.", "Se olisi kotona elokuvien ja hyvän ruoan parissa.",
+                      "¡Qué acogedor! Así que sería en casa, con películas y comida rica.", "Kuinka kotoisaa! Eli se olisi kotona elokuvien ja hyvän ruoan parissa."),
+                    O("Sería con amigos, haciendo una excursión.", "Se olisi ystävien kanssa retkellä.",
+                      "¡Qué divertido! Así que sería con amigos, haciendo una excursión.", "Hauskaa! Eli se olisi ystävien kanssa retkellä."),
+                    O("Sería practicando deporte al aire libre.", "Se olisi ulkona urheillen.",
+                      "¡Qué activo! Así que sería practicando deporte al aire libre.", "Kuinka aktiivista! Eli se olisi ulkona urheillen.")
+                ]
+            },
+
+            // ================= LOPETUS =================
+            closing: {
+                q: "¡Muchas gracias por esta conversación en español! Ha sido un placer charlar contigo. ¿Cómo te has sentido practicando?",
+                qFi: "Kiitos paljon tästä keskustelusta espanjaksi! Oli ilo jutella kanssasi. Miltä harjoittelu tuntui?",
+                opts: [
+                    O("¡Ha sido genial! He aprendido vocabulario muy útil.", "Tämä oli mahtavaa! Opin todella hyödyllistä sanastoa.",
+                      "¡Me alegro mucho! Así que has aprendido vocabulario muy útil.", "Olen todella iloinen! Eli opit todella hyödyllistä sanastoa."),
+                    O("Me ha parecido divertido y muy práctico.", "Se oli minusta hauskaa ja todella käytännöllistä.",
+                      "¡Qué bien! Así que te ha parecido divertido y muy práctico.", "Hienoa! Eli se oli sinusta hauskaa ja todella käytännöllistä."),
+                    O("Un poco difícil a veces, pero me ha gustado el reto.", "Välillä vähän vaikeaa, mutta pidin haasteesta.",
+                      "¡Así se aprende! Así que ha sido un poco difícil, pero te ha gustado el reto.", "Niin sitä opitaan! Eli se oli välillä vaikeaa, mutta pidit haasteesta."),
+                    O("Quiero repetir pronto para mejorar mi fluidez.", "Haluan toistaa tämän pian parantaakseni sujuvuuttani.",
+                      "¡Estupendo! Así que quieres repetir pronto para mejorar tu fluidez.", "Loistavaa! Eli haluat toistaa tämän pian parantaaksesi sujuvuuttasi."),
+                    O("¡Gracias a ti! Nos vemos en la próxima conversación.", "Kiitos sinulle! Nähdään seuraavassa keskustelussa.",
+                      "¡De nada! Nos vemos muy pronto.", "Eipä kestä! Nähdään pian.")
+                ]
+            }
+        };
+
+        // ------------------------------------------------------------------
+        //  VERBIKERTAUS
+        //  Jokaiseen vastaukseen liittyy kertauspari: lause yksikön 1. persoonassa
+        //  ja sama kysymyksenä yksikön 2. persoonassa.
+        //  Muoto: [verbi, lause, suomi 1. pers., suomi 2. pers.]
+        //  Lauseessa {V} = verbi, {mi}/{mis}/{me} vaihtuvat muotoon tu/tus/te.
+        // ------------------------------------------------------------------
+        var VERBS = {
+            llevar: ['llevo', 'llevas'],
+            hacer:  ['hago', 'haces'],
+            decir:  ['digo', 'dices'],
+            ir:     ['voy', 'vas'],
+            saber:  ['sé', 'sabes'],
+            creer:  ['creo', 'crees'],
+            tener:  ['tengo', 'tienes'],
+            llegar: ['llego', 'llegas'],
+            ser:    ['soy', 'eres'],
+            estar:  ['estoy', 'estás']
+        };
+
+        var DRILLS = {
+            start: [
+                ['hacer', '{V} limpieza en casa los fines de semana', 'Siivoan kotona viikonloppuisin.', 'Siivoatko kotona viikonloppuisin?'],
+                ['llegar', '{V} al trabajo temprano', 'Saavun töihin aikaisin.', 'Saavutko töihin aikaisin?'],
+                ['estar', '{V} contento porque es viernes', 'Olen iloinen, koska on perjantai.', 'Oletko iloinen, koska on perjantai?'],
+                ['tener', '{V} que trabajar mañana', 'Minun täytyy tehdä töitä huomenna.', 'Täytyykö sinun tehdä töitä huomenna?'],
+                ['llevar', '{V} todo el fin de semana trabajando', 'Olen tehnyt töitä koko viikonlopun.', 'Oletko tehnyt töitä koko viikonlopun?'],
+                ['ir', '{V} al gimnasio a menudo', 'Käyn usein salilla.', 'Käytkö usein salilla?']
+            ],
+            cleaning: [
+                ['decir', '{V} que el baño es lo más pesado', 'Sanon, että kylpyhuone on raskain.', 'Sanotko, että kylpyhuone on raskain?'],
+                ['saber', '{V} limpiar las ventanas sin manchas', 'Osaan pestä ikkunat ilman tahroja.', 'Osaatko pestä ikkunat ilman tahroja?'],
+                ['creer', '{V} que fregar los platos es aburrido', 'Uskon, että tiskaaminen on tylsää.', 'Uskotko, että tiskaaminen on tylsää?'],
+                ['ser', '{V} muy malo planchando', 'Olen tosi huono silittämään.', 'Oletko tosi huono silittämään?'],
+                ['llevar', '{V} auriculares para limpiar con música', 'Pidän kuulokkeita siivotessani musiikin kanssa.', 'Pidätkö kuulokkeita siivotessasi musiikin kanssa?']
+            ],
+            work_day: [
+                ['tener', '{V} muchas reuniones seguidas', 'Minulla on monta palaveria peräkkäin.', 'Onko sinulla monta palaveria peräkkäin?'],
+                ['estar', '{V} tranquilo en el trabajo', 'Olen rauhallinen töissä.', 'Oletko rauhallinen töissä?'],
+                ['hacer', '{V} proyectos importantes', 'Teen tärkeitä projekteja.', 'Teetkö tärkeitä projekteja?'],
+                ['decir', 'Siempre {V} que sí a {mi} jefe', 'Sanon aina kyllä pomolleni.', 'Sanotko aina kyllä pomollesi?'],
+                ['ir', 'No {V} a la oficina todos los días', 'En mene toimistolle joka päivä.', 'Etkö mene toimistolle joka päivä?']
+            ],
+            weekend_plans: [
+                ['ir', '{V} a la casa de verano con {mi} familia', 'Menen mökille perheeni kanssa.', 'Menetkö mökille perheesi kanssa?'],
+                ['estar', '{V} muy cansado esta semana', 'Olen tosi väsynyt tällä viikolla.', 'Oletko tosi väsynyt tällä viikolla?'],
+                ['llegar', '{V} al restaurante a las ocho', 'Saavun ravintolaan kahdeksalta.', 'Saavutko ravintolaan kahdeksalta?'],
+                ['saber', '{V} mucho de hockey', 'Tiedän paljon jääkiekosta.', 'Tiedätkö paljon jääkiekosta?'],
+                ['creer', '{V} que improvisar es divertido', 'Uskon, että improvisointi on hauskaa.', 'Uskotko, että improvisointi on hauskaa?']
+            ],
+            monday_mood: [
+                ['ser', 'Los lunes {V} un poco perezoso', 'Maanantaisin olen vähän laiska.', 'Oletko maanantaisin vähän laiska?'],
+                ['creer', '{V} que {mi} trabajo es interesante', 'Uskon, että työni on mielenkiintoinen.', 'Uskotko, että työsi on mielenkiintoinen?'],
+                ['tener', '{V} una semana muy llena', 'Minulla on todella täysi viikko.', 'Onko sinulla todella täysi viikko?'],
+                ['hacer', 'Los domingos no {V} planes para el lunes', 'Sunnuntaisin en tee suunnitelmia maanantaille.', 'Etkö sunnuntaisin tee suunnitelmia maanantaille?']
+            ],
+            sport_today: [
+                ['llevar', '{V} zapatillas nuevas para correr', 'Käytän uusia lenkkareita juoksuun.', 'Käytätkö uusia lenkkareita juoksuun?'],
+                ['ir', '{V} al gimnasio tres veces por semana', 'Käyn salilla kolme kertaa viikossa.', 'Käytkö salilla kolme kertaa viikossa?'],
+                ['saber', '{V} nadar muy bien', 'Osaan uida todella hyvin.', 'Osaatko uida todella hyvin?'],
+                ['llegar', '{V} a casa en bicicleta', 'Tulen kotiin pyörällä.', 'Tuletko kotiin pyörällä?'],
+                ['estar', '{V} en forma gracias al esquí', 'Olen hyvässä kunnossa hiihdon ansiosta.', 'Oletko hyvässä kunnossa hiihdon ansiosta?']
+            ],
+            books: [
+                ['saber', 'Siempre {V} quién es el culpable', 'Tiedän aina, kuka on syyllinen.', 'Tiedätkö aina, kuka on syyllinen?'],
+                ['creer', '{V} que la historia es fascinante', 'Uskon, että historia on kiehtovaa.', 'Uskotko, että historia on kiehtovaa?'],
+                ['ser', '{V} un gran fan de la fantasía', 'Olen suuri fantasian ystävä.', 'Oletko suuri fantasian ystävä?'],
+                ['llevar', 'Siempre {V} un libro en la mochila', 'Kannan aina kirjaa repussa.', 'Kannatko aina kirjaa repussa?']
+            ],
+            sauna: [
+                ['tener', '{V} sauna en casa', 'Minulla on sauna kotona.', 'Onko sinulla sauna kotona?'],
+                ['ir', '{V} a la sauna los sábados', 'Menen saunaan lauantaisin.', 'Menetkö saunaan lauantaisin?'],
+                ['llegar', '{V} a la casa de verano el viernes', 'Saavun mökille perjantaina.', 'Saavutko mökille perjantaina?'],
+                ['ser', '{V} muy valiente en el agua fría', 'Olen tosi rohkea kylmässä vedessä.', 'Oletko tosi rohkea kylmässä vedessä?']
+            ],
+            cooking: [
+                ['hacer', '{V} paella para {mis} amigos', 'Teen paellaa ystävilleni.', 'Teetkö paellaa ystävillesi?'],
+                ['saber', '{V} cocinar sopa de salmón', 'Osaan keittää lohikeittoa.', 'Osaatko keittää lohikeittoa?'],
+                ['creer', '{V} que la salsa casera es la mejor', 'Uskon, että kotitekoinen kastike on paras.', 'Uskotko, että kotitekoinen kastike on paras?'],
+                ['decir', '{V} que la tortilla lleva cebolla', 'Sanon, että tortillaan kuuluu sipuli.', 'Sanotko, että tortillaan kuuluu sipuli?'],
+                ['llevar', '{V} un pastel a cada fiesta', 'Vien kakun joka juhliin.', 'Vietkö kakun joka juhliin?']
+            ],
+            series: [
+                ['estar', '{V} enganchado a La casa de papel', 'Olen koukussa Rahapajaan.', 'Oletko koukussa Rahapajaan?'],
+                ['saber', '{V} mucho sobre el cine español', 'Tiedän paljon espanjalaisesta elokuvasta.', 'Tiedätkö paljon espanjalaisesta elokuvasta?'],
+                ['tener', '{V} los subtítulos en español', 'Minulla on tekstitykset espanjaksi.', 'Onko sinulla tekstitykset espanjaksi?'],
+                ['ir', '{V} a buscar una serie nueva', 'Aion etsiä uuden sarjan.', 'Aiotko etsiä uuden sarjan?']
+            ],
+            music: [
+                ['ser', '{V} fan del rock de los ochenta', 'Olen 80-luvun rockin fani.', 'Oletko 80-luvun rockin fani?'],
+                ['tener', '{V} una guitarra española', 'Minulla on espanjalainen kitara.', 'Onko sinulla espanjalainen kitara?'],
+                ['creer', '{V} que la música clásica relaja', 'Uskon, että klassinen musiikki rentouttaa.', 'Uskotko, että klassinen musiikki rentouttaa?'],
+                ['ir', '{V} a conciertos de heavy metal', 'Käyn heavy metal -konserteissa.', 'Käytkö heavy metal -konserteissa?'],
+                ['decir', '{V} que toda la música es buena', 'Sanon, että kaikki musiikki on hyvää.', 'Sanotko, että kaikki musiikki on hyvää?']
+            ],
+            shopping: [
+                ['estar', 'Sin café no {V} despierto', 'Ilman kahvia en ole hereillä.', 'Etkö ole hereillä ilman kahvia?'],
+                ['llevar', '{V} {mi} propia bolsa al supermercado', 'Vien oman kassini kauppaan.', 'Vietkö oman kassisi kauppaan?'],
+                ['saber', '{V} hacer pan de centeno', 'Osaan leipoa ruisleipää.', 'Osaatko leipoa ruisleipää?'],
+                ['decir', 'Siempre {V} que es el último chocolate', 'Sanon aina, että se on viimeinen suklaa.', 'Sanotko aina, että se on viimeinen suklaa?']
+            ],
+            beach: [
+                ['saber', '{V} nadar en el mar', 'Osaan uida meressä.', 'Osaatko uida meressä?'],
+                ['llevar', '{V} un libro a la playa', 'Vien kirjan rannalle.', 'Vietkö kirjan rannalle?'],
+                ['creer', '{V} que el marisco español es el mejor', 'Uskon, että espanjalaiset äyriäiset ovat parhaita.', 'Uskotko, että espanjalaiset äyriäiset ovat parhaita?'],
+                ['ser', '{V} bueno jugando al vóley', 'Olen hyvä pelaamaan lentopalloa.', 'Oletko hyvä pelaamaan lentopalloa?']
+            ],
+            kids: [
+                ['llevar', '{V} a {mi} hijo a la guardería', 'Vien poikani päiväkotiin.', 'Vietkö poikasi päiväkotiin?'],
+                ['tener', '{V} mucha paciencia con las adolescentes', 'Minulla on paljon kärsivällisyyttä teinien kanssa.', 'Onko sinulla paljon kärsivällisyyttä teinien kanssa?'],
+                ['estar', 'Siempre {V} ocupado en casa', 'Olen aina kiireinen kotona.', 'Oletko aina kiireinen kotona?'],
+                ['llegar', '{V} al colegio a las ocho', 'Saavun koululle kahdeksalta.', 'Saavutko koululle kahdeksalta?']
+            ],
+            dog: [
+                ['decir', '{V} que Musti es el mejor perro', 'Sanon, että Musti on paras koira.', 'Sanotko, että Musti on paras koira?'],
+                ['saber', '{V} por qué ladra tanto', 'Tiedän, miksi se haukkuu niin paljon.', 'Tiedätkö, miksi se haukkuu niin paljon?'],
+                ['llevar', '{V} al perro al parque cada día', 'Vien koiran puistoon joka päivä.', 'Vietkö koiran puistoon joka päivä?'],
+                ['creer', '{V} que los perros mayores son muy tiernos', 'Uskon, että vanhat koirat ovat tosi suloisia.', 'Uskotko, että vanhat koirat ovat tosi suloisia?']
+            ],
+            evening: [
+                ['tener', '{V} un buen libro para esta noche', 'Minulla on hyvä kirja tälle illalle.', 'Onko sinulla hyvä kirja tälle illalle?'],
+                ['hacer', '{V} ejercicio caminando por la tarde', 'Kuntoilen kävelemällä iltapäivisin.', 'Kuntoiletko kävelemällä iltapäivisin?'],
+                ['estar', '{V} estudiando español esta tarde', 'Opiskelen espanjaa tänä iltapäivänä.', 'Opiskeletko espanjaa tänä iltapäivänä?'],
+                ['ir', '{V} a la sauna esta noche', 'Menen saunaan tänä iltana.', 'Menetkö saunaan tänä iltana?'],
+                ['llegar', '{V} tarde a casa por los recados', 'Tulen myöhään kotiin asioiden takia.', 'Tuletko myöhään kotiin asioiden takia?']
+            ],
+            hobbies: [
+                ['hacer', '{V} platos nuevos cada semana', 'Teen uusia ruokia joka viikko.', 'Teetkö uusia ruokia joka viikko?'],
+                ['ir', '{V} al bosque los domingos', 'Menen metsään sunnuntaisin.', 'Menetkö metsään sunnuntaisin?'],
+                ['creer', '{V} que las series ayudan a aprender', 'Uskon, että sarjat auttavat oppimaan.', 'Uskotko, että sarjat auttavat oppimaan?'],
+                ['saber', '{V} tocar la guitarra', 'Osaan soittaa kitaraa.', 'Osaatko soittaa kitaraa?'],
+                ['ser', '{V} una persona muy sociable', 'Olen todella sosiaalinen ihminen.', 'Oletko todella sosiaalinen ihminen?']
+            ],
+            yesterday: [
+                ['estar', 'Hoy también {V} tranquilo', 'Tänäänkin olen rauhallinen.', 'Oletko tänäänkin rauhallinen?'],
+                ['tener', 'Siempre {V} mil cosas que hacer', 'Minulla on aina tuhat asiaa tehtävänä.', 'Onko sinulla aina tuhat asiaa tehtävänä?'],
+                ['decir', '{V} que {mis} amigos son muy divertidos', 'Sanon, että ystäväni ovat tosi hauskoja.', 'Sanotko, että ystäväsi ovat tosi hauskoja?'],
+                ['hacer', '{V} las tareas de casa los sábados', 'Teen kotityöt lauantaisin.', 'Teetkö kotityöt lauantaisin?'],
+                ['creer', '{V} que mañana será un día mejor', 'Uskon, että huomenna on parempi päivä.', 'Uskotko, että huomenna on parempi päivä?']
+            ],
+            tomorrow: [
+                ['llegar', '{V} al trabajo a las siete', 'Saavun töihin seitsemältä.', 'Saavutko töihin seitsemältä?'],
+                ['hacer', '{V} ejercicio antes de desayunar', 'Kuntoilen ennen aamiaista.', 'Kuntoiletko ennen aamiaista?'],
+                ['estar', 'Mañana {V} libre todo el día', 'Huomenna olen vapaa koko päivän.', 'Oletko huomenna vapaa koko päivän?'],
+                ['llevar', '{V} una lista a la tienda', 'Otan listan mukaan kauppaan.', 'Otatko listan mukaan kauppaan?'],
+                ['saber', '{V} lo que hay que decir en la reunión', 'Tiedän, mitä kokouksessa pitää sanoa.', 'Tiedätkö, mitä kokouksessa pitää sanoa?']
+            ],
+            food: [
+                ['creer', '{V} que la ensalada es muy sana', 'Uskon, että salaatti on tosi terveellistä.', 'Uskotko, että salaatti on tosi terveellistä?'],
+                ['saber', '{V} hacer pizza en casa', 'Osaan tehdä pizzaa kotona.', 'Osaatko tehdä pizzaa kotona?'],
+                ['hacer', '{V} sopa cuando hace frío', 'Teen keittoa, kun on kylmä.', 'Teetkö keittoa, kun on kylmä?'],
+                ['estar', '{V} demasiado cansado para cocinar', 'Olen liian väsynyt kokkaamaan.', 'Oletko liian väsynyt kokkaamaan?'],
+                ['tener', '{V} poca comida en la nevera', 'Minulla on vähän ruokaa jääkaapissa.', 'Onko sinulla vähän ruokaa jääkaapissa?']
+            ],
+            travel: [
+                ['ir', '{V} a España en verano', 'Menen Espanjaan kesällä.', 'Menetkö Espanjaan kesällä?'],
+                ['saber', '{V} mucho de historia europea', 'Tiedän paljon Euroopan historiasta.', 'Tiedätkö paljon Euroopan historiasta?'],
+                ['llevar', '{V} botas buenas en la montaña', 'Käytän vuorilla hyviä vaelluskenkiä.', 'Käytätkö vuorilla hyviä vaelluskenkiä?'],
+                ['estar', '{V} muy a gusto en casa', 'Viihdyn todella hyvin kotona.', 'Viihdytkö todella hyvin kotona?'],
+                ['creer', '{V} que Japón es fascinante', 'Uskon, että Japani on kiehtova.', 'Uskotko, että Japani on kiehtova?']
+            ],
+            learning: [
+                ['decir', '{V} que el español suena muy bonito', 'Sanon, että espanja kuulostaa tosi kauniilta.', 'Sanotko, että espanja kuulostaa tosi kauniilta?'],
+                ['ir', '{V} a viajar a Sudamérica', 'Aion matkustaa Etelä-Amerikkaan.', 'Aiotko matkustaa Etelä-Amerikkaan?'],
+                ['saber', '{V} bailar salsa', 'Osaan tanssia salsaa.', 'Osaatko tanssia salsaa?'],
+                ['llevar', '{V} un año estudiando español', 'Olen opiskellut espanjaa vuoden.', 'Oletko opiskellut espanjaa vuoden?'],
+                ['tener', '{V} amigos en España', 'Minulla on ystäviä Espanjassa.', 'Onko sinulla ystäviä Espanjassa?']
+            ],
+            emotions: [
+                ['tener', '{V} mucha energía hoy', 'Minulla on tänään paljon energiaa.', 'Onko sinulla tänään paljon energiaa?'],
+                ['estar', '{V} satisfecho con {mi} día', 'Olen tyytyväinen päivääni.', 'Oletko tyytyväinen päivääsi?'],
+                ['ser', '{V} una persona tranquila', 'Olen rauhallinen ihminen.', 'Oletko rauhallinen ihminen?'],
+                ['saber', '{V} relajar{me} después del trabajo', 'Osaan rentoutua töiden jälkeen.', 'Osaatko rentoutua töiden jälkeen?'],
+                ['llegar', 'El viernes {V} a casa muy feliz', 'Perjantaina tulen kotiin tosi iloisena.', 'Tuletko perjantaina kotiin tosi iloisena?']
+            ],
+            weather: [
+                ['llevar', '{V} gorro y guantes en invierno', 'Käytän pipoa ja hanskoja talvella.', 'Käytätkö pipoa ja hanskoja talvella?'],
+                ['ir', '{V} a pasear cuando hace sol', 'Lähden kävelylle, kun on aurinkoista.', 'Lähdetkö kävelylle, kun on aurinkoista?'],
+                ['tener', 'Siempre {V} un paraguas en el coche', 'Minulla on aina sateenvarjo autossa.', 'Onko sinulla aina sateenvarjo autossa?'],
+                ['estar', 'Cuando hay viento, {V} en casa', 'Kun tuulee, olen kotona.', 'Oletko kotona, kun tuulee?'],
+                ['creer', '{V} que veinte grados es perfecto', 'Uskon, että kaksikymmentä astetta on täydellinen.', 'Uskotko, että kaksikymmentä astetta on täydellinen?']
+            ],
+            family: [
+                ['ser', '{V} muy feliz con {mi} familia', 'Olen tosi onnellinen perheeni kanssa.', 'Oletko tosi onnellinen perheesi kanssa?'],
+                ['hacer', '{V} todo a {mi} manera', 'Teen kaiken omalla tavallani.', 'Teetkö kaiken omalla tavallasi?'],
+                ['llevar', '{V} cinco años con {mi} pareja', 'Olen ollut kumppanini kanssa viisi vuotta.', 'Oletko ollut kumppanisi kanssa viisi vuotta?'],
+                ['decir', '{V} que vivir con los padres es cómodo', 'Sanon, että vanhempien luona asuminen on mukavaa.', 'Sanotko, että vanhempien luona asuminen on mukavaa?'],
+                ['llegar', '{V} a casa y {mi} perro {me} espera', 'Tulen kotiin ja koirani odottaa minua.', 'Tuletko kotiin ja koirasi odottaa sinua?']
+            ],
+            pets: [
+                ['tener', '{V} un perro muy simpático', 'Minulla on tosi mukava koira.', 'Onko sinulla tosi mukava koira?'],
+                ['creer', '{V} que los gatos son independientes', 'Uskon, että kissat ovat itsenäisiä.', 'Uskotko, että kissat ovat itsenäisiä?'],
+                ['ir', '{V} a adoptar un animal pronto', 'Aion adoptoida eläimen pian.', 'Aiotko adoptoida eläimen pian?'],
+                ['ser', '{V} alérgico a los gatos', 'Olen allerginen kissoille.', 'Oletko allerginen kissoille?'],
+                ['saber', '{V} cuidar peces de acuario', 'Osaan hoitaa akvaariokaloja.', 'Osaatko hoitaa akvaariokaloja?']
+            ],
+            hometown: [
+                ['llegar', '{V} al centro en metro', 'Pääsen keskustaan metrolla.', 'Pääsetkö keskustaan metrolla?'],
+                ['saber', '{V} el nombre de todos {mis} vecinos', 'Tiedän kaikkien naapureideni nimet.', 'Tiedätkö kaikkien naapureidesi nimet?'],
+                ['ir', '{V} a la playa en verano', 'Menen rannalle kesällä.', 'Menetkö rannalle kesällä?'],
+                ['estar', '{V} rodeado de naturaleza', 'Olen luonnon ympäröimä.', 'Oletko luonnon ympäröimä?'],
+                ['tener', 'En invierno {V} poca energía', 'Talvella minulla on vähän energiaa.', 'Onko sinulla talvella vähän energiaa?']
+            ],
+            morning: [
+                ['decir', '{V} que el café es imprescindible', 'Sanon, että kahvi on välttämätöntä.', 'Sanotko, että kahvi on välttämätöntä?'],
+                ['hacer', '{V} un desayuno completo', 'Teen kunnon aamiaisen.', 'Teetkö kunnon aamiaisen?'],
+                ['saber', '{V} que el móvil no es bueno por la mañana', 'Tiedän, että puhelin ei ole hyväksi aamulla.', 'Tiedätkö, että puhelin ei ole hyväksi aamulla?'],
+                ['llevar', '{V} al perro al parque por la mañana', 'Vien koiran puistoon aamulla.', 'Vietkö koiran puistoon aamulla?'],
+                ['llegar', 'Siempre {V} tarde a todas partes', 'Tulen aina myöhässä joka paikkaan.', 'Tuletko aina myöhässä joka paikkaan?']
+            ],
+            seasons: [
+                ['ir', 'En verano {V} a la casa de verano', 'Kesällä menen mökille.', 'Menetkö kesällä mökille?'],
+                ['hacer', '{V} muñecos de nieve en invierno', 'Teen lumiukkoja talvella.', 'Teetkö lumiukkoja talvella?'],
+                ['estar', 'En primavera {V} de buen humor', 'Keväällä olen hyvällä tuulella.', 'Oletko keväällä hyvällä tuulella?'],
+                ['creer', '{V} que el otoño es precioso', 'Uskon, että syksy on upea.', 'Uskotko, että syksy on upea?']
+            ],
+            childhood: [
+                ['ser', '{V} un gran aficionado al fútbol', 'Olen suuri jalkapallofani.', 'Oletko suuri jalkapallofani?'],
+                ['tener', 'Todavía {V} muchos cómics', 'Minulla on yhä paljon sarjakuvia.', 'Onko sinulla yhä paljon sarjakuvia?'],
+                ['ir', 'Todavía {V} mucho al bosque', 'Käyn yhä paljon metsässä.', 'Käytkö yhä paljon metsässä?'],
+                ['saber', '{V} jugar a muchos videojuegos', 'Osaan pelata monia videopelejä.', 'Osaatko pelata monia videopelejä?'],
+                ['llevar', '{V} años sin patinar', 'En ole luistellut vuosiin.', 'Etkö ole luistellut vuosiin?']
+            ],
+            celebrations: [
+                ['estar', 'En Navidad {V} con toda la familia', 'Jouluna olen koko perheen kanssa.', 'Oletko jouluna koko perheen kanssa?'],
+                ['hacer', '{V} una hoguera en San Juan', 'Teen kokon juhannuksena.', 'Teetkö kokon juhannuksena?'],
+                ['decir', '{V} que los regalos son lo mejor', 'Sanon, että lahjat ovat parasta.', 'Sanotko, että lahjat ovat parasta?'],
+                ['llegar', '{V} a la fiesta antes de medianoche', 'Saavun juhliin ennen keskiyötä.', 'Saavutko juhliin ennen keskiyötä?']
+            ],
+            tech: [
+                ['estar', '{V} demasiado tiempo con el móvil', 'Olen liian paljon puhelimella.', 'Oletko liian paljon puhelimella?'],
+                ['creer', '{V} que dos horas es suficiente', 'Uskon, että kaksi tuntia riittää.', 'Uskotko, että kaksi tuntia riittää?'],
+                ['tener', '{V} un móvil para el trabajo', 'Minulla on työpuhelin.', 'Onko sinulla työpuhelin?'],
+                ['hacer', '{V} ejercicios de español en el móvil', 'Teen espanjan harjoituksia puhelimella.', 'Teetkö espanjan harjoituksia puhelimella?'],
+                ['ir', '{V} a dejar el móvil en casa más a menudo', 'Aion jättää puhelimen kotiin useammin.', 'Aiotko jättää puhelimen kotiin useammin?']
+            ],
+            sleep: [
+                ['ser', '{V} un gran dormilón', 'Olen kova nukkumaan.', 'Oletko kova nukkumaan?'],
+                ['estar', '{V} cansado casi siempre', 'Olen väsynyt melkein aina.', 'Oletko väsynyt melkein aina?'],
+                ['saber', 'No {V} por qué {me} cuesta dormir', 'En tiedä, miksi minun on vaikea nukkua.', 'Etkö tiedä, miksi sinun on vaikea nukkua?'],
+                ['llevar', '{V} años echándo{me} la siesta', 'Olen ottanut päiväunia jo vuosia.', 'Oletko ottanut päiväunia jo vuosia?']
+            ],
+            ideal_weekend: [
+                ['tener', '{V} una cabaña junto a un lago', 'Minulla on mökki järven rannalla.', 'Onko sinulla mökki järven rannalla?'],
+                ['ir', '{V} de compras a la ciudad', 'Lähden kaupungille ostoksille.', 'Lähdetkö kaupungille ostoksille?'],
+                ['hacer', '{V} palomitas para ver películas', 'Teen popcornia elokuvia varten.', 'Teetkö popcornia elokuvia varten?'],
+                ['llevar', '{V} la comida a la excursión', 'Otan ruoat mukaan retkelle.', 'Otatko ruoat mukaan retkelle?'],
+                ['ser', '{V} muy activo los fines de semana', 'Olen tosi aktiivinen viikonloppuisin.', 'Oletko tosi aktiivinen viikonloppuisin?']
+            ],
+            closing: [
+                ['saber', 'Ahora {V} muchas palabras nuevas', 'Nyt osaan paljon uusia sanoja.', 'Osaatko nyt paljon uusia sanoja?'],
+                ['creer', '{V} que practicar así es útil', 'Uskon, että tällainen harjoittelu on hyödyllistä.', 'Uskotko, että tällainen harjoittelu on hyödyllistä?'],
+                ['estar', '{V} orgulloso de {mi} esfuerzo', 'Olen ylpeä ponnistuksestani.', 'Oletko ylpeä ponnistuksestasi?'],
+                ['ir', '{V} a practicar otra vez mañana', 'Aion harjoitella taas huomenna.', 'Aiotko harjoitella taas huomenna?'],
+                ['decir', '{V} adiós con una sonrisa', 'Sanon heipat hymyillen.', 'Sanotko heipat hymyillen?']
+            ]
+        };
+
+        function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+        // Rakentaa kertausparin: "Tengo ..." ja "¿Tienes ...?"
+        function buildDrill(d) {
+            var verb = d[0], tpl = d[1], forms = VERBS[verb];
+            var first = tpl.replace('{V}', forms[0])
+                .replace(/\{mis\}/g, 'mis').replace(/\{mi\}/g, 'mi').replace(/\{me\}/g, 'me');
+            var second = tpl.replace('{V}', forms[1])
+                .replace(/\{mis\}/g, 'tus').replace(/\{mi\}/g, 'tu').replace(/\{me\}/g, 'te');
+            return {
+                verb: verb, forms: forms,
+                es1: capitalize(first) + '.',
+                es2: '¿' + capitalize(second) + '?',
+                fi1: d[2], fi2: d[3]
+            };
+        }
+
+        // Liitetään kertaus jokaiseen vastausvaihtoehtoon
+        Object.keys(NODES).forEach(function(id) {
+            var list = DRILLS[id] || [];
+            NODES[id].opts.forEach(function(opt, i) {
+                if (list[i]) opt.drill = buildDrill(list[i]);
+            });
+        });
+
+        // ------------------------------------------------------------------
+        //  TILA
+        // ------------------------------------------------------------------
+        var state = {
+            showHints: true,
+            autoAudio: true,        // ohjelman repliikit ääneen
+            readMyAnswers: true,    // omat valinnat ääneen
+            rate: 0.9,
+            sessionLength: 8,
+            currentNodeId: null,
+            mainQueue: [],
+            visited: {},
+            topicNumber: 1,
+            topicTotal: 10,
+            nodesExplored: 0,
+            currentOptions: [],
+            currentQuestionEs: "",
+            currentItems: [],
+            busy: false,
+            history: []
+        };
+
+        function loadSettings() {
+            try {
+                var s = JSON.parse(localStorage.getItem('hablemos-settings') || '{}');
+                if (typeof s.showHints === 'boolean') state.showHints = s.showHints;
+                if (typeof s.autoAudio === 'boolean') state.autoAudio = s.autoAudio;
+                if (typeof s.readMyAnswers === 'boolean') state.readMyAnswers = s.readMyAnswers;
+                if (s.rate) state.rate = parseFloat(s.rate) || 0.9;
+                if (s.sessionLength) state.sessionLength = parseInt(s.sessionLength, 10) || 8;
+            } catch (e) { /* ei tallennusta saatavilla */ }
+        }
+        function saveSettings() {
+            try {
+                localStorage.setItem('hablemos-settings', JSON.stringify({
+                    showHints: state.showHints, autoAudio: state.autoAudio, readMyAnswers: state.readMyAnswers,
+                    rate: state.rate, sessionLength: state.sessionLength
+                }));
+            } catch (e) { /* ohitetaan */ }
+        }
+
+        // ------------------------------------------------------------------
+        //  PUHE (Web Speech API)
+        //  Ohjelma ja käyttäjä saavat eri äänen, jos selaimessa on useampi
+        //  espanjankielinen ääni; muuten erotetaan äänenkorkeudella.
+        // ------------------------------------------------------------------
+        var esVoices = [];
+        var speechToken = 0;
+
+        function loadVoices() {
+            if (!('speechSynthesis' in window)) return;
+            var all = window.speechSynthesis.getVoices() || [];
+            esVoices = all.filter(function(v) { return v.lang && v.lang.toLowerCase().indexOf('es') === 0; });
+            // es-ES ensin
+            esVoices.sort(function(a, b) {
+                var as = a.lang.toLowerCase() === 'es-es' ? 0 : 1;
+                var bs = b.lang.toLowerCase() === 'es-es' ? 0 : 1;
+                return as - bs;
+            });
+        }
+        if ('speechSynthesis' in window) {
+            loadVoices();
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        function voiceFor(role) {
+            if (esVoices.length === 0) return null;
+            if (role === 'user' && esVoices.length > 1) return esVoices[1];
+            return esVoices[0];
+        }
+
+        function setSpeakingIndicator(role, on) {
+            var avatar = document.getElementById('ai-avatar');
+            if (avatar) avatar.classList.toggle('speaking', on && role === 'ai');
+            var chosen = document.querySelector('#options-container .chosen');
+            if (chosen) chosen.classList.toggle('speaking', on && role === 'user');
+        }
+
+        // Puhuu tekstin ja kutsuu onDone kun valmis (myös jos puhe ei toimi)
+        function speak(text, role, onDone) {
+            var token = ++speechToken;
+            var finished = false;
+            function done() {
+                if (finished) return;
+                finished = true;
+                clearTimeout(fallback);
+                setSpeakingIndicator(role, false);
+                if (token === speechToken && onDone) onDone();
+            }
+
+            if (!('speechSynthesis' in window)) {
+                var fallback = setTimeout(done, 300);
+                return;
+            }
+
+            // Varmistus: jos onend ei laukea (osa selaimista), jatketaan silti
+            var fallback = setTimeout(done, 2500 + text.length * 110 / state.rate);
+
+            try {
+                window.speechSynthesis.cancel();
+                var u = new SpeechSynthesisUtterance(text);
+                u.lang = 'es-ES';
+                u.rate = state.rate;
+                var v = voiceFor(role);
+                if (v) { u.voice = v; u.lang = v.lang; }
+                // Jos vain yksi ääni, erotetaan käyttäjän ääni korkeudella
+                u.pitch = (role === 'user' && esVoices.length < 2) ? 1.3 : 1.0;
+                u.onstart = function() { setSpeakingIndicator(role, true); };
+                u.onend = done;
+                u.onerror = done;
+                window.speechSynthesis.speak(u);
+            } catch (e) {
+                console.log('Speech error:', e);
+                done();
+            }
+        }
+
+        // Puhejono: lukee rivit peräkkäin ja korostaa luettavan rivin
+        var queueToken = 0;
+        function clearReading() {
+            Array.prototype.forEach.call(document.querySelectorAll('.reading'), function(el) { el.classList.remove('reading'); });
+        }
+        function speakQueue(items, onDone) {
+            var my = ++queueToken;
+            var i = 0;
+            function next() {
+                if (my !== queueToken) return;
+                clearReading();
+                if (i >= items.length) { if (onDone) onDone(); return; }
+                var it = items[i++];
+                if (!it.text) { next(); return; }
+                if (it.el) it.el.classList.add('reading');
+                speak(it.text, it.role, function() {
+                    if (my !== queueToken) return;
+                    if (it.el) it.el.classList.remove('reading');
+                    setTimeout(next, (it.pause || 350) / state.rate);
+                });
+            }
+            next();
+        }
+        function say(text, role) { speakQueue([{ text: text, role: role }]); }
+
+        function stopSpeech() {
+            queueToken++;
+            speechToken++;
+            try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+            clearReading();
+            setSpeakingIndicator('ai', false);
+        }
+
+        // ------------------------------------------------------------------
+        //  PELIN KULKU
+        // ------------------------------------------------------------------
+        function shuffle(arr) {
+            var a = arr.slice();
+            for (var i = a.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var t = a[i]; a[i] = a[j]; a[j] = t;
+            }
+            return a;
+        }
+
+        function initGame() {
+            stopSpeech();
+            state.nodesExplored = 0;
+            state.history = [];
+            state.visited = {};
+            state.busy = false;
+            state.mainQueue = shuffle(MAIN_TOPICS).slice(0, Math.min(state.sessionLength, MAIN_TOPICS.length));
+            state.topicNumber = 1;
+            state.topicTotal = state.mainQueue.length + 2; // aloitus + pääaiheet + lopetus
+
+            goToNode(START_NODE, null, false);
+            updateHistoryUI();
+        }
+
+        function restartGame() { initGame(); }
+
+        function pickNextNodeId(option) {
+            if (state.currentNodeId === CLOSING_NODE) return null;
+            if (option.next && !state.visited[option.next]) return option.next;
+            while (state.mainQueue.length) {
+                var id = state.mainQueue.shift();
+                if (!state.visited[id]) return id;
+            }
+            return CLOSING_NODE;
+        }
+
+        function goToNode(nodeId, option, speakIt) {
+            var node = NODES[nodeId];
+            state.currentNodeId = nodeId;
+            state.visited[nodeId] = true;
+            if (option && !node.followup) state.topicNumber++;
+
+            renderScreen(option, node.q, node.qFi, speakIt);
+            setOptions(node.opts);
+
+            var badge = document.getElementById('followup-badge');
+            if (badge) badge.classList.toggle('hidden', !node.followup);
+            updateStats();
+        }
+
+        function finishGame(option) {
+            state.currentNodeId = null;
+            renderScreen(option,
+                "¡Excelente trabajo! Has completado esta conversación. ¡Sigue practicando!",
+                "Hienoa työtä! Olet suorittanut tämän keskustelun. Jatka harjoittelua!",
+                true
+            );
+            setOptions([]);
+            var badge = document.getElementById('followup-badge');
+            if (badge) badge.classList.add('hidden');
+            updateStats();
+        }
+
+        function selectOption(option, btn) {
+            if (state.busy) return;
+            state.busy = true;
+
+            state.nodesExplored++;
+            state.history.push({ q: state.currentQuestionEs, ans: option.es, fi: option.fi });
+            updateHistoryUI();
+            updateStats();
+
+            // Korostetaan valittu vastaus
+            var container = document.getElementById('options-container');
+            if (container) {
+                Array.prototype.forEach.call(container.children, function(el) {
+                    el.style.pointerEvents = 'none';
+                    if (el === btn) el.classList.add('chosen'); else el.classList.add('dimmed');
+                });
+            }
+
+            var proceed = function() {
+                var nextId = pickNextNodeId(option);
+                if (nextId) goToNode(nextId, option, true);
+                else finishGame(option);
+                state.busy = false;
+            };
+
+            if (state.readMyAnswers) {
+                stopSpeech();
+                speakQueue([{ text: option.es, role: 'user', el: btn, pause: 250 }], proceed);
+            } else {
+                stopSpeech();
+                setTimeout(proceed, 300);
+            }
+        }
+
+        // ------------------------------------------------------------------
+        //  KÄYTTÖLIITTYMÄ
+        // ------------------------------------------------------------------
+        function toggleHints() {
+            state.showHints = !state.showHints;
+            saveSettings();
+            applySettingsUI();
+            renderOptions();
+        }
+
+        function toggleAutoAudio() {
+            state.autoAudio = !state.autoAudio;
+            if (!state.autoAudio) stopSpeech();
+            saveSettings();
+            applySettingsUI();
+        }
+
+        function toggleReadMyAnswers() {
+            state.readMyAnswers = !state.readMyAnswers;
+            saveSettings();
+            applySettingsUI();
+        }
+
+        function changeRate(v) {
+            state.rate = parseFloat(v) || 0.9;
+            saveSettings();
+        }
+
+        function changeLength(v) {
+            state.sessionLength = parseInt(v, 10) || 8;
+            saveSettings();
+            initGame();
+        }
+
+        function applySettingsUI() {
+            var hintsStatus = document.getElementById('hints-status');
+            if (hintsStatus) hintsStatus.textContent = state.showHints ? 'Vihjeet: On' : 'Vihjeet: Off';
+            var hintIndicator = document.getElementById('hint-indicator');
+            if (hintIndicator) hintIndicator.classList.toggle('hidden', !state.showHints);
+            applyHintVisibility();
+
+            var icon = document.getElementById('audio-icon');
+            if (icon) icon.className = state.autoAudio
+                ? "fa-solid fa-volume-high text-amber-500 text-sm"
+                : "fa-solid fa-volume-xmark text-slate-400 text-sm";
+            var audioStatus = document.getElementById('audio-status');
+            if (audioStatus) audioStatus.textContent = state.autoAudio ? 'Ohjelma: On' : 'Ohjelma: Off';
+
+            var myIcon = document.getElementById('my-voice-icon');
+            if (myIcon) myIcon.className = state.readMyAnswers
+                ? "fa-solid fa-user text-emerald-400 text-sm"
+                : "fa-solid fa-user-slash text-slate-400 text-sm";
+            var myStatus = document.getElementById('my-voice-status');
+            if (myStatus) myStatus.textContent = state.readMyAnswers ? 'Oma vastaus: On' : 'Oma vastaus: Off';
+
+            var rateSel = document.getElementById('rate-select');
+            if (rateSel) rateSel.value = String(state.rate);
+            var lenSel = document.getElementById('length-select');
+            if (lenSel) lenSel.value = String(state.sessionLength);
+        }
+
+        function toggleHistory() {
+            var panel = document.getElementById('history-panel');
+            if (panel) panel.classList.toggle('hidden');
+        }
+
+        function updateStats() {
+            var stepCountEl = document.getElementById('step-count');
+            var stepTotalEl = document.getElementById('step-total');
+            var nodesExploredEl = document.getElementById('nodes-explored');
+            if (stepCountEl) stepCountEl.textContent = Math.min(state.topicNumber, state.topicTotal);
+            if (stepTotalEl) stepTotalEl.textContent = state.topicTotal;
+            if (nodesExploredEl) nodesExploredEl.textContent = state.nodesExplored;
+        }
+
+        function setText(id, text) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = text || '';
+        }
+
+        // Näyttää: kuittaus -> verbikertaus (yo / tú) -> seuraava kysymys
+        function renderScreen(option, qEsText, qFiText, speakIt) {
+            state.currentQuestionEs = qEsText;
+            var ackBlock = document.getElementById('ack-block');
+            var drillBlock = document.getElementById('drill-block');
+            var drill1 = document.getElementById('drill-1');
+            var drill2 = document.getElementById('drill-2');
+            var qBlock = document.getElementById('question-block');
+            var box = document.getElementById('ai-box');
+            var items = [];
+
+            if (option && option.ack) {
+                setText('ack-es', option.ack);
+                setText('ack-fi', option.ackFi);
+                ackBlock.classList.remove('hidden');
+                items.push({ text: option.ack, role: 'ai', el: ackBlock, pause: 450 });
+            } else {
+                ackBlock.classList.add('hidden');
+            }
+
+            var d = option && option.drill;
+            if (d) {
+                setText('drill-verb', d.verb);
+                setText('drill-forms', '(yo ' + d.forms[0] + ' → tú ' + d.forms[1] + ')');
+                setText('drill-1-es', d.es1);
+                setText('drill-1-fi', d.fi1);
+                setText('drill-2-es', d.es2);
+                setText('drill-2-fi', d.fi2);
+                drillBlock.classList.remove('hidden');
+                // Tauko 1. persoonan lauseen jälkeen, jotta ehdit toistaa sen itse
+                items.push({ text: d.es1, role: 'user', el: drill1, pause: 1400 });
+                items.push({ text: d.es2, role: 'ai', el: drill2, pause: 700 });
+                drill1.onclick = function() { say(d.es1, 'user'); };
+                drill2.onclick = function() { say(d.es2, 'ai'); };
+            } else {
+                drillBlock.classList.add('hidden');
+            }
+
+            setText('ai-question-es', qEsText);
+            setText('ai-question-fi', qFiText);
+            items.push({ text: qEsText, role: 'ai', el: qBlock });
+
+            if (option && option.ack) ackBlock.onclick = function() { say(option.ack, 'ai'); };
+            qBlock.onclick = function(e) {
+                if (e.target.closest('#speak-btn')) return;
+                say(qEsText, 'ai');
+            };
+            var speakBtn = document.getElementById('speak-btn');
+            if (speakBtn) speakBtn.onclick = function(e) { e.stopPropagation(); speakQueue(state.currentItems); };
+
+            state.currentItems = items;
+            applyHintVisibility();
+            if (box) { box.classList.remove('fade-in'); void box.offsetWidth; box.classList.add('fade-in'); }
+
+            if (speakIt && state.autoAudio) speakQueue(items);
+        }
+
+        function applyHintVisibility() {
+            Array.prototype.forEach.call(document.querySelectorAll('#ai-box .translation-hint'), function(el) {
+                el.classList.toggle('hidden', !state.showHints);
+            });
+        }
+
+        function setOptions(options) {
+            state.currentOptions = options;
+            renderOptions();
+        }
+
+        function renderOptions() {
+            var container = document.getElementById('options-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (!state.currentOptions || state.currentOptions.length === 0) {
+                container.innerHTML =
+                    '<button onclick="restartGame()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-lg rounded-xl transition shadow-lg flex items-center justify-center gap-2">' +
+                    '<i class="fa-solid fa-rotate-right"></i> Aloita uusi keskustelu (uudet aiheet)</button>';
+                return;
+            }
+
+            state.currentOptions.forEach(function(opt, idx) {
+                var btn = document.createElement('div');
+                btn.setAttribute('role', 'button');
+                btn.tabIndex = 0;
+                btn.className = "w-full text-left p-2.5 sm:p-3 rounded-xl border border-slate-700 hover:border-amber-400 bg-slate-900/80 hover:bg-amber-950/40 transition duration-150 group flex items-center gap-3 shadow cursor-pointer shrink-0";
+
+                var isHiddenClass = state.showHints ? '' : 'hidden';
+                btn.innerHTML =
+                    '<span class="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-800 group-hover:bg-amber-500 group-hover:text-white text-amber-400 font-extrabold text-sm sm:text-base flex items-center justify-center border border-slate-700 transition">' + (idx + 1) + '</span>' +
+                    '<div class="flex-1 min-w-0">' +
+                        '<p class="text-base sm:text-lg font-bold text-slate-100 group-hover:text-amber-300 leading-tight">' + escapeHtml(opt.es) + '</p>' +
+                        (opt.fi ? '<p class="translation-hint ' + isHiddenClass + ' text-xs sm:text-sm text-slate-300/80 mt-0.5 font-medium leading-tight">' + escapeHtml(opt.fi) + '</p>' : '') +
+                    '</div>' +
+                    '<button class="listen-btn flex-shrink-0 text-slate-400 hover:text-emerald-400 p-1.5 text-base" title="Kuuntele tämä vastaus valitsematta"><i class="fa-solid fa-ear-listen"></i></button>';
+
+                btn.querySelector('.listen-btn').onclick = function(e) {
+                    e.stopPropagation();
+                    say(opt.es, 'user');
+                };
+                btn.onclick = function() { selectOption(opt, btn); };
+                btn.onkeydown = function(e) { if (e.key === 'Enter') selectOption(opt, btn); };
+                container.appendChild(btn);
+            });
+        }
+
+        function updateHistoryUI() {
+            var historyEl = document.getElementById('history-content');
+            if (!historyEl) return;
+
+            if (state.history.length === 0) {
+                historyEl.innerHTML = '<p class="italic text-slate-400">Ei vielä aiempia siirtoja.</p>';
+                return;
+            }
+
+            historyEl.innerHTML = '';
+            state.history.forEach(function(item, idx) {
+                var row = document.createElement('div');
+                row.className = "border-b border-slate-700 pb-1 cursor-pointer hover:text-amber-200";
+                row.innerHTML = '<span class="font-bold text-amber-500">V' + (idx + 1) + ':</span> ' + escapeHtml(item.ans) +
+                    ' <span class="text-slate-500">— ' + escapeHtml(item.fi) + '</span> <i class="fa-solid fa-volume-low text-slate-500 ml-1"></i>';
+                row.onclick = function() { say(item.ans, 'user'); };
+                historyEl.appendChild(row);
+            });
+        }
+
+        function escapeHtml(str) {
+            return str ? String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
+        }
+
+        // Näppäimistö: 1–9 valitsee vastauksen, välilyönti toistaa kysymyksen
+        document.addEventListener('keydown', function(e) {
+            if (e.target && (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT')) return;
+            var n = parseInt(e.key, 10);
+            if (!isNaN(n) && n >= 1 && n <= state.currentOptions.length) {
+                var container = document.getElementById('options-container');
+                selectOption(state.currentOptions[n - 1], container ? container.children[n - 1] : null);
+            } else if (e.key === ' ') {
+                e.preventDefault();
+                speakQueue(state.currentItems || []);
+            }
+        });
+
+        loadSettings();
+        applySettingsUI();
+        initGame();
+    </script>
+</body>
+</html>
