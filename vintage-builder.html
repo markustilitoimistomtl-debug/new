@@ -171,12 +171,12 @@ function toast(msg,ms=3500){let t=document.querySelector('.toast');if(!t){t=docu
 /* ============ read the game file ============ */
 function readGame(text){
   const lines=text.split('\n');
-  const want=/^(const (VOX_DATA|SFX_DATA|MUSIC_LONG|TM_KEY|NAMEOFF|HEMAP|PB|TN_META|JX_META|LINE_META|ABBR|LEAGUE_REC|KITS|DEFAULT_LOOK)\b|let MUSIC_LONG\b|Object\.assign\((VOX|SFX)_DATA|VOX_DATA\.|SFX_DATA\.)/;
+  const want=/^(const (VOX_DATA|SFX_DATA|MUSIC_LONG|TM_KEY|NAMEOFF|HEMAP|PB|TN_META|JX_META|LINE_META|ABBR|LEAGUE_REC|KITS|DEFAULT_LOOK|DEFAULT_MUSIC_USE)\b|let MUSIC_LONG\b|Object\.assign\((VOX|SFX)_DATA|VOX_DATA\.|SFX_DATA\.)/;
   let code='';for(const l of lines)if(want.test(l))code+=l+'\n';
   const a=text.indexOf('const LEAGUE=[\n');const b=text.indexOf(']];',a);if(a<0||b<0)throw new Error('This does not look like the Vintage Basket game file (no team list found).');
   code+=text.slice(a,b+3)+'\n';
   const ls=lines.find(l=>l.startsWith('const LOGO_SETS='));if(ls)code+=ls.slice(0,ls.indexOf(';const LOGO_DATA'))+';\n';
-  code+='return{VOX_DATA,SFX_DATA,MUSIC_LONG,HEMAP,PB,TN_META,JN_META,TI_META,JT_META,JX_META,LEAGUE,ABBR:typeof ABBR!=="undefined"?ABBR:{},LEAGUE_REC:typeof LEAGUE_REC!=="undefined"?LEAGUE_REC:{},KITS:typeof KITS!=="undefined"?KITS:{},LOGO_SETS:typeof LOGO_SETS!=="undefined"?LOGO_SETS:{},DEFAULT_LOOK:typeof DEFAULT_LOOK!=="undefined"?DEFAULT_LOOK:null};';
+  code+='return{VOX_DATA,SFX_DATA,MUSIC_LONG,HEMAP,PB,TN_META,JN_META,TI_META,JT_META,JX_META,LEAGUE,ABBR:typeof ABBR!=="undefined"?ABBR:{},LEAGUE_REC:typeof LEAGUE_REC!=="undefined"?LEAGUE_REC:{},KITS:typeof KITS!=="undefined"?KITS:{},LOGO_SETS:typeof LOGO_SETS!=="undefined"?LOGO_SETS:{},DEFAULT_LOOK:typeof DEFAULT_LOOK!=="undefined"?DEFAULT_LOOK:null,DEFAULT_MUSIC_USE:typeof DEFAULT_MUSIC_USE!=="undefined"?DEFAULT_MUSIC_USE:null};';
   const D=(new Function(code))();
   if(!D.VOX_DATA||!D.PB)throw new Error('The game file has no commentary data.');
   return D;}
@@ -252,12 +252,14 @@ function render(){renderNav();const m=$('main');m.innerHTML=(VIEWS[view]||VIEWS.
 /* ============ views ============ */
 const VIEWS={};
 VIEWS.home=()=>{let h=`<h2>VINTAGE BUILDER</h2><p class="lead">Pick the music, logos, kits and commentary for Vintage Basket, listen to every line, then save a setup file (<b>vintage.vbf</b>). Put the setup file in the same folder as the game and the game uses it the next time it is opened.</p>`;
-  if(!G)return h+`<div class="drop" id="drop"><p><b>1.</b> Open the game file (<b>index.html</b>) so the builder can read the current sounds, logos and teams.</p><button class="big" id="openGame">OPEN GAME FILE</button><p class="muted">You can also drag the file here.</p></div>`;
+  if(!G)return h+`<div class="drop" id="drop"><p><b>1.</b> Open the game so the builder can read the current sounds, logos and teams.</p>
+    ${FS_OK?`<p><button class="big" id="openFolder">OPEN GAME FOLDER</button></p><p class="muted">Pick the folder where the game's index.html is. Then <b>UPDATE GAME</b> writes your changes straight into that folder.</p>${lastDir?`<p><button id="reopenFolder">Reopen “${esc(lastDir.name)}”</button></p>`:''}<p class="muted">Or open just the file:</p>`:''}
+    <button ${FS_OK?'':'class="big"'} id="openGame">OPEN GAME FILE</button><p class="muted">You can also drag index.html here.</p></div>`;
   const cnt=countClips();
   h+=`<div class="stat"><div><b>${Object.keys(S.teams).length}</b>teams</div><div><b>${S.music.length}</b>music tracks</div><div><b>${cnt.all}</b>commentary &amp; arena clips</div><div><b>${cnt.changed}</b>changes</div></div>
   <p class="muted">Game file: ${esc(gameName)}</p>
-  <div class="row"><button class="big" id="saveVbf">SAVE SETUP (.VBF)</button><button id="openVbf">Open a saved setup</button><button id="openGame">Open another game file</button><button id="resetAll" class="del">Undo all changes</button></div>
-  <div class="guide"><b>How the setup reaches the game.</b> Save the file as <b>vintage.vbf</b> in the folder where the game's index.html is. The game reads it on start. If your browser saves it as vintage(1).vbf, rename it.</div>
+  <div class="row">${FS_OK?`<button class="big" id="updateGame">UPDATE GAME</button><button id="saveVbf">Save setup as a file</button>`:`<button class="big" id="saveVbf">SAVE SETUP (.VBF)</button>`}<button id="openVbf">Open a saved setup</button>${FS_OK?'<button id="openFolder">Open another game folder</button>':''}<button id="openGame">Open another game file</button><button id="resetAll" class="del">Undo all changes</button></div>
+  <div class="guide"><b>How the setup reaches the game.</b> ${FS_OK?`<b>UPDATE GAME</b> writes <b>vintage.vbf</b> into the game folder${gameDir?` (“${esc(gameDir.name)}”)`:''}; reload the game to see the changes. `:''}A saved setup file must be named <b>vintage.vbf</b> and sit in the same folder as the game's index.html. If your browser saves it as vintage(1).vbf, rename it.</div>
   <div class="guide"><b>Sizes.</b> Logos: square PNG with a transparent background, at least 256 × 256 px (the game shows them at up to 160 px). Clip lengths are shown on each page; lines that are too long or short are marked in yellow.<br>
   <b>Fills.</b> In a phrase, write <b>X</b> where the team's name goes, <b>Y</b> for the other team, <b>P</b> for a player and <b>#</b> for a number. In the 1st quarter the game says the full name (city + nickname) one time in three; otherwise the city or the nickname. If the name goes in the middle of the recording, give the cut time in seconds.<br>
   <b>Check with Claude.</b> When everything is in place, bring the .vbf to Claude to check that every clip cuts in correctly.</div>`;
@@ -383,7 +385,7 @@ VIEWS.horns=()=>{ROWS={};let h=`<h2>HOME-ARENA HORNS</h2><p class="lead">Each ar
 
 // where a track plays: t tip-off, b breaks and timeouts, f final results, m menus (any mix)
 const SLOTS=[['t','Tip-off'],['b','Breaks'],['f','Final results'],['m','Menus']];
-const useDefault=(i,long)=>long?'tbfm':'bfm';
+const useDefault=(i,long)=>G&&G.DEFAULT_MUSIC_USE&&G.DEFAULT_MUSIC_USE[i]!=null?G.DEFAULT_MUSIC_USE[i]:long?'tbfm':'bfm';   // the game's own default placement
 VIEWS.music=()=>{ROWS={};let h=`<h2>MUSIC</h2><p class="lead">Tick where each track can play. The game picks at random from the tracks ticked for that moment: the tip-off, timeouts and breaks between quarters, the final results, and the menus. Any track can go anywhere.</p>
   <div class="guide">Tip-off tracks <b>${LEN_TXT('musicL')}</b> (faded out after 40 s), other music <b>${LEN_TXT('musicS')}</b>. MP3, 44.1 kHz. A moment with no tracks ticked uses all of them.</div>
   <table><thead><tr><th>Track</th>${SLOTS.map(x=>`<th>${x[1]}</th>`).join('')}<th>Length</th><th></th></tr></thead><tbody>`;
@@ -444,6 +446,9 @@ function wire(){const m=$('main');
   const og=$('openGame');if(og)og.onclick=()=>$('pickGame').click();
   const ov=$('openVbf');if(ov)ov.onclick=()=>$('pickVbf').click();
   const sv=$('saveVbf');if(sv)sv.onclick=saveVbf;
+  const ug=$('updateGame');if(ug)ug.onclick=updateGame;
+  const of=$('openFolder');if(of)of.onclick=pickFolder;
+  const rf=$('reopenFolder');if(rf)rf.onclick=()=>useFolder(lastDir).catch(e=>toast('Could not open the folder: '+e.message,6000));
   const ra=$('resetAll');if(ra)ra.onclick=()=>{if(ra.dataset.armed){initState();render();toast('Back to the game file as it is.');}else{ra.dataset.armed=1;ra.textContent='Click again to undo everything';}};
   const d=$('drop');if(d){d.ondragover=e=>{e.preventDefault();d.classList.add('on');};d.ondragleave=()=>d.classList.remove('on');d.ondrop=e=>{e.preventDefault();d.classList.remove('on');const f=e.dataTransfer.files[0];if(f)loadGameFile(f);};}}
 async function fillLens(){for(const td of $('main').querySelectorAll('[data-len]')){const R=ROWS[td.dataset.len];if(!R)continue;const l=await lenOf(R.c);if(!td.isConnected)return;
@@ -457,6 +462,24 @@ $('pickImage').onchange=e=>{const f=e.target.files[0];if(!f||!pending)return;con
   g.drawImage(im,(S2-im.width*k)/2,(S2-im.height*k)/2,im.width*k,im.height*k);pending(c.toDataURL('image/png'));pending=null;};im.src=r.result;};r.readAsDataURL(f);};
 $('pickGame').onchange=e=>{const f=e.target.files[0];if(f)loadGameFile(f);};
 $('pickVbf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{applyVbfToState(parseVbf(String(r.result)));render();toast('Setup opened: '+f.name);}catch(err){toast('Could not read the setup: '+err.message,6000);}};r.readAsText(f);};
+/* ============ the game folder: read index.html and write vintage.vbf straight into it (Chrome and Edge) ============ */
+const FS_OK=typeof window.showDirectoryPicker==='function';let gameDir=null,lastDir=null;
+function idb(){return new Promise((ok,no)=>{const r=indexedDB.open('vintage-builder',1);r.onupgradeneeded=()=>r.result.createObjectStore('h');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);});}
+async function keepDir(h){try{const db=await idb();db.transaction('h','readwrite').objectStore('h').put(h,'dir');}catch(e){}}
+async function lastDirLoad(){try{const db=await idb();lastDir=await new Promise(ok=>{const q=db.transaction('h').objectStore('h').get('dir');q.onsuccess=()=>ok(q.result||null);q.onerror=()=>ok(null);});}catch(e){lastDir=null;}if(lastDir&&!G)render();}
+async function useFolder(h){if(await h.requestPermission({mode:'readwrite'})!=='granted'){toast('The builder needs permission to write into the game folder.');return;}
+  let f;try{f=await (await h.getFileHandle('index.html')).getFile();}catch(e){toast(`No index.html in “${h.name}”. Pick the folder where the game is.`,7000);return;}
+  toast('Reading '+h.name+'/index.html …',8000);G=readGame(await f.text());gameName=h.name+'/index.html';gameDir=h;keepDir(h);initState();BUF.clear();
+  try{const v=await (await h.getFileHandle('vintage.vbf')).getFile();applyVbfToState(parseVbf(await v.text()));toast(`Game and its current setup read from “${h.name}”.`);}catch(e){toast(`Game read from “${h.name}”.`);}
+  view='home';render();}
+async function pickFolder(){try{await useFolder(await window.showDirectoryPicker({id:'vintage-game',mode:'readwrite'}));}catch(e){if(e.name!=='AbortError')toast('Could not open the folder: '+e.message,6000);}}
+async function updateGame(){const V=buildVbf();
+  try{if(!gameDir){const h=await window.showDirectoryPicker({id:'vintage-game',mode:'readwrite'});try{await h.getFileHandle('index.html');}catch(e){toast(`No index.html in “${h.name}”. Pick the folder where the game is.`,7000);return;}gameDir=h;keepDir(h);}
+    if(await gameDir.requestPermission({mode:'readwrite'})!=='granted'){toast('The builder needs permission to write into the game folder.');return;}
+    const w=await (await gameDir.getFileHandle('vintage.vbf',{create:true})).createWritable();await w.write(vbfText(V));await w.close();
+    toast(`Game updated: vintage.vbf written to “${gameDir.name}”. Reload the game to see the changes.`+(V.problems.length?` ${V.problems.length} line(s) still need a cut time.`:''),8000);}
+  catch(e){if(e.name!=='AbortError')toast('Could not update the game: '+e.message,7000);}}
+lastDirLoad();
 function loadGameFile(f){toast('Reading '+f.name+' …',8000);const r=new FileReader();r.onload=()=>{try{G=readGame(String(r.result));gameName=f.name;initState();BUF.clear();view='home';render();toast('Game file read: '+f.name);}
   catch(err){toast(err.message,8000);}};r.readAsText(f);}
 
@@ -477,7 +500,8 @@ function buildVbf(){const V={format:'VBF',version:1,saved:new Date().toISOString
   if(JSON.stringify(S.look)!==JSON.stringify(baseLook())){const T=THEMES.find(t=>t[0]===S.look.theme)||THEMES[0];V.look=Object.assign(clone(S.look),{vars:lookVars(T[0]),fonts:[...new Set(T[4])].map(f=>f.replace(/ /g,'+'))});}
   if(musicDirty())V.music={list:S.music.map(x=>x.src),use:S.music.map(x=>x.use),long:S.music.filter(x=>x.use.includes('t')).length};
   return V;}
-function saveVbf(){const V=buildVbf();const txt='/* Vintage Builder setup: keep this file next to the game (index.html) as vintage.vbf */\nwindow.VBF='+JSON.stringify(V)+';\n';
+const vbfText=V=>'/* Vintage Builder setup: keep this file next to the game (index.html) as vintage.vbf */\nwindow.VBF='+JSON.stringify(V)+';\n';
+function saveVbf(){const V=buildVbf();const txt=vbfText(V);
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/octet-stream'}));a.download='vintage.vbf';document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
   toast(V.problems.length?`Saved, but ${V.problems.length} line(s) need a cut time: ${V.problems.slice(0,3).join('; ')}`:'Saved vintage.vbf. Put it in the game folder.',7000);}

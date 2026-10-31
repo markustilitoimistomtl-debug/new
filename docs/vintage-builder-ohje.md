@@ -7,7 +7,8 @@ jonka peli lukee käynnistyessään.
 ## Käyttö
 
 1. Avaa `vintage-builder.html` selaimessa (Chrome, Edge tai Firefox).
-2. Valitse **OPEN GAME FILE** ja avaa pelin `index.html`. Builder lukee siitä nykyiset äänet, logot ja joukkueet.
+2. Valitse **OPEN GAME FOLDER** ja valitse kansio, jossa pelin `index.html` on (Chrome ja Edge). Builder lukee pelin
+   ja kansiossa jo olevan `vintage.vbf`-setupin. Firefoxissa valitse **OPEN GAME FILE** ja avaa `index.html`.
 3. Käy osiot läpi vasemmasta valikosta:
    - **Look & layout**: pelin yleisilme 20 teemasta (värit ja fontit), paneelien tekstikoot ja tip off -kortin logot
    - **Teams, logos & kits**: nimet, lyhenteet, värit, koti- ja vierasasut sekä logot
@@ -21,8 +22,9 @@ jonka peli lukee käynnistyessään.
    - **Crowd & arena sounds** ja **Home-arena horns**
 4. Jokaisella rivillä on **Play**, **Delete** ja **Import**. Import vaihtaa äänen omaan mp3-tiedostoon.
    **+ Add a line** lisää uuden lauseen tilanteeseen. Kun tilanteessa on useita lauseita, peli arpoo yhden.
-5. Palaa **Start**-sivulle ja valitse **SAVE SETUP (.VBF)**. Siirrä `vintage.vbf` samaan kansioon pelin
-   `index.html`-tiedoston kanssa. Jos selain nimesi tiedoston uudelleen (esim. `vintage(1).vbf`), korjaa nimi.
+5. Palaa **Start**-sivulle ja valitse **UPDATE GAME**: muutokset kirjoitetaan suoraan pelikansion `vintage.vbf`-tiedostoon.
+   Päivitä peli selaimessa (F5), niin muutokset näkyvät. Ensimmäisellä kerralla selain kysyy luvan kirjoittaa kansioon.
+   Firefoxissa valitse **SAVE SETUP (.VBF)** ja siirrä `vintage.vbf` pelin kansioon (korjaa nimi, jos selain lisäsi `(1)`).
 
 ## Ulkoasu (Look & layout)
 
