@@ -63,6 +63,14 @@
 
                 <!-- Header Controls -->
                 <div class="flex items-center gap-1.5 flex-wrap">
+                    <button id="play-btn" onclick="togglePlayMode()" class="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 border bg-emerald-700/70 hover:bg-emerald-600 border-emerald-500 text-white" title="Soittomoodi: kone valitsee vastaukset itse ja keskustelu etenee automaattisesti (P)">
+                        <i id="play-icon" class="fa-solid fa-play"></i> <span id="play-status">Soitto</span>
+                    </button>
+
+                    <button onclick="toggleHistory()" class="px-2.5 py-1 rounded-lg bg-slate-800 text-amber-400 hover:bg-slate-700 transition flex items-center gap-1.5 text-xs font-semibold border border-slate-700" title="Käyty keskusteluhistoria">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Historia
+                    </button>
+
                     <button id="toggle-hints-btn" onclick="toggleHints()" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition flex items-center gap-1.5 text-xs font-semibold border border-slate-700" title="Käännösvihjeet päälle/pois">
                         <i class="fa-solid fa-language text-amber-400 text-sm"></i>
                         <span id="hints-status">Vihjeet: On</span>
@@ -79,15 +87,15 @@
                     </button>
 
                     <select id="rate-select" onchange="changeRate(this.value)" class="px-1.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs font-semibold border border-slate-700" title="Puhenopeus">
-                        <option value="0.7">🐢 Hidas</option>
-                        <option value="0.9" selected>Normaali</option>
-                        <option value="1.05">🐇 Nopea</option>
+                        <option value="0.7">Nopeus: hidas</option>
+                        <option value="0.9" selected>Nopeus: normaali</option>
+                        <option value="1.05">Nopeus: nopea</option>
                     </select>
 
                     <select id="length-select" onchange="changeLength(this.value)" class="px-1.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs font-semibold border border-slate-700" title="Keskustelun pituus (aloittaa alusta)">
-                        <option value="5">Lyhyt</option>
-                        <option value="8" selected>Normaali</option>
-                        <option value="99">Pitkä (kaikki aiheet)</option>
+                        <option value="5">Pituus: lyhyt</option>
+                        <option value="8" selected>Pituus: normaali</option>
+                        <option value="99">Pituus: pitkä</option>
                     </select>
 
                     <button onclick="restartGame()" class="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition border border-slate-700" title="Aloita alusta">
@@ -99,7 +107,7 @@
     </div>
 
     <!-- Main Game Area -->
-    <main class="flex-1 max-w-4xl w-full mx-auto p-2 sm:p-3 flex flex-col justify-between overflow-hidden gap-1.5">
+    <main class="flex-1 max-w-4xl w-full mx-auto px-2 pb-2 pt-5 sm:px-3 sm:pb-3 sm:pt-6 flex flex-col justify-between overflow-hidden gap-1.5">
 
         <!-- Progress Tracker Bar -->
         <div class="bg-slate-800/80 px-3 py-1 rounded-lg border border-slate-700 flex items-center justify-between text-xs text-slate-300 shrink-0">
@@ -109,13 +117,8 @@
                 <span id="followup-badge" class="hidden px-1.5 py-0.5 rounded bg-emerald-700/60 text-emerald-200 text-[10px] font-bold uppercase tracking-wide">jatkokysymys</span>
             </div>
             <div class="flex items-center gap-3">
-                <button id="play-btn" onclick="togglePlayMode()" class="text-xs font-bold flex items-center gap-1.5 px-2.5 py-0.5 rounded border bg-emerald-700/70 hover:bg-emerald-600 border-emerald-500 text-white" title="Soittomoodi: kone valitsee vastaukset itse ja keskustelu etenee automaattisesti (P)">
-                    <i id="play-icon" class="fa-solid fa-play"></i> <span id="play-status">Soitto</span>
-                </button>
+                <span id="play-indicator" class="hidden text-xs font-bold text-rose-300 animate-pulse"><i class="fa-solid fa-circle-play"></i> Soitto käynnissä</span>
                 <div class="font-medium"><i class="fa-solid fa-code-branch text-amber-400 mr-1"></i> <span id="nodes-explored" class="font-bold text-white">0</span> valintaa</div>
-                <button onclick="toggleHistory()" class="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 bg-slate-700/60 px-2 py-0.5 rounded border border-slate-600">
-                    <i class="fa-solid fa-clock-rotate-left"></i> Historia
-                </button>
             </div>
         </div>
 
@@ -1881,7 +1884,8 @@
             var btn = document.getElementById('play-btn');
             setText('play-status', state.playMode ? 'Pysäytä' : 'Soitto');
             document.getElementById('play-icon').className = state.playMode ? 'fa-solid fa-stop' : 'fa-solid fa-play';
-            btn.className = 'text-xs font-bold flex items-center gap-1.5 px-2.5 py-0.5 rounded border text-white ' +
+            document.getElementById('play-indicator').classList.toggle('hidden', !state.playMode);
+            btn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 border text-white ' +
                 (state.playMode ? 'bg-rose-700/80 hover:bg-rose-600 border-rose-500 animate-pulse' : 'bg-emerald-700/70 hover:bg-emerald-600 border-emerald-500');
         }
 
