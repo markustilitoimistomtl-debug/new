@@ -139,20 +139,12 @@
                     </div>
 
                     <!-- Verbikertaus: 1. persoona -> 2. persoonan kysymys -->
-                    <div id="drill-block" class="hidden bg-emerald-950/40 border border-emerald-700/50 rounded-lg px-2.5 py-1.5 space-y-1">
-                        <div class="flex items-center gap-2 text-[11px] uppercase tracking-wider font-bold text-emerald-300">
-                            <i class="fa-solid fa-repeat"></i> Kertaus · verbi
-                            <span id="drill-verb" class="px-1.5 py-0.5 rounded bg-emerald-700/60 text-white normal-case tracking-normal text-xs"></span>
-                            <span id="drill-forms" class="normal-case tracking-normal font-semibold text-emerald-200/80 text-xs"></span>
+                    <div id="drill-block" class="hidden bg-emerald-950/40 border border-emerald-700/50 rounded-lg px-2.5 py-1.5">
+                        <div class="flex items-center gap-2 flex-wrap text-[11px] uppercase tracking-wider font-bold text-emerald-300 mb-1">
+                            <i class="fa-solid fa-repeat"></i> Kertaus · kuuntele ja lue
+                            <span id="drill-tense" class="px-1.5 py-0.5 rounded bg-emerald-700/60 text-white normal-case tracking-normal text-xs"></span>
                         </div>
-                        <div id="drill-1" class="speak-line cursor-pointer rounded px-1 -mx-1" title="Klikkaa kuullaksesi">
-                            <p class="text-base sm:text-lg font-bold text-emerald-100 leading-snug"><span class="text-emerald-400 text-xs font-bold mr-1">YO</span><span id="drill-1-es"></span></p>
-                            <p id="drill-1-fi" class="translation-hint text-xs sm:text-sm text-emerald-200/70 italic"></p>
-                        </div>
-                        <div id="drill-2" class="speak-line cursor-pointer rounded px-1 -mx-1" title="Klikkaa kuullaksesi">
-                            <p class="text-base sm:text-lg font-bold text-amber-200 leading-snug"><span class="text-amber-400 text-xs font-bold mr-1">TÚ</span><span id="drill-2-es"></span></p>
-                            <p id="drill-2-fi" class="translation-hint text-xs sm:text-sm text-amber-200/70 italic"></p>
-                        </div>
+                        <div id="drill-list" class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 max-h-[34vh] overflow-y-auto pr-1"></div>
                     </div>
 
                     <!-- Seuraava kysymys -->
@@ -767,288 +759,629 @@
         };
 
         // ------------------------------------------------------------------
-        //  VERBIKERTAUS
-        //  Jokaiseen vastaukseen liittyy kertauspari: lause yksikön 1. persoonassa
-        //  ja sama kysymyksenä yksikön 2. persoonassa.
-        //  Muoto: [verbi, lause, suomi 1. pers., suomi 2. pers.]
-        //  Lauseessa {V} = verbi, {mi}/{mis}/{me} vaihtuvat muotoon tu/tus/te.
+        //  JATKOKYSYMYKSET PÄÄAIHEILLE
+        //  Kun vastauksella ei ole omaa jatkokysymystä, kysytään aiheen
+        //  oma jatkokysymys (noodi "<aihe>_fu").
         // ------------------------------------------------------------------
-        var VERBS = {
-            llevar: ['llevo', 'llevas'],
-            hacer:  ['hago', 'haces'],
-            decir:  ['digo', 'dices'],
-            ir:     ['voy', 'vas'],
-            saber:  ['sé', 'sabes'],
-            creer:  ['creo', 'crees'],
-            tener:  ['tengo', 'tienes'],
-            llegar: ['llego', 'llegas'],
-            ser:    ['soy', 'eres'],
-            estar:  ['estoy', 'estás']
+        var FOLLOWUPS = {
+            evening_fu: {
+                q: "¿Y con quién vas a pasar la noche?",
+                qFi: "Ja kenen kanssa vietät illan?",
+                opts: [
+                    O("Voy a estar en casa sin compañía.", "Olen kotona ilman seuraa.",
+                      "¡Qué tranquilo! Así que vas a estar en casa sin compañía.", "Kuinka rauhallista! Eli olet kotona ilman seuraa."),
+                    O("Con mi pareja, vamos a cenar juntos.", "Kumppanini kanssa, syömme yhdessä illallista.",
+                      "¡Qué romántico! Así que vas a cenar con tu pareja.", "Kuinka romanttista! Eli syötte kumppanisi kanssa illallista yhdessä."),
+                    O("Con unos amigos en un bar.", "Ystävien kanssa baarissa.",
+                      "¡Qué divertido! Así que vas a pasar la noche con unos amigos en un bar.", "Hauskaa! Eli vietät illan ystävien kanssa baarissa."),
+                    O("Con mi familia, viendo una película.", "Perheeni kanssa elokuvaa katsellen.",
+                      "¡Qué bonito! Así que vas a pasar la noche con tu familia viendo una película.", "Ihanaa! Eli vietät illan perheesi kanssa elokuvaa katsellen.")
+                ]
+            },
+            hobbies_fu: {
+                q: "¿Y cuánto tiempo dedicas a tus aficiones a la semana?",
+                qFi: "Ja kuinka paljon aikaa käytät harrastuksiisi viikossa?",
+                opts: [
+                    O("Unas tres o cuatro horas.", "Noin kolme tai neljä tuntia.",
+                      "¡Está bien! Así que dedicas unas tres o cuatro horas a la semana.", "Hyvä! Eli käytät niihin noin kolme tai neljä tuntia viikossa."),
+                    O("Todo el tiempo libre que tengo.", "Kaiken vapaa-aikani.",
+                      "¡Qué pasión! Así que dedicas todo el tiempo libre que tienes.", "Mikä intohimo! Eli käytät niihin kaiken vapaa-aikasi."),
+                    O("Muy poco, porque trabajo mucho.", "Todella vähän, koska teen paljon töitä.",
+                      "¡Qué pena! Así que dedicas muy poco porque trabajas mucho.", "Harmi! Eli käytät niihin todella vähän, koska teet paljon töitä."),
+                    O("Sobre todo los fines de semana.", "Lähinnä viikonloppuisin.",
+                      "¡Entiendo! Así que les dedicas tiempo sobre todo los fines de semana.", "Ymmärrän! Eli harrastat lähinnä viikonloppuisin.")
+                ]
+            },
+            yesterday_fu: {
+                q: "¿Y qué cenaste anoche?",
+                qFi: "Ja mitä söit eilen illalla?",
+                opts: [
+                    O("Cené pescado con patatas.", "Söin kalaa ja perunoita.",
+                      "¡Qué sano! Así que cenaste pescado con patatas.", "Terveellistä! Eli söit kalaa ja perunoita."),
+                    O("Pedí una pizza a domicilio.", "Tilasin pizzan kotiin.",
+                      "¡Qué cómodo! Así que pediste una pizza a domicilio.", "Kätevää! Eli tilasit pizzan kotiin."),
+                    O("Cené en un restaurante con amigos.", "Söin ravintolassa ystävien kanssa.",
+                      "¡Qué bien! Así que cenaste en un restaurante con amigos.", "Kiva! Eli söit ravintolassa ystävien kanssa."),
+                    O("Solo tomé un bocadillo rápido.", "Söin vain nopean voileivän.",
+                      "¡Ajá! Así que solo tomaste un bocadillo rápido.", "Ahaa! Eli söit vain nopean voileivän.")
+                ]
+            },
+            tomorrow_fu: {
+                q: "¿Y a qué hora te vas a levantar mañana?",
+                qFi: "Ja mihin aikaan heräät huomenna?",
+                opts: [
+                    O("Me voy a levantar muy temprano, a las seis.", "Herään todella aikaisin, kuudelta.",
+                      "¡Uf, qué pronto! Así que te vas a levantar a las seis.", "Huh, kuinka aikaisin! Eli heräät kuudelta."),
+                    O("Me voy a levantar a las ocho, como siempre.", "Herään kahdeksalta, kuten aina.",
+                      "¡Muy normal! Así que te vas a levantar a las ocho, como siempre.", "Ihan tavallista! Eli heräät kahdeksalta, kuten aina."),
+                    O("Me voy a levantar sin alarma.", "Herään ilman herätyskelloa.",
+                      "¡Qué lujo! Así que te vas a levantar sin alarma.", "Mikä luksus! Eli heräät ilman herätyskelloa."),
+                    O("No lo sé, depende de cuándo me acueste.", "En tiedä, riippuu siitä, milloin menen nukkumaan.",
+                      "¡Es lógico! Así que depende de cuándo te acuestes.", "Loogista! Eli se riippuu siitä, milloin menet nukkumaan.")
+                ]
+            },
+            food_fu: {
+                q: "¿Y normalmente cocinas tú o cocina otra persona?",
+                qFi: "Ja kokkaatko yleensä sinä vai joku muu?",
+                opts: [
+                    O("Cocino yo casi siempre.", "Kokkaan melkein aina minä.",
+                      "¡Muy bien! Así que cocinas tú casi siempre.", "Hienoa! Eli kokkaat melkein aina sinä."),
+                    O("Cocina mi pareja, ¡y cocina muy bien!", "Kumppanini kokkaa, ja tosi hyvin kokkaakin!",
+                      "¡Qué suerte! Así que cocina tu pareja y cocina muy bien.", "Onnekasta! Eli kumppanisi kokkaa ja tosi hyvin."),
+                    O("Cocinamos juntos los fines de semana.", "Kokkaamme yhdessä viikonloppuisin.",
+                      "¡Qué bonito! Así que cocináis juntos los fines de semana.", "Ihanaa! Eli kokkaatte yhdessä viikonloppuisin."),
+                    O("Casi nunca cocino, como fuera.", "En juuri koskaan kokkaa, syön ulkona.",
+                      "¡Ajá! Así que casi nunca cocinas y comes fuera.", "Ahaa! Eli et juuri koskaan kokkaa vaan syöt ulkona.")
+                ]
+            },
+            travel_fu: {
+                q: "¿Y con quién te gustaría hacer ese viaje?",
+                qFi: "Ja kenen kanssa haluaisit tehdä sen matkan?",
+                opts: [
+                    O("Con mi pareja, sería muy romántico.", "Kumppanini kanssa, se olisi todella romanttista.",
+                      "¡Qué bonito! Así que viajarías con tu pareja y sería muy romántico.", "Ihanaa! Eli matkustaisit kumppanisi kanssa ja se olisi todella romanttista."),
+                    O("Con mis mejores amigos.", "Parhaiden ystävieni kanssa.",
+                      "¡Qué divertido! Así que viajarías con tus mejores amigos.", "Hauskaa! Eli matkustaisit parhaiden ystäviesi kanssa."),
+                    O("Con toda mi familia.", "Koko perheeni kanssa.",
+                      "¡Qué bien! Así que viajarías con toda tu familia.", "Kiva! Eli matkustaisit koko perheesi kanssa."),
+                    O("Viajaría sin compañía para conocer gente nueva.", "Matkustaisin yksin tutustuakseni uusiin ihmisiin.",
+                      "¡Qué valiente! Así que viajarías sin compañía para conocer gente nueva.", "Rohkeaa! Eli matkustaisit yksin tutustuaksesi uusiin ihmisiin.")
+                ]
+            },
+            learning_fu: {
+                q: "¿Y cuánto tiempo practicas español cada día?",
+                qFi: "Ja kuinka kauan harjoittelet espanjaa päivittäin?",
+                opts: [
+                    O("Unos quince minutos al día.", "Noin viisitoista minuuttia päivässä.",
+                      "¡Muy bien! Así que practicas unos quince minutos al día.", "Hyvä! Eli harjoittelet noin viisitoista minuuttia päivässä."),
+                    O("Una hora, más o menos.", "Noin tunnin.",
+                      "¡Qué dedicación! Así que practicas una hora, más o menos.", "Mikä omistautuminen! Eli harjoittelet noin tunnin."),
+                    O("Depende del día, no tengo rutina.", "Riippuu päivästä, minulla ei ole rutiinia.",
+                      "¡Entiendo! Así que depende del día y no tienes rutina.", "Ymmärrän! Eli se riippuu päivästä, eikä sinulla ole rutiinia."),
+                    O("Solo los fines de semana.", "Vain viikonloppuisin.",
+                      "¡Ajá! Así que practicas solo los fines de semana.", "Ahaa! Eli harjoittelet vain viikonloppuisin.")
+                ]
+            },
+            emotions_fu: {
+                q: "¿Y qué haces para sentirte mejor cuando tienes un mal día?",
+                qFi: "Ja mitä teet, jotta olosi paranisi, kun sinulla on huono päivä?",
+                opts: [
+                    O("Salgo a caminar por la naturaleza.", "Lähden kävelylle luontoon.",
+                      "¡Muy sano! Así que sales a caminar por la naturaleza.", "Terveellistä! Eli lähdet kävelylle luontoon."),
+                    O("Hablo con un buen amigo.", "Puhun hyvän ystävän kanssa.",
+                      "¡Qué importante! Así que hablas con un buen amigo.", "Tärkeää! Eli puhut hyvän ystävän kanssa."),
+                    O("Escucho mi música favorita.", "Kuuntelen lempimusiikkiani.",
+                      "¡Buena idea! Así que escuchas tu música favorita.", "Hyvä idea! Eli kuuntelet lempimusiikkiasi."),
+                    O("Voy a la sauna y me relajo.", "Menen saunaan ja rentoudun.",
+                      "¡Muy finlandés! Así que vas a la sauna y te relajas.", "Hyvin suomalaista! Eli menet saunaan ja rentoudut.")
+                ]
+            },
+            weather_fu: {
+                q: "¿Y qué te gusta hacer cuando hace este tiempo?",
+                qFi: "Ja mitä tykkäät tehdä, kun on tällainen sää?",
+                opts: [
+                    O("Quedarme en casa con una manta.", "Jäädä kotiin viltin alle.",
+                      "¡Qué acogedor! Así que te gusta quedarte en casa con una manta.", "Kuinka kotoisaa! Eli tykkäät jäädä kotiin viltin alle."),
+                    O("Salir a caminar, haga el tiempo que haga.", "Lähteä kävelylle, oli sää mikä tahansa.",
+                      "¡Qué valiente! Así que te gusta salir a caminar, haga el tiempo que haga.", "Rohkeaa! Eli tykkäät lähteä kävelylle, oli sää mikä tahansa."),
+                    O("Tomar un chocolate caliente en una cafetería.", "Juoda kuumaa kaakaota kahvilassa.",
+                      "¡Qué rico! Así que te gusta tomar un chocolate caliente en una cafetería.", "Herkullista! Eli tykkäät juoda kuumaa kaakaota kahvilassa."),
+                    O("Hacer fotos del paisaje.", "Ottaa kuvia maisemista.",
+                      "¡Qué artístico! Así que te gusta hacer fotos del paisaje.", "Kuinka taiteellista! Eli tykkäät ottaa kuvia maisemista.")
+                ]
+            },
+            family_fu: {
+                q: "¿Y con qué frecuencia ves al resto de tu familia?",
+                qFi: "Ja kuinka usein näet muuta perhettäsi?",
+                opts: [
+                    O("Cada semana, vivimos cerca.", "Joka viikko, asumme lähellä.",
+                      "¡Qué bien! Así que ves a tu familia cada semana porque vivís cerca.", "Kiva! Eli näet perhettäsi joka viikko, koska asutte lähellä."),
+                    O("Una vez al mes, más o menos.", "Noin kerran kuukaudessa.",
+                      "¡Está bien! Así que ves a tu familia una vez al mes, más o menos.", "Hyvä! Eli näet perhettäsi noin kerran kuukaudessa."),
+                    O("Solo en Navidad y en verano.", "Vain jouluna ja kesällä.",
+                      "¡Ajá! Así que solo ves a tu familia en Navidad y en verano.", "Ahaa! Eli näet perhettäsi vain jouluna ja kesällä."),
+                    O("Hablamos por videollamada a menudo.", "Puhumme usein videopuhelulla.",
+                      "¡Qué moderno! Así que habláis por videollamada a menudo.", "Kuinka modernia! Eli puhutte usein videopuhelulla.")
+                ]
+            },
+            pets_fu: {
+                q: "¿Y qué animal te gustaría tener si pudieras elegir?",
+                qFi: "Ja minkä eläimen haluaisit, jos saisit valita?",
+                opts: [
+                    O("Un perro grande para correr juntos.", "Ison koiran, jotta voisimme juosta yhdessä.",
+                      "¡Qué deportivo! Así que te gustaría un perro grande para correr juntos.", "Urheilullista! Eli haluaisit ison koiran, jotta voisitte juosta yhdessä."),
+                    O("Un caballo, siempre ha sido mi sueño.", "Hevosen, se on aina ollut unelmani.",
+                      "¡Qué bonito sueño! Así que te gustaría tener un caballo.", "Kaunis unelma! Eli haluaisit hevosen."),
+                    O("Un gato tranquilo para el sofá.", "Rauhallisen kissan sohvalle.",
+                      "¡Qué cómodo! Así que te gustaría un gato tranquilo para el sofá.", "Mukavaa! Eli haluaisit rauhallisen kissan sohvalle."),
+                    O("Un loro que hable español.", "Papukaijan, joka puhuu espanjaa.",
+                      "¡Ja, ja! Así que te gustaría un loro que hable español.", "Hah! Eli haluaisit papukaijan, joka puhuu espanjaa.")
+                ]
+            },
+            hometown_fu: {
+                q: "¿Y qué es lo que más te gusta de tu ciudad o pueblo?",
+                qFi: "Ja mistä pidät eniten kaupungissasi tai kylässäsi?",
+                opts: [
+                    O("La naturaleza que hay cerca.", "Lähellä olevasta luonnosta.",
+                      "¡Qué bien! Así que lo que más te gusta es la naturaleza que hay cerca.", "Kiva! Eli pidät eniten lähellä olevasta luonnosta."),
+                    O("La gente, es muy amable.", "Ihmisistä, he ovat tosi ystävällisiä.",
+                      "¡Qué suerte! Así que lo que más te gusta es la gente, porque es muy amable.", "Onnekasta! Eli pidät eniten ihmisistä, koska he ovat tosi ystävällisiä."),
+                    O("Los cafés y los restaurantes.", "Kahviloista ja ravintoloista.",
+                      "¡Qué rico! Así que lo que más te gusta son los cafés y los restaurantes.", "Herkullista! Eli pidät eniten kahviloista ja ravintoloista."),
+                    O("Que es tranquila y segura.", "Siitä, että se on rauhallinen ja turvallinen.",
+                      "¡Muy importante! Así que lo que más te gusta es que es tranquila y segura.", "Tärkeää! Eli pidät eniten siitä, että se on rauhallinen ja turvallinen.")
+                ]
+            },
+            morning_fu: {
+                q: "¿Y qué sueles desayunar?",
+                qFi: "Ja mitä yleensä syöt aamiaiseksi?",
+                opts: [
+                    O("Gachas de avena con fruta.", "Kaurapuuroa ja hedelmiä.",
+                      "¡Qué sano! Así que sueles desayunar gachas de avena con fruta.", "Terveellistä! Eli syöt yleensä aamiaiseksi kaurapuuroa ja hedelmiä."),
+                    O("Pan con queso y un café.", "Leipää juuston kanssa ja kahvin.",
+                      "¡Un clásico! Así que sueles desayunar pan con queso y un café.", "Klassikko! Eli syöt yleensä leipää juuston kanssa ja juot kahvin."),
+                    O("Solo un café, no tengo hambre.", "Vain kahvin, minulla ei ole nälkä.",
+                      "¡Ajá! Así que solo tomas un café porque no tienes hambre.", "Ahaa! Eli juot vain kahvin, koska sinulla ei ole nälkä."),
+                    O("Huevos y tostadas los domingos.", "Kananmunia ja paahtoleipää sunnuntaisin.",
+                      "¡Qué rico! Así que desayunas huevos y tostadas los domingos.", "Herkullista! Eli syöt kananmunia ja paahtoleipää sunnuntaisin.")
+                ]
+            },
+            seasons_fu: {
+                q: "¿Y qué es lo que más te gusta hacer en esa estación?",
+                qFi: "Ja mitä tykkäät eniten tehdä sinä vuodenaikana?",
+                opts: [
+                    O("Pasar tiempo al aire libre.", "Viettää aikaa ulkona.",
+                      "¡Qué bien! Así que te gusta pasar tiempo al aire libre.", "Kiva! Eli tykkäät viettää aikaa ulkona."),
+                    O("Hacer deportes de invierno.", "Harrastaa talviurheilua.",
+                      "¡Qué activo! Así que te gusta hacer deportes de invierno.", "Aktiivista! Eli tykkäät harrastaa talviurheilua."),
+                    O("Recoger bayas y setas en el bosque.", "Kerätä marjoja ja sieniä metsästä.",
+                      "¡Muy finlandés! Así que te gusta recoger bayas y setas en el bosque.", "Hyvin suomalaista! Eli tykkäät kerätä marjoja ja sieniä metsästä."),
+                    O("Ver cómo cambia la naturaleza.", "Seurata, miten luonto muuttuu.",
+                      "¡Qué bonito! Así que te gusta ver cómo cambia la naturaleza.", "Kaunista! Eli tykkäät seurata, miten luonto muuttuu.")
+                ]
+            },
+            childhood_fu: {
+                q: "¿Y cuál era tu comida favorita en tu infancia?",
+                qFi: "Ja mikä oli lempiruokasi lapsuudessasi?",
+                opts: [
+                    O("Eran los macarrones con carne picada.", "Se oli makaronilaatikko.",
+                      "¡Qué clásico! Así que tu comida favorita eran los macarrones con carne picada.", "Klassikko! Eli lempiruokasi oli makaronilaatikko."),
+                    O("Eran las tortitas de mi abuela.", "Ne olivat isoäitini letut.",
+                      "¡Qué tierno! Así que tu comida favorita eran las tortitas de tu abuela.", "Kuinka suloista! Eli lempiruokasi olivat isoäitisi letut."),
+                    O("Me encantaban los helados.", "Rakastin jäätelöä.",
+                      "¡Ja, ja! Así que te encantaban los helados.", "Hah! Eli rakastit jäätelöä."),
+                    O("Comía de todo, no era nada exigente.", "Söin kaikkea, en ollut yhtään nirso.",
+                      "¡Qué fácil! Así que comías de todo y no eras nada exigente.", "Helppoa! Eli söit kaikkea etkä ollut yhtään nirso.")
+                ]
+            },
+            celebrations_fu: {
+                q: "¿Y qué comida no puede faltar en esa fiesta?",
+                qFi: "Ja mikä ruoka ei saa puuttua siitä juhlasta?",
+                opts: [
+                    O("El jamón y el pescado.", "Kinkku ja kala.",
+                      "¡Qué rico! Así que no pueden faltar el jamón y el pescado.", "Herkullista! Eli kinkku ja kala eivät saa puuttua."),
+                    O("Las salchichas a la parrilla.", "Grillimakkarat.",
+                      "¡Muy típico! Así que no pueden faltar las salchichas a la parrilla.", "Tyypillistä! Eli grillimakkarat eivät saa puuttua."),
+                    O("Una tarta de cumpleaños enorme.", "Valtava syntymäpäiväkakku.",
+                      "¡Qué dulce! Así que no puede faltar una tarta de cumpleaños enorme.", "Makeaa! Eli valtava syntymäpäiväkakku ei saa puuttua."),
+                    O("Las uvas a medianoche, como en España.", "Viinirypäleet keskiyöllä, kuten Espanjassa.",
+                      "¡Qué tradición! Así que no pueden faltar las uvas a medianoche, como en España.", "Mikä perinne! Eli viinirypäleet keskiyöllä eivät saa puuttua, kuten Espanjassa.")
+                ]
+            },
+            tech_fu: {
+                q: "¿Y qué aplicación usas más en el móvil?",
+                qFi: "Ja mitä sovellusta käytät eniten puhelimessa?",
+                opts: [
+                    O("WhatsApp, para hablar con todos.", "WhatsAppia, puhuakseni kaikkien kanssa.",
+                      "¡Claro! Así que usas más WhatsApp para hablar con todos.", "Tietenkin! Eli käytät eniten WhatsAppia puhuaksesi kaikkien kanssa."),
+                    O("Una aplicación para aprender idiomas.", "Kieltenopiskelusovellusta.",
+                      "¡Muy bien! Así que usas más una aplicación para aprender idiomas.", "Hienoa! Eli käytät eniten kieltenopiskelusovellusta."),
+                    O("Las noticias y el tiempo.", "Uutisia ja säätä.",
+                      "¡Qué práctico! Así que usas más las noticias y el tiempo.", "Käytännöllistä! Eli käytät eniten uutisia ja sääsovellusta."),
+                    O("Música y podcasts.", "Musiikkia ja podcasteja.",
+                      "¡Qué bien! Así que usas más la música y los podcasts.", "Kiva! Eli käytät eniten musiikkia ja podcasteja.")
+                ]
+            },
+            sleep_fu: {
+                q: "¿Y qué haces antes de dormir?",
+                qFi: "Ja mitä teet ennen nukkumaanmenoa?",
+                opts: [
+                    O("Leo un rato en la cama.", "Luen hetken sängyssä.",
+                      "¡Qué agradable! Así que lees un rato en la cama.", "Mukavaa! Eli luet hetken sängyssä."),
+                    O("Miro el móvil demasiado tiempo.", "Katson puhelinta liian kauan.",
+                      "¡Uy! Así que miras el móvil demasiado tiempo.", "Hups! Eli katsot puhelinta liian kauan."),
+                    O("Tomo una infusión caliente.", "Juon lämpimän yrttiteen.",
+                      "¡Qué relajante! Así que tomas una infusión caliente.", "Rentouttavaa! Eli juot lämpimän yrttiteen."),
+                    O("Medito unos minutos.", "Meditoin muutaman minuutin.",
+                      "¡Muy sano! Así que meditas unos minutos.", "Terveellistä! Eli meditoit muutaman minuutin.")
+                ]
+            },
+            ideal_weekend_fu: {
+                q: "¿Y qué comerías durante ese fin de semana ideal?",
+                qFi: "Ja mitä söisit tuona ihanneviikonloppuna?",
+                opts: [
+                    O("Pescado fresco a la parrilla.", "Tuoretta grillattua kalaa.",
+                      "¡Qué rico! Así que comerías pescado fresco a la parrilla.", "Herkullista! Eli söisit tuoretta grillattua kalaa."),
+                    O("Tapas en un bar con ambiente.", "Tapaksia tunnelmallisessa baarissa.",
+                      "¡Muy español! Así que comerías tapas en un bar con ambiente.", "Hyvin espanjalaista! Eli söisit tapaksia tunnelmallisessa baarissa."),
+                    O("Pizza y helado sin culpa.", "Pizzaa ja jäätelöä ilman huonoa omaatuntoa.",
+                      "¡Ja, ja! Así que comerías pizza y helado sin culpa.", "Hah! Eli söisit pizzaa ja jäätelöä ilman huonoa omaatuntoa."),
+                    O("Un buen asado con amigos.", "Kunnon grilliateria ystävien kanssa.",
+                      "¡Qué bien! Así que comerías un buen asado con amigos.", "Kiva! Eli söisit kunnon grilliaterian ystävien kanssa.")
+                ]
+            }
+        };
+        Object.keys(FOLLOWUPS).forEach(function(id) {
+            FOLLOWUPS[id].followup = true;
+            NODES[id] = FOLLOWUPS[id];
+            var main = id.replace(/_fu$/, '');
+            if (NODES[main]) NODES[main].fu = id;
+        });
+
+        // ------------------------------------------------------------------
+        //  VERBIKERTAUS: 10 verbiä, jokaisesta lause minä-muodossa ja
+        //  sama sinä-muodossa, samassa aikamuodossa kuin valittu vastaus.
+        // ------------------------------------------------------------------
+        var VERB_ORDER = ['llevar', 'hacer', 'decir', 'ir', 'saber', 'creer', 'tener', 'llegar', 'ser', 'estar'];
+
+        var ES_FORMS = {
+            pres:   { llevar: ['llevo', 'llevas'], hacer: ['hago', 'haces'], decir: ['digo', 'dices'], ir: ['voy', 'vas'], saber: ['sé', 'sabes'],
+                      creer: ['creo', 'crees'], tener: ['tengo', 'tienes'], llegar: ['llego', 'llegas'], ser: ['soy', 'eres'], estar: ['estoy', 'estás'] },
+            indef:  { llevar: ['llevé', 'llevaste'], hacer: ['hice', 'hiciste'], decir: ['dije', 'dijiste'], ir: ['fui', 'fuiste'], saber: ['supe', 'supiste'],
+                      creer: ['creí', 'creíste'], tener: ['tuve', 'tuviste'], llegar: ['llegué', 'llegaste'], ser: ['fui', 'fuiste'], estar: ['estuve', 'estuviste'] },
+            imperf: { llevar: ['llevaba', 'llevabas'], hacer: ['hacía', 'hacías'], decir: ['decía', 'decías'], ir: ['iba', 'ibas'], saber: ['sabía', 'sabías'],
+                      creer: ['creía', 'creías'], tener: ['tenía', 'tenías'], llegar: ['llegaba', 'llegabas'], ser: ['era', 'eras'], estar: ['estaba', 'estabas'] },
+            futs:   { llevar: ['llevaré', 'llevarás'], hacer: ['haré', 'harás'], decir: ['diré', 'dirás'], ir: ['iré', 'irás'], saber: ['sabré', 'sabrás'],
+                      creer: ['creeré', 'creerás'], tener: ['tendré', 'tendrás'], llegar: ['llegaré', 'llegarás'], ser: ['seré', 'serás'], estar: ['estaré', 'estarás'] },
+            cond:   { llevar: ['llevaría', 'llevarías'], hacer: ['haría', 'harías'], decir: ['diría', 'dirías'], ir: ['iría', 'irías'], saber: ['sabría', 'sabrías'],
+                      creer: ['creería', 'creerías'], tener: ['tendría', 'tendrías'], llegar: ['llegaría', 'llegarías'], ser: ['sería', 'serías'], estar: ['estaría', 'estarías'] }
+        };
+        var PARTICIPLES = { llevar: 'llevado', hacer: 'hecho', decir: 'dicho', ir: 'ido', saber: 'sabido',
+                            creer: 'creído', tener: 'tenido', llegar: 'llegado', ser: 'sido', estar: 'estado' };
+
+        function esForms(verb, tense) {
+            if (tense === 'perf') return ['he ' + PARTICIPLES[verb], 'has ' + PARTICIPLES[verb]];
+            if (tense === 'fut') return ['voy a ' + verb, 'vas a ' + verb];
+            return (ES_FORMS[tense] || ES_FORMS.pres)[verb];
+        }
+
+        var TENSE_LABELS = {
+            pres:   'presente (teen)',
+            perf:   'pretérito perfecto (olen tehnyt)',
+            indef:  'pretérito indefinido (tein)',
+            imperf: 'pretérito imperfecto (tein, tapasin tehdä)',
+            fut:    'ir a + infinitivo (aion tehdä)',
+            futs:   'futuro (teen, tulen tekemään)',
+            cond:   'condicional (tekisin)'
         };
 
-        var DRILLS = {
-            start: [
-                ['hacer', '{V} limpieza en casa los fines de semana', 'Siivoan kotona viikonloppuisin.', 'Siivoatko kotona viikonloppuisin?'],
-                ['llegar', '{V} al trabajo temprano', 'Saavun töihin aikaisin.', 'Saavutko töihin aikaisin?'],
-                ['estar', '{V} contento porque es viernes', 'Olen iloinen, koska on perjantai.', 'Oletko iloinen, koska on perjantai?'],
-                ['tener', '{V} que trabajar mañana', 'Minun täytyy tehdä töitä huomenna.', 'Täytyykö sinun tehdä töitä huomenna?'],
-                ['llevar', '{V} todo el fin de semana trabajando', 'Olen tehnyt töitä koko viikonlopun.', 'Oletko tehnyt töitä koko viikonlopun?'],
-                ['ir', '{V} al gimnasio a menudo', 'Käyn usein salilla.', 'Käytkö usein salilla?']
-            ],
-            cleaning: [
-                ['decir', '{V} que el baño es lo más pesado', 'Sanon, että kylpyhuone on raskain.', 'Sanotko, että kylpyhuone on raskain?'],
-                ['saber', '{V} limpiar las ventanas sin manchas', 'Osaan pestä ikkunat ilman tahroja.', 'Osaatko pestä ikkunat ilman tahroja?'],
-                ['creer', '{V} que fregar los platos es aburrido', 'Uskon, että tiskaaminen on tylsää.', 'Uskotko, että tiskaaminen on tylsää?'],
-                ['ser', '{V} muy malo planchando', 'Olen tosi huono silittämään.', 'Oletko tosi huono silittämään?'],
-                ['llevar', '{V} auriculares para limpiar con música', 'Pidän kuulokkeita siivotessani musiikin kanssa.', 'Pidätkö kuulokkeita siivotessasi musiikin kanssa?']
-            ],
-            work_day: [
-                ['tener', '{V} muchas reuniones seguidas', 'Minulla on monta palaveria peräkkäin.', 'Onko sinulla monta palaveria peräkkäin?'],
-                ['estar', '{V} tranquilo en el trabajo', 'Olen rauhallinen töissä.', 'Oletko rauhallinen töissä?'],
-                ['hacer', '{V} proyectos importantes', 'Teen tärkeitä projekteja.', 'Teetkö tärkeitä projekteja?'],
-                ['decir', 'Siempre {V} que sí a {mi} jefe', 'Sanon aina kyllä pomolleni.', 'Sanotko aina kyllä pomollesi?'],
-                ['ir', 'No {V} a la oficina todos los días', 'En mene toimistolle joka päivä.', 'Etkö mene toimistolle joka päivä?']
-            ],
-            weekend_plans: [
-                ['ir', '{V} a la casa de verano con {mi} familia', 'Menen mökille perheeni kanssa.', 'Menetkö mökille perheesi kanssa?'],
-                ['estar', '{V} muy cansado esta semana', 'Olen tosi väsynyt tällä viikolla.', 'Oletko tosi väsynyt tällä viikolla?'],
-                ['llegar', '{V} al restaurante a las ocho', 'Saavun ravintolaan kahdeksalta.', 'Saavutko ravintolaan kahdeksalta?'],
-                ['saber', '{V} mucho de hockey', 'Tiedän paljon jääkiekosta.', 'Tiedätkö paljon jääkiekosta?'],
-                ['creer', '{V} que improvisar es divertido', 'Uskon, että improvisointi on hauskaa.', 'Uskotko, että improvisointi on hauskaa?']
-            ],
-            monday_mood: [
-                ['ser', 'Los lunes {V} un poco perezoso', 'Maanantaisin olen vähän laiska.', 'Oletko maanantaisin vähän laiska?'],
-                ['creer', '{V} que {mi} trabajo es interesante', 'Uskon, että työni on mielenkiintoinen.', 'Uskotko, että työsi on mielenkiintoinen?'],
-                ['tener', '{V} una semana muy llena', 'Minulla on todella täysi viikko.', 'Onko sinulla todella täysi viikko?'],
-                ['hacer', 'Los domingos no {V} planes para el lunes', 'Sunnuntaisin en tee suunnitelmia maanantaille.', 'Etkö sunnuntaisin tee suunnitelmia maanantaille?']
-            ],
-            sport_today: [
-                ['llevar', '{V} zapatillas nuevas para correr', 'Käytän uusia lenkkareita juoksuun.', 'Käytätkö uusia lenkkareita juoksuun?'],
-                ['ir', '{V} al gimnasio tres veces por semana', 'Käyn salilla kolme kertaa viikossa.', 'Käytkö salilla kolme kertaa viikossa?'],
-                ['saber', '{V} nadar muy bien', 'Osaan uida todella hyvin.', 'Osaatko uida todella hyvin?'],
-                ['llegar', '{V} a casa en bicicleta', 'Tulen kotiin pyörällä.', 'Tuletko kotiin pyörällä?'],
-                ['estar', '{V} en forma gracias al esquí', 'Olen hyvässä kunnossa hiihdon ansiosta.', 'Oletko hyvässä kunnossa hiihdon ansiosta?']
-            ],
-            books: [
-                ['saber', 'Siempre {V} quién es el culpable', 'Tiedän aina, kuka on syyllinen.', 'Tiedätkö aina, kuka on syyllinen?'],
-                ['creer', '{V} que la historia es fascinante', 'Uskon, että historia on kiehtovaa.', 'Uskotko, että historia on kiehtovaa?'],
-                ['ser', '{V} un gran fan de la fantasía', 'Olen suuri fantasian ystävä.', 'Oletko suuri fantasian ystävä?'],
-                ['llevar', 'Siempre {V} un libro en la mochila', 'Kannan aina kirjaa repussa.', 'Kannatko aina kirjaa repussa?']
-            ],
-            sauna: [
-                ['tener', '{V} sauna en casa', 'Minulla on sauna kotona.', 'Onko sinulla sauna kotona?'],
-                ['ir', '{V} a la sauna los sábados', 'Menen saunaan lauantaisin.', 'Menetkö saunaan lauantaisin?'],
-                ['llegar', '{V} a la casa de verano el viernes', 'Saavun mökille perjantaina.', 'Saavutko mökille perjantaina?'],
-                ['ser', '{V} muy valiente en el agua fría', 'Olen tosi rohkea kylmässä vedessä.', 'Oletko tosi rohkea kylmässä vedessä?']
-            ],
-            cooking: [
-                ['hacer', '{V} paella para {mis} amigos', 'Teen paellaa ystävilleni.', 'Teetkö paellaa ystävillesi?'],
-                ['saber', '{V} cocinar sopa de salmón', 'Osaan keittää lohikeittoa.', 'Osaatko keittää lohikeittoa?'],
-                ['creer', '{V} que la salsa casera es la mejor', 'Uskon, että kotitekoinen kastike on paras.', 'Uskotko, että kotitekoinen kastike on paras?'],
-                ['decir', '{V} que la tortilla lleva cebolla', 'Sanon, että tortillaan kuuluu sipuli.', 'Sanotko, että tortillaan kuuluu sipuli?'],
-                ['llevar', '{V} un pastel a cada fiesta', 'Vien kakun joka juhliin.', 'Vietkö kakun joka juhliin?']
-            ],
-            series: [
-                ['estar', '{V} enganchado a La casa de papel', 'Olen koukussa Rahapajaan.', 'Oletko koukussa Rahapajaan?'],
-                ['saber', '{V} mucho sobre el cine español', 'Tiedän paljon espanjalaisesta elokuvasta.', 'Tiedätkö paljon espanjalaisesta elokuvasta?'],
-                ['tener', '{V} los subtítulos en español', 'Minulla on tekstitykset espanjaksi.', 'Onko sinulla tekstitykset espanjaksi?'],
-                ['ir', '{V} a buscar una serie nueva', 'Aion etsiä uuden sarjan.', 'Aiotko etsiä uuden sarjan?']
-            ],
-            music: [
-                ['ser', '{V} fan del rock de los ochenta', 'Olen 80-luvun rockin fani.', 'Oletko 80-luvun rockin fani?'],
-                ['tener', '{V} una guitarra española', 'Minulla on espanjalainen kitara.', 'Onko sinulla espanjalainen kitara?'],
-                ['creer', '{V} que la música clásica relaja', 'Uskon, että klassinen musiikki rentouttaa.', 'Uskotko, että klassinen musiikki rentouttaa?'],
-                ['ir', '{V} a conciertos de heavy metal', 'Käyn heavy metal -konserteissa.', 'Käytkö heavy metal -konserteissa?'],
-                ['decir', '{V} que toda la música es buena', 'Sanon, että kaikki musiikki on hyvää.', 'Sanotko, että kaikki musiikki on hyvää?']
-            ],
-            shopping: [
-                ['estar', 'Sin café no {V} despierto', 'Ilman kahvia en ole hereillä.', 'Etkö ole hereillä ilman kahvia?'],
-                ['llevar', '{V} {mi} propia bolsa al supermercado', 'Vien oman kassini kauppaan.', 'Vietkö oman kassisi kauppaan?'],
-                ['saber', '{V} hacer pan de centeno', 'Osaan leipoa ruisleipää.', 'Osaatko leipoa ruisleipää?'],
-                ['decir', 'Siempre {V} que es el último chocolate', 'Sanon aina, että se on viimeinen suklaa.', 'Sanotko aina, että se on viimeinen suklaa?']
-            ],
-            beach: [
-                ['saber', '{V} nadar en el mar', 'Osaan uida meressä.', 'Osaatko uida meressä?'],
-                ['llevar', '{V} un libro a la playa', 'Vien kirjan rannalle.', 'Vietkö kirjan rannalle?'],
-                ['creer', '{V} que el marisco español es el mejor', 'Uskon, että espanjalaiset äyriäiset ovat parhaita.', 'Uskotko, että espanjalaiset äyriäiset ovat parhaita?'],
-                ['ser', '{V} bueno jugando al vóley', 'Olen hyvä pelaamaan lentopalloa.', 'Oletko hyvä pelaamaan lentopalloa?']
-            ],
-            kids: [
-                ['llevar', '{V} a {mi} hijo a la guardería', 'Vien poikani päiväkotiin.', 'Vietkö poikasi päiväkotiin?'],
-                ['tener', '{V} mucha paciencia con las adolescentes', 'Minulla on paljon kärsivällisyyttä teinien kanssa.', 'Onko sinulla paljon kärsivällisyyttä teinien kanssa?'],
-                ['estar', 'Siempre {V} ocupado en casa', 'Olen aina kiireinen kotona.', 'Oletko aina kiireinen kotona?'],
-                ['llegar', '{V} al colegio a las ocho', 'Saavun koululle kahdeksalta.', 'Saavutko koululle kahdeksalta?']
-            ],
-            dog: [
-                ['decir', '{V} que Musti es el mejor perro', 'Sanon, että Musti on paras koira.', 'Sanotko, että Musti on paras koira?'],
-                ['saber', '{V} por qué ladra tanto', 'Tiedän, miksi se haukkuu niin paljon.', 'Tiedätkö, miksi se haukkuu niin paljon?'],
-                ['llevar', '{V} al perro al parque cada día', 'Vien koiran puistoon joka päivä.', 'Vietkö koiran puistoon joka päivä?'],
-                ['creer', '{V} que los perros mayores son muy tiernos', 'Uskon, että vanhat koirat ovat tosi suloisia.', 'Uskotko, että vanhat koirat ovat tosi suloisia?']
-            ],
-            evening: [
-                ['tener', '{V} un buen libro para esta noche', 'Minulla on hyvä kirja tälle illalle.', 'Onko sinulla hyvä kirja tälle illalle?'],
-                ['hacer', '{V} ejercicio caminando por la tarde', 'Kuntoilen kävelemällä iltapäivisin.', 'Kuntoiletko kävelemällä iltapäivisin?'],
-                ['estar', '{V} estudiando español esta tarde', 'Opiskelen espanjaa tänä iltapäivänä.', 'Opiskeletko espanjaa tänä iltapäivänä?'],
-                ['ir', '{V} a la sauna esta noche', 'Menen saunaan tänä iltana.', 'Menetkö saunaan tänä iltana?'],
-                ['llegar', '{V} tarde a casa por los recados', 'Tulen myöhään kotiin asioiden takia.', 'Tuletko myöhään kotiin asioiden takia?']
-            ],
-            hobbies: [
-                ['hacer', '{V} platos nuevos cada semana', 'Teen uusia ruokia joka viikko.', 'Teetkö uusia ruokia joka viikko?'],
-                ['ir', '{V} al bosque los domingos', 'Menen metsään sunnuntaisin.', 'Menetkö metsään sunnuntaisin?'],
-                ['creer', '{V} que las series ayudan a aprender', 'Uskon, että sarjat auttavat oppimaan.', 'Uskotko, että sarjat auttavat oppimaan?'],
-                ['saber', '{V} tocar la guitarra', 'Osaan soittaa kitaraa.', 'Osaatko soittaa kitaraa?'],
-                ['ser', '{V} una persona muy sociable', 'Olen todella sosiaalinen ihminen.', 'Oletko todella sosiaalinen ihminen?']
-            ],
-            yesterday: [
-                ['estar', 'Hoy también {V} tranquilo', 'Tänäänkin olen rauhallinen.', 'Oletko tänäänkin rauhallinen?'],
-                ['tener', 'Siempre {V} mil cosas que hacer', 'Minulla on aina tuhat asiaa tehtävänä.', 'Onko sinulla aina tuhat asiaa tehtävänä?'],
-                ['decir', '{V} que {mis} amigos son muy divertidos', 'Sanon, että ystäväni ovat tosi hauskoja.', 'Sanotko, että ystäväsi ovat tosi hauskoja?'],
-                ['hacer', '{V} las tareas de casa los sábados', 'Teen kotityöt lauantaisin.', 'Teetkö kotityöt lauantaisin?'],
-                ['creer', '{V} que mañana será un día mejor', 'Uskon, että huomenna on parempi päivä.', 'Uskotko, että huomenna on parempi päivä?']
-            ],
-            tomorrow: [
-                ['llegar', '{V} al trabajo a las siete', 'Saavun töihin seitsemältä.', 'Saavutko töihin seitsemältä?'],
-                ['hacer', '{V} ejercicio antes de desayunar', 'Kuntoilen ennen aamiaista.', 'Kuntoiletko ennen aamiaista?'],
-                ['estar', 'Mañana {V} libre todo el día', 'Huomenna olen vapaa koko päivän.', 'Oletko huomenna vapaa koko päivän?'],
-                ['llevar', '{V} una lista a la tienda', 'Otan listan mukaan kauppaan.', 'Otatko listan mukaan kauppaan?'],
-                ['saber', '{V} lo que hay que decir en la reunión', 'Tiedän, mitä kokouksessa pitää sanoa.', 'Tiedätkö, mitä kokouksessa pitää sanoa?']
-            ],
-            food: [
-                ['creer', '{V} que la ensalada es muy sana', 'Uskon, että salaatti on tosi terveellistä.', 'Uskotko, että salaatti on tosi terveellistä?'],
-                ['saber', '{V} hacer pizza en casa', 'Osaan tehdä pizzaa kotona.', 'Osaatko tehdä pizzaa kotona?'],
-                ['hacer', '{V} sopa cuando hace frío', 'Teen keittoa, kun on kylmä.', 'Teetkö keittoa, kun on kylmä?'],
-                ['estar', '{V} demasiado cansado para cocinar', 'Olen liian väsynyt kokkaamaan.', 'Oletko liian väsynyt kokkaamaan?'],
-                ['tener', '{V} poca comida en la nevera', 'Minulla on vähän ruokaa jääkaapissa.', 'Onko sinulla vähän ruokaa jääkaapissa?']
-            ],
-            travel: [
-                ['ir', '{V} a España en verano', 'Menen Espanjaan kesällä.', 'Menetkö Espanjaan kesällä?'],
-                ['saber', '{V} mucho de historia europea', 'Tiedän paljon Euroopan historiasta.', 'Tiedätkö paljon Euroopan historiasta?'],
-                ['llevar', '{V} botas buenas en la montaña', 'Käytän vuorilla hyviä vaelluskenkiä.', 'Käytätkö vuorilla hyviä vaelluskenkiä?'],
-                ['estar', '{V} muy a gusto en casa', 'Viihdyn todella hyvin kotona.', 'Viihdytkö todella hyvin kotona?'],
-                ['creer', '{V} que Japón es fascinante', 'Uskon, että Japani on kiehtova.', 'Uskotko, että Japani on kiehtova?']
-            ],
-            learning: [
-                ['decir', '{V} que el español suena muy bonito', 'Sanon, että espanja kuulostaa tosi kauniilta.', 'Sanotko, että espanja kuulostaa tosi kauniilta?'],
-                ['ir', '{V} a viajar a Sudamérica', 'Aion matkustaa Etelä-Amerikkaan.', 'Aiotko matkustaa Etelä-Amerikkaan?'],
-                ['saber', '{V} bailar salsa', 'Osaan tanssia salsaa.', 'Osaatko tanssia salsaa?'],
-                ['llevar', '{V} un año estudiando español', 'Olen opiskellut espanjaa vuoden.', 'Oletko opiskellut espanjaa vuoden?'],
-                ['tener', '{V} amigos en España', 'Minulla on ystäviä Espanjassa.', 'Onko sinulla ystäviä Espanjassa?']
-            ],
-            emotions: [
-                ['tener', '{V} mucha energía hoy', 'Minulla on tänään paljon energiaa.', 'Onko sinulla tänään paljon energiaa?'],
-                ['estar', '{V} satisfecho con {mi} día', 'Olen tyytyväinen päivääni.', 'Oletko tyytyväinen päivääsi?'],
-                ['ser', '{V} una persona tranquila', 'Olen rauhallinen ihminen.', 'Oletko rauhallinen ihminen?'],
-                ['saber', '{V} relajar{me} después del trabajo', 'Osaan rentoutua töiden jälkeen.', 'Osaatko rentoutua töiden jälkeen?'],
-                ['llegar', 'El viernes {V} a casa muy feliz', 'Perjantaina tulen kotiin tosi iloisena.', 'Tuletko perjantaina kotiin tosi iloisena?']
-            ],
-            weather: [
-                ['llevar', '{V} gorro y guantes en invierno', 'Käytän pipoa ja hanskoja talvella.', 'Käytätkö pipoa ja hanskoja talvella?'],
-                ['ir', '{V} a pasear cuando hace sol', 'Lähden kävelylle, kun on aurinkoista.', 'Lähdetkö kävelylle, kun on aurinkoista?'],
-                ['tener', 'Siempre {V} un paraguas en el coche', 'Minulla on aina sateenvarjo autossa.', 'Onko sinulla aina sateenvarjo autossa?'],
-                ['estar', 'Cuando hay viento, {V} en casa', 'Kun tuulee, olen kotona.', 'Oletko kotona, kun tuulee?'],
-                ['creer', '{V} que veinte grados es perfecto', 'Uskon, että kaksikymmentä astetta on täydellinen.', 'Uskotko, että kaksikymmentä astetta on täydellinen?']
-            ],
-            family: [
-                ['ser', '{V} muy feliz con {mi} familia', 'Olen tosi onnellinen perheeni kanssa.', 'Oletko tosi onnellinen perheesi kanssa?'],
-                ['hacer', '{V} todo a {mi} manera', 'Teen kaiken omalla tavallani.', 'Teetkö kaiken omalla tavallasi?'],
-                ['llevar', '{V} cinco años con {mi} pareja', 'Olen ollut kumppanini kanssa viisi vuotta.', 'Oletko ollut kumppanisi kanssa viisi vuotta?'],
-                ['decir', '{V} que vivir con los padres es cómodo', 'Sanon, että vanhempien luona asuminen on mukavaa.', 'Sanotko, että vanhempien luona asuminen on mukavaa?'],
-                ['llegar', '{V} a casa y {mi} perro {me} espera', 'Tulen kotiin ja koirani odottaa minua.', 'Tuletko kotiin ja koirasi odottaa sinua?']
-            ],
-            pets: [
-                ['tener', '{V} un perro muy simpático', 'Minulla on tosi mukava koira.', 'Onko sinulla tosi mukava koira?'],
-                ['creer', '{V} que los gatos son independientes', 'Uskon, että kissat ovat itsenäisiä.', 'Uskotko, että kissat ovat itsenäisiä?'],
-                ['ir', '{V} a adoptar un animal pronto', 'Aion adoptoida eläimen pian.', 'Aiotko adoptoida eläimen pian?'],
-                ['ser', '{V} alérgico a los gatos', 'Olen allerginen kissoille.', 'Oletko allerginen kissoille?'],
-                ['saber', '{V} cuidar peces de acuario', 'Osaan hoitaa akvaariokaloja.', 'Osaatko hoitaa akvaariokaloja?']
-            ],
-            hometown: [
-                ['llegar', '{V} al centro en metro', 'Pääsen keskustaan metrolla.', 'Pääsetkö keskustaan metrolla?'],
-                ['saber', '{V} el nombre de todos {mis} vecinos', 'Tiedän kaikkien naapureideni nimet.', 'Tiedätkö kaikkien naapureidesi nimet?'],
-                ['ir', '{V} a la playa en verano', 'Menen rannalle kesällä.', 'Menetkö rannalle kesällä?'],
-                ['estar', '{V} rodeado de naturaleza', 'Olen luonnon ympäröimä.', 'Oletko luonnon ympäröimä?'],
-                ['tener', 'En invierno {V} poca energía', 'Talvella minulla on vähän energiaa.', 'Onko sinulla talvella vähän energiaa?']
-            ],
-            morning: [
-                ['decir', '{V} que el café es imprescindible', 'Sanon, että kahvi on välttämätöntä.', 'Sanotko, että kahvi on välttämätöntä?'],
-                ['hacer', '{V} un desayuno completo', 'Teen kunnon aamiaisen.', 'Teetkö kunnon aamiaisen?'],
-                ['saber', '{V} que el móvil no es bueno por la mañana', 'Tiedän, että puhelin ei ole hyväksi aamulla.', 'Tiedätkö, että puhelin ei ole hyväksi aamulla?'],
-                ['llevar', '{V} al perro al parque por la mañana', 'Vien koiran puistoon aamulla.', 'Vietkö koiran puistoon aamulla?'],
-                ['llegar', 'Siempre {V} tarde a todas partes', 'Tulen aina myöhässä joka paikkaan.', 'Tuletko aina myöhässä joka paikkaan?']
-            ],
-            seasons: [
-                ['ir', 'En verano {V} a la casa de verano', 'Kesällä menen mökille.', 'Menetkö kesällä mökille?'],
-                ['hacer', '{V} muñecos de nieve en invierno', 'Teen lumiukkoja talvella.', 'Teetkö lumiukkoja talvella?'],
-                ['estar', 'En primavera {V} de buen humor', 'Keväällä olen hyvällä tuulella.', 'Oletko keväällä hyvällä tuulella?'],
-                ['creer', '{V} que el otoño es precioso', 'Uskon, että syksy on upea.', 'Uskotko, että syksy on upea?']
-            ],
-            childhood: [
-                ['ser', '{V} un gran aficionado al fútbol', 'Olen suuri jalkapallofani.', 'Oletko suuri jalkapallofani?'],
-                ['tener', 'Todavía {V} muchos cómics', 'Minulla on yhä paljon sarjakuvia.', 'Onko sinulla yhä paljon sarjakuvia?'],
-                ['ir', 'Todavía {V} mucho al bosque', 'Käyn yhä paljon metsässä.', 'Käytkö yhä paljon metsässä?'],
-                ['saber', '{V} jugar a muchos videojuegos', 'Osaan pelata monia videopelejä.', 'Osaatko pelata monia videopelejä?'],
-                ['llevar', '{V} años sin patinar', 'En ole luistellut vuosiin.', 'Etkö ole luistellut vuosiin?']
-            ],
-            celebrations: [
-                ['estar', 'En Navidad {V} con toda la familia', 'Jouluna olen koko perheen kanssa.', 'Oletko jouluna koko perheen kanssa?'],
-                ['hacer', '{V} una hoguera en San Juan', 'Teen kokon juhannuksena.', 'Teetkö kokon juhannuksena?'],
-                ['decir', '{V} que los regalos son lo mejor', 'Sanon, että lahjat ovat parasta.', 'Sanotko, että lahjat ovat parasta?'],
-                ['llegar', '{V} a la fiesta antes de medianoche', 'Saavun juhliin ennen keskiyötä.', 'Saavutko juhliin ennen keskiyötä?']
-            ],
-            tech: [
-                ['estar', '{V} demasiado tiempo con el móvil', 'Olen liian paljon puhelimella.', 'Oletko liian paljon puhelimella?'],
-                ['creer', '{V} que dos horas es suficiente', 'Uskon, että kaksi tuntia riittää.', 'Uskotko, että kaksi tuntia riittää?'],
-                ['tener', '{V} un móvil para el trabajo', 'Minulla on työpuhelin.', 'Onko sinulla työpuhelin?'],
-                ['hacer', '{V} ejercicios de español en el móvil', 'Teen espanjan harjoituksia puhelimella.', 'Teetkö espanjan harjoituksia puhelimella?'],
-                ['ir', '{V} a dejar el móvil en casa más a menudo', 'Aion jättää puhelimen kotiin useammin.', 'Aiotko jättää puhelimen kotiin useammin?']
-            ],
-            sleep: [
-                ['ser', '{V} un gran dormilón', 'Olen kova nukkumaan.', 'Oletko kova nukkumaan?'],
-                ['estar', '{V} cansado casi siempre', 'Olen väsynyt melkein aina.', 'Oletko väsynyt melkein aina?'],
-                ['saber', 'No {V} por qué {me} cuesta dormir', 'En tiedä, miksi minun on vaikea nukkua.', 'Etkö tiedä, miksi sinun on vaikea nukkua?'],
-                ['llevar', '{V} años echándo{me} la siesta', 'Olen ottanut päiväunia jo vuosia.', 'Oletko ottanut päiväunia jo vuosia?']
-            ],
-            ideal_weekend: [
-                ['tener', '{V} una cabaña junto a un lago', 'Minulla on mökki järven rannalla.', 'Onko sinulla mökki järven rannalla?'],
-                ['ir', '{V} de compras a la ciudad', 'Lähden kaupungille ostoksille.', 'Lähdetkö kaupungille ostoksille?'],
-                ['hacer', '{V} palomitas para ver películas', 'Teen popcornia elokuvia varten.', 'Teetkö popcornia elokuvia varten?'],
-                ['llevar', '{V} la comida a la excursión', 'Otan ruoat mukaan retkelle.', 'Otatko ruoat mukaan retkelle?'],
-                ['ser', '{V} muy activo los fines de semana', 'Olen tosi aktiivinen viikonloppuisin.', 'Oletko tosi aktiivinen viikonloppuisin?']
-            ],
-            closing: [
-                ['saber', 'Ahora {V} muchas palabras nuevas', 'Nyt osaan paljon uusia sanoja.', 'Osaatko nyt paljon uusia sanoja?'],
-                ['creer', '{V} que practicar así es útil', 'Uskon, että tällainen harjoittelu on hyödyllistä.', 'Uskotko, että tällainen harjoittelu on hyödyllistä?'],
-                ['estar', '{V} orgulloso de {mi} esfuerzo', 'Olen ylpeä ponnistuksestani.', 'Oletko ylpeä ponnistuksestasi?'],
-                ['ir', '{V} a practicar otra vez mañana', 'Aion harjoitella taas huomenna.', 'Aiotko harjoitella taas huomenna?'],
-                ['decir', '{V} adiós con una sonrisa', 'Sanon heipat hymyillen.', 'Sanotko heipat hymyillen?']
-            ]
+        // Suomen verbien muodot: [minä, sinä] eri aikamuodoissa
+        function fv(p1, p2, part, pa1, pa2, inf, c1, c2, fut) {
+            return {
+                pres: [p1, p2], perf: ['olen ' + part, 'olet ' + part], past: [pa1, pa2],
+                fut: fut || ['aion ' + inf, 'aiot ' + inf], cond: [c1, c2]
+            };
+        }
+        var FI_VERBS = {
+            'viedä':    fv('vien', 'viet', 'vienyt', 'vein', 'veit', 'viedä', 'veisin', 'veisit'),
+            'ottaa':    fv('otan', 'otat', 'ottanut', 'otin', 'otit', 'ottaa', 'ottaisin', 'ottaisit'),
+            'käyttää':  fv('käytän', 'käytät', 'käyttänyt', 'käytin', 'käytit', 'käyttää', 'käyttäisin', 'käyttäisit'),
+            'kantaa':   fv('kannan', 'kannat', 'kantanut', 'kannoin', 'kannoit', 'kantaa', 'kantaisin', 'kantaisit'),
+            'pitää':    fv('pidän', 'pidät', 'pitänyt', 'pidin', 'pidit', 'pitää', 'pitäisin', 'pitäisit'),
+            'viettää':  fv('vietän', 'vietät', 'viettänyt', 'vietin', 'vietit', 'viettää', 'viettäisin', 'viettäisit'),
+            'tehdä':    fv('teen', 'teet', 'tehnyt', 'tein', 'teit', 'tehdä', 'tekisin', 'tekisit'),
+            'harrastaa':fv('harrastan', 'harrastat', 'harrastanut', 'harrastin', 'harrastit', 'harrastaa', 'harrastaisin', 'harrastaisit'),
+            'pakata':   fv('pakkaan', 'pakkaat', 'pakannut', 'pakkasin', 'pakkasit', 'pakata', 'pakkaisin', 'pakkaisit'),
+            'soittaa':  fv('soitan', 'soitat', 'soittanut', 'soitin', 'soitit', 'soittaa', 'soittaisin', 'soittaisit'),
+            'paistaa':  fv('paistan', 'paistat', 'paistanut', 'paistoin', 'paistoit', 'paistaa', 'paistaisin', 'paistaisit'),
+            'sanoa':    fv('sanon', 'sanot', 'sanonut', 'sanoin', 'sanoit', 'sanoa', 'sanoisin', 'sanoisit'),
+            'mennä':    fv('menen', 'menet', 'mennyt', 'menin', 'menit', 'mennä', 'menisin', 'menisit'),
+            'käydä':    fv('käyn', 'käyt', 'käynyt', 'kävin', 'kävit', 'käydä', 'kävisin', 'kävisit'),
+            'lähteä':   fv('lähden', 'lähdet', 'lähtenyt', 'lähdin', 'lähdit', 'lähteä', 'lähtisin', 'lähtisit'),
+            'tietää':   fv('tiedän', 'tiedät', 'tiennyt', 'tiesin', 'tiesit', '', 'tietäisin', 'tietäisit', ['saan tietää', 'saat tietää']),
+            'osata':    fv('osaan', 'osaat', 'osannut', 'osasin', 'osasit', '', 'osaisin', 'osaisit', ['tulen osaamaan', 'tulet osaamaan']),
+            'uskoa':    fv('uskon', 'uskot', 'uskonut', 'uskoin', 'uskoit', 'uskoa', 'uskoisin', 'uskoisit'),
+            'omistus':  { pres: ['minulla on', 'sinulla on'], perf: ['minulla on ollut', 'sinulla on ollut'], past: ['minulla oli', 'sinulla oli'],
+                          fut: ['minulla tulee olemaan', 'sinulla tulee olemaan'], cond: ['minulla olisi', 'sinulla olisi'] },
+            'tulla':    fv('tulen', 'tulet', 'tullut', 'tulin', 'tulit', 'tulla', 'tulisin', 'tulisit'),
+            'saapua':   fv('saavun', 'saavut', 'saapunut', 'saavuin', 'saavuit', 'saapua', 'saapuisin', 'saapuisit'),
+            'päästä':   fv('pääsen', 'pääset', 'päässyt', 'pääsin', 'pääsit', 'päästä', 'pääsisin', 'pääsisit'),
+            'olla':     fv('olen', 'olet', 'ollut', 'olin', 'olit', 'olla', 'olisin', 'olisit'),
+            'viihtyä':  fv('viihdyn', 'viihdyt', 'viihtynyt', 'viihdyin', 'viihdyit', 'viihtyä', 'viihtyisin', 'viihtyisit')
+        };
+        var FI_DEFAULT = { llevar: 'viedä', hacer: 'tehdä', decir: 'sanoa', ir: 'mennä', saber: 'tietää',
+                           creer: 'uskoa', tener: 'omistus', llegar: 'tulla', ser: 'olla', estar: 'olla' };
+
+        function fiForms(key, tense) {
+            var v = FI_VERBS[key];
+            var t = (tense === 'indef' || tense === 'imperf') ? 'past' : (tense === 'futs' ? 'pres' : tense);
+            return v[t] || v.pres;
+        }
+
+        // Kertauslauseet aiheittain, verbijärjestyksessä:
+        // llevar, hacer, decir, ir, saber, creer, tener, llegar, ser, estar
+        // Muoto: "espanja|suomi|suomen verbi (valinnainen)"
+        // Espanjassa {mi}/{mis}/{me} -> tu/tus/te, suomessa {minä/sinä}-muoto, esim. ystävie{ni/si}
+        var DRILL_SETS = {
+            start: ['la ropa a la lavandería|pyykit pesulaan', 'las tareas de casa|kotitöitä', 'hola a los vecinos|hei naapureille',
+                    'al supermercado|kauppaan', 'lo de la lluvia|sateesta', 'en el poder del descanso|levon voimaan',
+                    'un día libre|vapaapäivä', 'a casa temprano|kotiin aikaisin', 'una persona muy ordenada|todella järjestelmällinen ihminen',
+                    'al aire libre|ulkona'],
+            cleaning: ['la basura al contenedor|roskat roskikseen', 'la limpieza a fondo|perusteellisen siivouksen', 'la verdad sobre el desorden|totuuden sotkusta',
+                    'a comprar productos de limpieza|ostamaan siivoustarvikkeita', 'limpiar muy bien|siivota todella hyvin|osata', 'en el orden|järjestykseen',
+                    'una aspiradora nueva|uusi imuri', 'a casa con la compra|kotiin ostosten kanssa', 'una persona limpia|siisti ihminen', 'en la cocina|keittiössä'],
+            work_day: ['el portátil a la oficina|kannettavan toimistolle', 'un informe importante|tärkeän raportin', 'buenos días a {mis} compañeros|huomenta työkavereil{leni/lesi}',
+                    'a muchas reuniones|moniin palavereihin', 'la respuesta a todas las preguntas|vastauksen kaikkiin kysymyksiin', 'en el trabajo en equipo|tiimityöhön',
+                    'mucho trabajo|paljon töitä', 'a la oficina a las ocho|toimistolle kahdeksalta|saapua', 'una persona muy eficaz|todella tehokas ihminen',
+                    'en la oficina todo el día|toimistolla koko päivän'],
+            weekend_plans: ['comida a la casa de verano|ruokaa mökille', 'una excursión|retken', 'que sí a todos los planes|kyllä kaikille suunnitelmille',
+                    'al cine|elokuviin', 'los planes de {mis} amigos|ystävie{ni/si} suunnitelmat', 'en el descanso|lepoon',
+                    'tiempo libre|vapaa-aikaa', 'tarde a casa|myöhään kotiin', 'una persona muy relajada|todella rento ihminen', 'con {mi} familia|perhee{ni/si} kanssa'],
+            monday_mood: ['el café al trabajo|kahvin töihin', 'una lista de tareas|tehtävälistan', 'adiós al fin de semana|hyvästit viikonlopulle',
+                    'al trabajo en autobús|töihin bussilla', 'el horario de la semana|viikon aikataulun', 'en una buena semana|hyvään viikkoon',
+                    'muchas tareas|paljon tehtäviä', 'puntual a la oficina|ajoissa toimistolle', 'una persona optimista|optimistinen ihminen',
+                    'en casa el domingo por la noche|kotona sunnuntai-iltana'],
+            sport_today: ['ropa deportiva|urheiluvaatteita|käyttää', 'un entrenamiento duro|kovan treenin', 'que el deporte es salud|, että urheilu on terveyttä',
+                    'al gimnasio|salilla|käydä', '{mi} récord personal|ennätykse{ni/si}', 'en el deporte|urheiluun',
+                    'mucha energía|paljon energiaa', 'a la meta|maaliin|saapua', 'una persona muy activa|todella aktiivinen ihminen', 'en el polideportivo|urheiluhallissa'],
+            books: ['un libro en la mochila|kirjaa repussa|kantaa', 'una lista de libros|kirjalistan', 'el título del libro|kirjan nimen',
+                    'a la biblioteca|kirjastoon', 'el final de la historia|tarinan lopun', 'en la magia de los libros|kirjojen taikaan',
+                    'muchos libros en casa|paljon kirjoja kotona', 'al último capítulo|viimeiseen lukuun|päästä', 'una persona curiosa|utelias ihminen',
+                    'en el sofá con un libro|sohvalla kirjan kanssa'],
+            sauna: ['toallas a la sauna|pyyhkeitä saunaan', 'fuego en la estufa|tulen kiukaaseen', 'que el vapor está perfecto|, että löyly on täydellinen',
+                    'al lago|järveen', 'la temperatura de la sauna|saunan lämpötilan', 'en el poder de la sauna|saunan voimaan',
+                    'una sauna de leña|puusauna', 'a la sauna con {mis} amigos|saunaan ystävie{ni/si} kanssa', 'una persona muy finlandesa|hyvin suomalainen ihminen',
+                    'en la sauna|saunassa'],
+            cooking: ['un postre a la fiesta|jälkiruoan juhliin', 'la cena|illallisen', 'la receta a {mis} amigos|reseptin ystävil{leni/lesi}',
+                    'al mercado|torille', 'cocinar muchos platos|laittaa monia ruokia|osata', 'en la cocina casera|kotiruokaan',
+                    'muchas especias|paljon mausteita', 'a casa con hambre|kotiin nälkäisenä', 'una persona creativa en la cocina|luova ihminen keittiössä',
+                    'en la cocina|keittiössä'],
+            series: ['palomitas al sofá|popcornia sohvalle', 'maratones de series|sarjamaratoneja|pitää', 'frases de la serie|sarjan repliikkejä',
+                    'al cine|elokuviin', 'los nombres de los actores|näyttelijöiden nimet', 'en los finales felices|onnellisiin loppuihin',
+                    'una plataforma de streaming|suoratoistopalvelu', 'al último episodio|viimeiseen jaksoon|päästä', 'una persona cinéfila|elokuvafriikki',
+                    'delante de la tele|television ääressä'],
+            music: ['la guitarra a los ensayos|kitaran harjoituksiin', 'música con amigos|musiikkia ystävien kanssa', 'la letra de la canción|laulun sanat',
+                    'a conciertos|konserteissa|käydä', 'tocar varias canciones|soittaa useita kappaleita|osata', 'en el poder de la música|musiikin voimaan',
+                    'muchos discos|paljon levyjä', 'al concierto a tiempo|konserttiin ajoissa', 'una persona muy musical|todella musikaalinen ihminen',
+                    'en un concierto|konsertissa'],
+            shopping: ['bolsas reutilizables|kestokassit mukaan|ottaa', 'la compra los sábados|ostokset lauantaisin', 'gracias a la cajera|kiitos kassalle',
+                    'al supermercado|supermarkettiin', 'los precios de memoria|hinnat ulkoa', 'en las ofertas|tarjouksiin',
+                    'una lista de la compra|kauppalista', 'a la tienda antes de cerrar|kauppaan ennen sulkemista', 'una persona ahorradora|säästäväinen ihminen',
+                    'en la cola de la caja|kassajonossa'],
+            beach: ['una sombrilla a la playa|aurinkovarjon rannalle', 'castillos de arena|hiekkalinnoja', 'adiós al frío|hyvästit kylmyydelle',
+                    'a la playa cada día|rannalle joka päivä', 'dónde está la mejor playa|, missä paras ranta on', 'en las vacaciones perfectas|täydelliseen lomaan',
+                    'mucho tiempo libre|paljon vapaa-aikaa', 'a la playa temprano|rannalle aikaisin', 'una persona muy feliz|todella onnellinen ihminen',
+                    'al sol todo el día|auringossa koko päivän'],
+            kids: ['a los niños al colegio|lapset kouluun', 'los deberes con los niños|läksyjä lasten kanssa', 'buenas noches a los niños|hyvää yötä lapsille',
+                    'al parque con los niños|puistoon lasten kanssa', 'los horarios del colegio|koulun aikataulut', 'en la educación|kasvatukseen',
+                    'mucha paciencia|paljon kärsivällisyyttä', 'tarde a recoger a los niños|myöhässä hakemaan lapsia', 'una persona paciente|kärsivällinen ihminen',
+                    'en casa con los niños|kotona lasten kanssa'],
+            dog: ['al perro al veterinario|koiran eläinlääkäriin', 'largos paseos con el perro|pitkiä lenkkejä koiran kanssa', 'palabras bonitas al perro|kauniita sanoja koiralle',
+                    'al bosque con el perro|metsään koiran kanssa', 'lo que quiere el perro|, mitä koira haluaa', 'en la amistad de los perros|koirien ystävyyteen',
+                    'un perro muy bueno|todella kiltti koira', 'a casa con el perro|kotiin koiran kanssa', 'una persona de perros|koiraihminen',
+                    'en el parque con el perro|puistossa koiran kanssa'],
+            evening: ['un libro al sofá|kirjan sohvalle', 'planes para la noche|suunnitelmia illaksi', 'buenas noches a {mi} familia|hyvää yötä perhee{lleni/llesi}',
+                    'a dar un paseo|kävelylle|lähteä', 'qué hacer por la noche|, mitä tehdä illalla', 'en las noches tranquilas|rauhallisiin iltoihin',
+                    'tiempo para descansar|aikaa levätä', 'a casa antes de las seis|kotiin ennen kuutta', 'una persona casera|kotihiiri', 'en el sofá|sohvalla'],
+            hobbies: ['el equipo de deporte|urheiluvarusteet mukaan|ottaa', 'muchas actividades|paljon asioita vapaa-ajalla', 'que sí a nuevas aficiones|kyllä uusille harrastuksille',
+                    'a clases de baile|tanssitunneilla|käydä', 'tocar un instrumento|soittaa soitinta|osata', 'en el tiempo libre de calidad|laadukkaaseen vapaa-aikaan',
+                    'muchas aficiones|paljon harrastuksia', 'puntual a los entrenamientos|ajoissa harjoituksiin', 'una persona muy activa|todella aktiivinen ihminen',
+                    'en un club de lectura|lukupiirissä'],
+            yesterday: ['a {mi} hermano al aeropuerto|velje{ni/si} lentokentälle', 'muchas cosas|paljon asioita', 'la verdad a un amigo|totuuden ystävälle',
+                    'al centro|keskustaan', 'la respuesta|vastauksen', 'a {mi} amigo|ystävää{ni/si}',
+                    'un día largo|pitkä päivä', 'tarde a casa|myöhään kotiin', 'una persona muy productiva|todella tuottelias ihminen', 'con unos amigos|ystävien kanssa'],
+            tomorrow: ['el coche al taller|auton korjaamolle', 'ejercicio por la mañana|aamulenkin', '{mi} opinión en la reunión|mielipitee{ni/si} kokouksessa',
+                    'al trabajo temprano|töihin aikaisin', 'el horario de mañana|huomisen aikataulun', 'en el éxito de la reunión|kokouksen onnistumiseen',
+                    'una reunión importante|tärkeä kokous', 'a la oficina a las siete|toimistolle seitsemältä|saapua', 'una persona puntual|täsmällinen ihminen',
+                    'en casa por la tarde|kotona iltapäivällä'],
+            food: ['comida al trabajo|eväät töihin|ottaa', 'la cena|päivällisen', 'que la comida está rica|, että ruoka on hyvää',
+                    'a un restaurante|ravintolaan', 'cocinar platos sencillos|laittaa yksinkertaisia ruokia|osata', 'en la comida sana|terveelliseen ruokaan',
+                    'hambre|nälkä', 'a casa con hambre|kotiin nälkäisenä', 'una persona golosa|herkkusuu', 'en la cocina|keittiössä'],
+            travel: ['poco equipaje|mukaan vähän matkatavaroita|ottaa', 'muchas fotos|paljon kuvia|ottaa', 'hola en otro idioma|hei toisella kielellä',
+                    'a Barcelona|Barcelonaan', 'el idioma del país|maan kielen|osata', 'en la aventura|seikkailuun',
+                    'mucho tiempo para viajar|paljon aikaa matkustaa', 'al aeropuerto con tiempo|lentokentälle ajoissa|saapua', 'una persona aventurera|seikkailunhaluinen ihminen',
+                    'de vacaciones|lomalla'],
+            learning: ['un diccionario en el móvil|sanakirjaa puhelimessa|kantaa', 'ejercicios de gramática|kielioppiharjoituksia', 'frases en español|lauseita espanjaksi',
+                    'a clases de español|espanjan tunneilla|käydä', 'muchas palabras|paljon sanoja|osata', 'en el aprendizaje diario|päivittäiseen oppimiseen',
+                    'un buen profesor|hyvä opettaja', 'a un buen nivel|hyvälle tasolle|päästä', 'una persona constante|sinnikäs ihminen', 'en clase de español|espanjan tunnilla'],
+            emotions: ['una vida tranquila|rauhallista elämää|viettää', 'todo lo posible|parhaa{ni/si}', 'palabras positivas|positiivisia sanoja',
+                    'a clases de yoga|joogassa|käydä', 'relajar{me}|rentoutua|osata', 'en el pensamiento positivo|positiiviseen ajatteluun',
+                    'un buen día|hyvä päivä', 'a casa de buen humor|kotiin hyvällä tuulella', 'una persona alegre|iloinen ihminen', 'de buen humor|hyvällä tuulella'],
+            weather: ['un paraguas|sateenvarjon mukaan|ottaa', 'un muñeco de nieve|lumiukon', 'que hace frío|, että on kylmä',
+                    'a pasear con lluvia|kävelylle sateessa|lähteä', 'el pronóstico del tiempo|sääennusteen', 'en el pronóstico del tiempo|sääennusteeseen',
+                    'frío|kylmä', 'a casa con nieve en las botas|kotiin lunta saappaissa', 'una persona de invierno|talvi-ihminen', 'en casa bajo una manta|kotona viltin alla'],
+            family: ['a {mi} familia de excursión|perhee{ni/si} retkelle', 'la cena para todos|illallisen kaikille', 'buenas noticias a {mi} familia|hyviä uutisia perhee{lleni/llesi}',
+                    'a casa de {mis} padres|vanhempie{ni/si} luo', 'los cumpleaños de todos|kaikkien syntymäpäivät', 'en la familia|perheeseen',
+                    'una familia grande|iso perhe', 'a casa para cenar|kotiin syömään', 'una persona familiar|perhekeskeinen ihminen', 'con {mi} familia|perhee{ni/si} kanssa'],
+            pets: ['al gato al veterinario|kissan eläinlääkäriin', 'fotos de animales|kuvia eläimistä|ottaa', 'cosas bonitas a los animales|kauniita asioita eläimille',
+                    'al zoo|eläintarhaan', 'cuidar animales|hoitaa eläimiä|osata', 'en los derechos de los animales|eläinten oikeuksiin',
+                    'un animal en casa|eläin kotona', 'a casa con comida para el gato|kotiin kissanruoan kanssa', 'una persona de gatos|kissaihminen',
+                    'con los animales|eläinten kanssa'],
+            hometown: ['a los turistas al centro|turistit keskustaan', 'la compra en el centro|ostokset keskustassa', 'hola a los vecinos|hei naapureille',
+                    'al centro en bicicleta|keskustaan pyörällä', 'el nombre de todas las calles|kaikkien katujen nimet', 'en {mi} barrio|asuinaluee{seeni/seesi}',
+                    'un parque cerca de casa|puisto lähellä kotia', 'al centro en diez minutos|keskustaan kymmenessä minuutissa|päästä', 'una persona de ciudad|kaupunki-ihminen',
+                    'a gusto en {mi} ciudad|kaupungissa{ni/si}|viihtyä'],
+            morning: ['al perro de paseo|koiran lenkille', 'el desayuno|aamiaisen', 'buenos días a todos|huomenta kaikille',
+                    'al trabajo en bicicleta|töihin pyörällä', 'la hora sin mirar el reloj|kellonajan katsomatta kelloa', 'en el poder del café|kahvin voimaan',
+                    'prisa por las mañanas|kiire aamuisin', 'a tiempo al trabajo|ajoissa töihin', 'una persona madrugadora|aamuihminen', 'en la ducha|suihkussa'],
+            seasons: ['ropa de abrigo en invierno|lämpimiä vaatteita talvella|käyttää', 'excursiones en otoño|retkiä syksyllä', 'que el verano es corto|, että kesä on lyhyt',
+                    'a esquiar en invierno|hiihtämään talvella', 'cuándo empieza la primavera|, milloin kevät alkaa', 'en la magia del invierno|talven taikaan',
+                    'una estación favorita|lempivuodenaika', 'a la casa de verano en junio|mökille kesäkuussa', 'una persona de verano|kesäihminen',
+                    'al aire libre en primavera|ulkona keväällä'],
+            childhood: ['una mochila muy pesada|todella painavaa reppua|kantaa', 'travesuras|kepposia', 'muchas tonterías|paljon hassuja juttuja',
+                    'al colegio andando|kouluun kävellen', 'montar en bicicleta|ajaa pyörällä|osata', 'en Papá Noel|joulupukkiin',
+                    'muchos amigos|paljon ystäviä', 'tarde al colegio|myöhässä kouluun', 'una persona muy curiosa|todella utelias ihminen',
+                    'en el bosque con amigos|metsässä ystävien kanssa'],
+            celebrations: ['regalos a la fiesta|lahjoja juhliin', 'una gran cena|ison juhla-aterian', 'felicidades a todos|onnittelut kaikille',
+                    'a fiestas con amigos|juhliin ystävien kanssa', 'las canciones tradicionales|perinteiset laulut|osata', 'en las tradiciones|perinteisiin',
+                    'muchos invitados|paljon vieraita', 'a la fiesta a tiempo|juhliin ajoissa', 'una persona muy fiestera|juhlaihminen', 'con toda la familia|koko perheen kanssa'],
+            tech: ['el móvil a todas partes|puhelimen mukaan joka paikkaan|ottaa', 'fotos con el móvil|kuvia puhelimella|ottaa', 'que no a las redes sociales|ei sosiaaliselle medialle',
+                    'a la tienda de móviles|puhelinkauppaan', 'usar muchas aplicaciones|käyttää monia sovelluksia|osata', 'en la tecnología|teknologiaan',
+                    'un móvil nuevo|uusi puhelin', 'a casa sin batería|kotiin akku tyhjänä', 'una persona muy digital|todella digitaalinen ihminen',
+                    'en línea todo el día|verkossa koko päivän'],
+            sleep: ['un pijama de rayas|raidallista pyjamaa|käyttää', 'una siesta corta|lyhyet päiväunet|ottaa', 'buenas noches a todos|hyvää yötä kaikille',
+                    'a la cama temprano|nukkumaan aikaisin', 'dormir en cualquier sitio|nukkua missä tahansa|osata', 'en el poder del sueño|unen voimaan',
+                    'una cama muy cómoda|todella mukava sänky', 'a la cama muy tarde|sänkyyn todella myöhään|päästä', 'una persona dormilona|unikeko', 'en la cama|sängyssä'],
+            ideal_weekend: ['comida a la cabaña|ruokaa mökille', 'una excursión al bosque|retken metsään', 'que no al trabajo|ei työnteolle',
+                    'de compras|ostoksille', 'disfrutar del momento|nauttia hetkestä|osata', 'en el descanso total|täydelliseen lepoon',
+                    'todo el tiempo del mundo|kaikki maailman aika', 'a la cabaña el viernes|mökille perjantaina|saapua', 'una persona muy feliz|todella onnellinen ihminen',
+                    'junto a un lago|järven rannalla'],
+            closing: ['la práctica a otro nivel|harjoittelun uudelle tasolle', 'un gran esfuerzo|suuren ponnistuksen', 'muchas frases en español|monta lausetta espanjaksi',
+                    'paso a paso|askel kerrallaan', 'muchas respuestas|monta vastausta', 'en {mi} progreso|edistymisee{ni/si}',
+                    'una buena conversación|hyvä keskustelu', 'al final de la conversación|keskustelun loppuun|päästä', 'una persona muy constante|todella sinnikäs ihminen',
+                    'con ganas de aprender|innokas oppimaan'],
+
+            // Jatkokysymysten kertaukset
+            evening_fu: ['vino a casa de unos amigos|viiniä ystävien luo', 'la cena para dos|illallisen kahdelle', 'buenas noches a todos|hyvää yötä kaikille',
+                    'a un bar del centro|keskustan baariin', 'qué película ver|, mitä elokuvaa katsoa', 'en los buenos amigos|hyviin ystäviin',
+                    'una noche libre|vapaa ilta', 'a casa a medianoche|kotiin keskiyöllä', 'una persona muy sociable|todella sosiaalinen ihminen',
+                    'con {mis} amigos|ystävie{ni/si} kanssa'],
+            hobbies_fu: ['una agenda de actividades|harrastuskalenteria|pitää', 'deporte los sábados|urheilua lauantaisin|harrastaa', 'que el tiempo libre es sagrado|, että vapaa-aika on pyhää',
+                    'al gimnasio por la tarde|salilla iltapäivisin|käydä', 'organizar bien {mi} tiempo|järjestää aika{ni/si} hyvin|osata', 'en el equilibrio entre trabajo y ocio|työn ja vapaa-ajan tasapainoon',
+                    'poco tiempo libre|vähän vapaa-aikaa', 'a casa tarde del trabajo|kotiin myöhään töistä', 'una persona muy organizada|todella järjestelmällinen ihminen',
+                    'en el club los domingos|kerholla sunnuntaisin'],
+            yesterday_fu: ['el postre a la mesa|jälkiruoan pöytään', 'la cena en casa|illallisen kotona', 'que la comida estaba rica|, että ruoka oli hyvää',
+                    'a un restaurante nuevo|uuteen ravintolaan', 'el nombre del plato|ruokalajin nimen', 'al camarero|tarjoilijaa',
+                    'mucha hambre|kova nälkä', 'al restaurante a las ocho|ravintolaan kahdeksalta|saapua', 'una persona muy golosa|todellinen herkkusuu',
+                    'en la mesa con amigos|pöydässä ystävien kanssa'],
+            tomorrow_fu: ['el café a la cama|kahvin sänkyyn', 'la mochila por la noche|repun illalla|pakata', 'buenos días a {mi} familia|huomenta perhee{lleni/llesi}',
+                    'a la cama pronto|nukkumaan aikaisin', 'la hora del primer tren|ensimmäisen junan ajan', 'en la alarma del móvil|puhelimen herätykseen',
+                    'un despertador muy ruidoso|todella äänekäs herätyskello', 'puntual a la estación|ajoissa asemalle', 'una persona madrugadora|aamuihminen',
+                    'en pie a las seis|jalkeilla kuudelta'],
+            food_fu: ['un delantal en la cocina|esiliinaa keittiössä|käyttää', 'la comida para toda la semana|ruoat koko viikoksi', 'que la cena está lista|, että illallinen on valmis',
+                    'al mercado a por verduras|torille hakemaan vihanneksia', 'muchas recetas|monta reseptiä|osata', 'en la comida casera|kotiruokaan',
+                    'una cocina pequeña|pieni keittiö', 'a casa con ganas de cocinar|kotiin kokkausinnossa', 'una persona buena en la cocina|hyvä kokki',
+                    'en la cocina con {mi} pareja|keittiössä kumppani{ni/si} kanssa'],
+            travel_fu: ['una maleta pequeña|pienen matkalaukun|ottaa', 'un viaje inolvidable|unohtumattoman matkan', 'adiós a la rutina|hyvästit arjelle',
+                    'de viaje con amigos|matkalle ystävien kanssa|lähteä', 'el camino al hotel|tien hotellille', 'en los viajes en grupo|ryhmämatkoihin',
+                    'los billetes de avión|lentoliput', 'al hotel por la noche|hotellille illalla|saapua', 'una persona muy viajera|innokas matkailija',
+                    'lejos de casa|kaukana kotoa'],
+            learning_fu: ['un cuaderno de vocabulario|sanastovihkoa|pitää', 'ejercicios cada mañana|harjoituksia joka aamu', 'palabras nuevas en voz alta|uusia sanoja ääneen',
+                    'a un intercambio de idiomas|kielikahvilassa|käydä', 'los verbos irregulares|epäsäännölliset verbit|osata', 'en la práctica diaria|päivittäiseen harjoitteluun',
+                    'una aplicación para aprender|oppimissovellus', 'a la clase a tiempo|tunnille ajoissa', 'una persona disciplinada|kurinalainen ihminen',
+                    'en clase los martes|tunnilla tiistaisin'],
+            emotions_fu: ['una vida equilibrada|tasapainoista elämää|viettää', 'yoga por la tarde|joogaa iltaisin|harrastaa', 'cosas positivas|positiivisia asioita',
+                    'al bosque|metsään', 'cuidar{me}|huolehtia itsestä{ni/si}|osata', 'en los días mejores|parempiin päiviin',
+                    'buenos amigos|hyviä ystäviä', 'a casa con una sonrisa|kotiin hymyillen', 'una persona positiva|positiivinen ihminen', 'en la naturaleza|luonnossa'],
+            weather_fu: ['botas de invierno|talvisaappaita|käyttää', 'fotos de la nieve|kuvia lumesta|ottaa', 'que hace un día precioso|, että on upea päivä',
+                    'a la cafetería|kahvilaan', 'la temperatura exacta|tarkan lämpötilan', 'en el buen tiempo|hyvään säähän',
+                    'una manta muy suave|todella pehmeä viltti', 'a casa con las manos frías|kotiin kädet kylminä', 'una persona de exterior|ulkoilmaihminen',
+                    'en la terraza|terassilla'],
+            family_fu: ['regalos a {mis} abuelos|lahjoja isovanhemmil{leni/lesi}', 'videollamadas los domingos|videopuheluita sunnuntaisin|soittaa', 'buenas noticias a {mi} familia|hyviä uutisia perhee{lleni/llesi}',
+                    'a casa de {mis} abuelos|isovanhempie{ni/si} luo', 'las noticias de la familia|perheen kuulumiset', 'en las reuniones familiares|sukujuhliin',
+                    'muchos primos|paljon serkkuja', 'a casa de {mis} padres en tren|vanhempie{ni/si} luo junalla', 'una persona cercana a {mi} familia|läheinen perhee{ni/si} kanssa',
+                    'con {mis} hermanos|sisarus{teni/tesi} kanssa'],
+            pets_fu: ['al animal a pasear|eläimen ulkoilemaan', 'una casita para el animal|pienen kodin eläimelle', 'su nombre cada día|sen nimen joka päivä',
+                    'a la tienda de animales|eläinkauppaan', 'entrenar animales|kouluttaa eläimiä|osata', 'en la amistad con los animales|ystävyyteen eläinten kanssa',
+                    'un jardín grande|iso puutarha', 'a casa con comida para el animal|kotiin eläimen ruoan kanssa', 'una persona muy responsable|todella vastuullinen ihminen',
+                    'en el campo con los animales|maalla eläinten kanssa'],
+            hometown_fu: ['a los visitantes al puerto|vieraat satamaan', 'paseos por el parque|kävelyjä puistossa', 'buenos días al panadero|huomenta leipurille',
+                    'a la cafetería de la esquina|kulman kahvilaan', 'los mejores sitios de la ciudad|kaupungin parhaat paikat', 'en la vida de barrio|asuinalueen yhteisöllisyyteen',
+                    'vecinos muy amables|todella ystävälliset naapurit', 'al bosque en cinco minutos|metsään viidessä minuutissa|päästä', 'una persona de pueblo|pikkukaupungin ihminen',
+                    'en la plaza|torilla'],
+            morning_fu: ['el desayuno a la mesa|aamiaisen pöytään', 'gachas para todos|puuroa kaikille', 'que el desayuno es importante|, että aamiainen on tärkeä',
+                    'a la panadería temprano|leipomoon aikaisin', 'preparar un buen café|keittää hyvän kahvin|osata', 'en un desayuno completo|kunnon aamiaiseen',
+                    'poco tiempo por la mañana|vähän aikaa aamulla', 'a la mesa con sueño|aamiaispöytään unisena', 'una persona de café|kahvi-ihminen',
+                    'en la cocina a las siete|keittiössä seitsemältä'],
+            seasons_fu: ['una cesta al bosque|korin metsään', 'excursiones en bicicleta|pyöräretkiä', 'que es la mejor estación|, että se on paras vuodenaika',
+                    'al bosque a por setas|metsään sieneen', 'dónde hay muchas bayas|, missä on paljon marjoja', 'en la fuerza de la naturaleza|luonnon voimaan',
+                    'unos esquís nuevos|uudet sukset', 'a casa con la cesta llena|kotiin kori täynnä', 'una persona de naturaleza|luontoihminen', 'en el bosque|metsässä'],
+            childhood_fu: ['el almuerzo al colegio|eväät kouluun', 'tortitas con {mi} abuela|lettuja isoäi{tini/tisi} kanssa|paistaa', 'que no a las verduras|ei kasviksille',
+                    'a casa de {mis} abuelos|isovanhempie{ni/si} luo', 'hacer bocadillos|tehdä voileipiä|osata', 'en la magia|taikuuteen',
+                    'un plato favorito|lempiruoka', 'a casa con hambre|kotiin nälkäisenä', 'una persona muy golosa|todellinen herkkusuu',
+                    'en la cocina con {mi} abuela|keittiössä isoäi{tini/tisi} kanssa'],
+            celebrations_fu: ['la tarta a la mesa|kakun pöytään', 'la comida de fiesta|juhlaruoat', 'un brindis|maljapuheen|pitää',
+                    'a comprar los ingredientes|ostamaan aineksia', 'la receta tradicional|perinteisen reseptin|osata', 'en la buena suerte|hyvään onneen',
+                    'una mesa llena de comida|pöytä täynnä ruokaa', 'a la fiesta con un regalo|juhliin lahjan kanssa', 'una persona tradicional|perinteinen ihminen',
+                    'en la mesa con todos|pöydässä kaikkien kanssa'],
+            tech_fu: ['los auriculares|kuulokkeita|käyttää', 'videollamadas|videopuheluita|soittaa', 'buenos días por mensaje|huomenta viestillä',
+                    'a todas partes con el móvil|joka paikkaan puhelimen kanssa', 'muchos trucos del móvil|monta puhelinkikkaa|osata', 'en las noticias fiables|luotettaviin uutisiin',
+                    'muchas aplicaciones|paljon sovelluksia', 'a casa con el móvil sin batería|kotiin puhelimen akku tyhjänä', 'una persona curiosa con la tecnología|teknologiasta kiinnostunut ihminen',
+                    'en un grupo de WhatsApp|WhatsApp-ryhmässä'],
+            sleep_fu: ['un libro a la cama|kirjan sänkyyn', 'ejercicios de respiración|hengitysharjoituksia', 'buenas noches a {mi} pareja|hyvää yötä kumppanil{leni/lesi}',
+                    'al baño a lavar{me} los dientes|pesemään hampaat', 'relajar{me} antes de dormir|rentoutua ennen nukkumaanmenoa|osata', 'en las rutinas de noche|iltarutiineihin',
+                    'una lámpara de lectura|lukulamppu', 'al final del capítulo|luvun loppuun|päästä', 'una persona tranquila por la noche|rauhallinen ihminen iltaisin',
+                    'en la cama a las diez|sängyssä kymmeneltä'],
+            ideal_weekend_fu: ['pescado a la parrilla|kalaa grilliin', 'una barbacoa|grillijuhlat|pitää', '«¡salud!» a todos|”kippis!” kaikille',
+                    'a un bar de tapas|tapasbaariin', 'preparar un buen asado|valmistaa hyvän grilliaterian|osata', 'en la buena comida|hyvään ruokaan',
+                    'una mesa en la terraza|pöytä terassilla', 'al restaurante con hambre|ravintolaan nälkäisenä', 'una persona muy generosa|todella antelias ihminen',
+                    'en la terraza al sol|terassilla auringossa']
+        };
+
+        // Kunkin vastauksen aikamuoto (vastausten järjestyksessä)
+        var TENSES = {
+            start: 'pres indef pres pres perf perf',
+            work_day: 'perf perf perf perf perf',
+            weekend_plans: 'fut fut perf fut futs',
+            sport_today: 'perf perf perf perf perf',
+            series: 'pres pres pres perf',
+            beach: 'cond cond cond cond',
+            evening: 'imperf pres fut fut pres',
+            yesterday: 'indef indef indef indef indef',
+            tomorrow: 'pres pres pres fut pres',
+            food: 'pres pres fut pres futs',
+            travel: 'cond cond cond pres cond',
+            childhood: 'imperf imperf imperf imperf imperf',
+            ideal_weekend: 'cond cond cond cond cond',
+            closing: 'perf perf perf pres pres',
+            evening_fu: 'fut fut pres pres',
+            yesterday_fu: 'indef indef indef indef',
+            tomorrow_fu: 'fut fut fut pres',
+            travel_fu: 'cond cond cond cond',
+            pets_fu: 'cond cond cond cond',
+            childhood_fu: 'imperf imperf imperf imperf',
+            ideal_weekend_fu: 'cond cond cond cond'
+            // muut: presente
         };
 
         function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
-        // Rakentaa kertausparin: "Tengo ..." ja "¿Tienes ...?"
-        function buildDrill(d) {
-            var verb = d[0], tpl = d[1], forms = VERBS[verb];
-            var first = tpl.replace('{V}', forms[0])
-                .replace(/\{mis\}/g, 'mis').replace(/\{mi\}/g, 'mi').replace(/\{me\}/g, 'me');
-            var second = tpl.replace('{V}', forms[1])
-                .replace(/\{mis\}/g, 'tus').replace(/\{mi\}/g, 'tu').replace(/\{me\}/g, 'te');
-            return {
-                verb: verb, forms: forms,
-                es1: capitalize(first) + '.',
-                es2: '¿' + capitalize(second) + '?',
-                fi1: d[2], fi2: d[3]
-            };
+        function buildDrill(verb, entry, tense) {
+            var parts = entry.split('|');
+            var es = parts[0], fi = parts[1], fiKey = parts[2] || FI_DEFAULT[verb];
+            var esF = esForms(verb, tense), fiF = fiForms(fiKey, tense);
+            function esLine(p) {
+                var c = p === 0
+                    ? es.replace(/\{mis\}/g, 'mis').replace(/\{mi\}/g, 'mi').replace(/\{me\}/g, 'me')
+                    : es.replace(/\{mis\}/g, 'tus').replace(/\{mi\}/g, 'tu').replace(/\{me\}/g, 'te');
+                return capitalize(esF[p] + ' ' + c) + '.';
+            }
+            function fiLine(p) {
+                var c = fi.replace(/\{([^\/}]*)\/([^}]*)\}/g, function(m, a, b) { return p === 0 ? a : b; });
+                return capitalize(fiF[p] + (c.charAt(0) === ',' ? '' : ' ') + c) + '.';
+            }
+            return { verb: verb, forms: esF, es1: esLine(0), es2: esLine(1), fi1: fiLine(0), fi2: fiLine(1) };
         }
 
-        // Liitetään kertaus jokaiseen vastausvaihtoehtoon
+        // Liitetään jokaiseen vastaukseen aikamuoto ja 10 kertausparia
         Object.keys(NODES).forEach(function(id) {
-            var list = DRILLS[id] || [];
+            var set = DRILL_SETS[id];
+            var tenses = (TENSES[id] || '').split(' ');
             NODES[id].opts.forEach(function(opt, i) {
-                if (list[i]) opt.drill = buildDrill(list[i]);
+                opt.tense = tenses[i] || 'pres';
+                if (set) opt.drills = VERB_ORDER.map(function(v, k) { return buildDrill(v, set[k], opt.tense); });
             });
         });
-
         // ------------------------------------------------------------------
         //  TILA
         // ------------------------------------------------------------------
@@ -1180,7 +1513,10 @@
                 if (i >= items.length) { if (onDone) onDone(); return; }
                 var it = items[i++];
                 if (!it.text) { next(); return; }
-                if (it.el) it.el.classList.add('reading');
+                if (it.el) {
+                    it.el.classList.add('reading');
+                    try { it.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+                }
                 speak(it.text, it.role, function() {
                     if (my !== queueToken) return;
                     if (it.el) it.el.classList.remove('reading');
@@ -1230,6 +1566,9 @@
         function pickNextNodeId(option) {
             if (state.currentNodeId === CLOSING_NODE) return null;
             if (option.next && !state.visited[option.next]) return option.next;
+            // Muuten jatkokysymys sen aiheen perusteella, johon juuri vastasit
+            var cur = NODES[state.currentNodeId];
+            if (cur && cur.fu && !state.visited[cur.fu]) return cur.fu;
             while (state.mainQueue.length) {
                 var id = state.mainQueue.shift();
                 if (!state.visited[id]) return id;
@@ -1383,8 +1722,6 @@
             state.currentQuestionEs = qEsText;
             var ackBlock = document.getElementById('ack-block');
             var drillBlock = document.getElementById('drill-block');
-            var drill1 = document.getElementById('drill-1');
-            var drill2 = document.getElementById('drill-2');
             var qBlock = document.getElementById('question-block');
             var box = document.getElementById('ai-box');
             var items = [];
@@ -1398,20 +1735,32 @@
                 ackBlock.classList.add('hidden');
             }
 
-            var d = option && option.drill;
-            if (d) {
-                setText('drill-verb', d.verb);
-                setText('drill-forms', '(yo ' + d.forms[0] + ' → tú ' + d.forms[1] + ')');
-                setText('drill-1-es', d.es1);
-                setText('drill-1-fi', d.fi1);
-                setText('drill-2-es', d.es2);
-                setText('drill-2-fi', d.fi2);
+            var drills = option && option.drills;
+            var list = document.getElementById('drill-list');
+            list.innerHTML = '';
+            if (drills && drills.length) {
+                setText('drill-tense', TENSE_LABELS[option.tense] || option.tense);
+                drills.forEach(function(d) {
+                    var row = document.createElement('div');
+                    row.className = 'border-l-2 border-emerald-700/60 pl-2';
+                    row.innerHTML =
+                        '<div class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">' + escapeHtml(d.verb) +
+                        ' <span class="normal-case tracking-normal text-emerald-200/70">· ' + escapeHtml(d.forms[0]) + ' / ' + escapeHtml(d.forms[1]) + '</span></div>' +
+                        '<div class="drill-yo speak-line cursor-pointer rounded px-1 -mx-1">' +
+                            '<p class="text-sm sm:text-base font-bold text-emerald-100 leading-snug">' + escapeHtml(d.es1) + '</p>' +
+                            '<p class="translation-hint text-xs text-emerald-200/60 italic leading-tight">' + escapeHtml(d.fi1) + '</p></div>' +
+                        '<div class="drill-tu speak-line cursor-pointer rounded px-1 -mx-1">' +
+                            '<p class="text-sm sm:text-base font-bold text-amber-200 leading-snug">' + escapeHtml(d.es2) + '</p>' +
+                            '<p class="translation-hint text-xs text-amber-200/60 italic leading-tight">' + escapeHtml(d.fi2) + '</p></div>';
+                    var yo = row.querySelector('.drill-yo'), tu = row.querySelector('.drill-tu');
+                    yo.onclick = function() { say(d.es1, 'user'); };
+                    tu.onclick = function() { say(d.es2, 'ai'); };
+                    list.appendChild(row);
+                    items.push({ text: d.es1, role: 'user', el: yo, pause: 300 });
+                    items.push({ text: d.es2, role: 'ai', el: tu, pause: 500 });
+                });
+                list.scrollTop = 0;
                 drillBlock.classList.remove('hidden');
-                // Tauko 1. persoonan lauseen jälkeen, jotta ehdit toistaa sen itse
-                items.push({ text: d.es1, role: 'user', el: drill1, pause: 1400 });
-                items.push({ text: d.es2, role: 'ai', el: drill2, pause: 700 });
-                drill1.onclick = function() { say(d.es1, 'user'); };
-                drill2.onclick = function() { say(d.es2, 'ai'); };
             } else {
                 drillBlock.classList.add('hidden');
             }
