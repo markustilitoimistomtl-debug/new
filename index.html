@@ -488,6 +488,14 @@ const TEAMS={};
     if((og==='AA'||og==='AN')&&!['US','AN','AA'].includes(ORG[p.n])){for(let t=0;t<20;t++){const c=NP.US.f[(rr()*NP.US.f.length)|0];if(!usedN.has(c+' '+nl)){f=c;break;}}}
     if(FN[og]&&ORG[p.n]!==og){for(let t=0;t<20;t++){const c=FN[og][(rr()*FN[og].length)|0];if(!usedN.has(c+' '+nl)){f=c;break;}}}
     usedN.delete(p.n);delete ORG[p.n];p.n=f+' '+nl;usedN.add(p.n);ORG[p.n]=og;cnt[nl]=1;});
+  // Latino players are traded to Mexico City: first everybody with a Latino surname, then, while the roster still has room,
+  // players with a Latino first name. Each trade is one for one at the same position, so every roster keeps its shape.
+  const MX=TEAMS.MEX;if(MX){const LATF=new Set([...FN.LA,'Antonio','Jose','Juan','Pedro','Manuel','Fernando','Ricardo','Alejandro','Jorge','Raul','Hector','Rafael','Carlos']);
+    const latS=p=>ORG[p.n]==='LA',latF=p=>LATF.has(p.n.slice(0,p.n.indexOf(' '))),free=(T,no)=>{const u=new Set(T.P.map(q=>q.no));if(!u.has(no))return no;for(let n=0;n<56;n++)if(!u.has(n))return n;return no;};
+    const trade=(want,keep)=>{for(const k of Object.keys(TEAMS)){if(k==='MEX')continue;const T=TEAMS[k];
+      for(const p of T.P.slice()){if(!want(p))continue;const grp={PG:'G',SG:'G',SF:'F',PF:'F',C:'C'},q=MX.P.find(x=>x.pos===p.pos&&!keep(x))||MX.P.find(x=>grp[x.pos]===grp[p.pos]&&!keep(x));if(!q)continue;   // same position, else a guard for a guard / forward for a forward
+        const i=MX.P.indexOf(q),j=T.P.indexOf(p);MX.P[i]=p;T.P[j]=q;if(p.pos!==q.pos)[p.pos,q.pos]=[q.pos,p.pos];p.no=free({P:MX.P.filter(x=>x!==p)},p.no);q.no=free({P:T.P.filter(x=>x!==q)},q.no);}}};
+    trade(latS,latS);trade(p=>latF(p)&&!latS(p),p=>latS(p)||latF(p));}
 })();
 
 /* ---------- geometry ---------- */
@@ -1173,7 +1181,8 @@ function carrierAI(p,dt){
   // failed dribble -> double dribble
   if(p.pickT>0){p.pickT-=dt;if(p.pickT<=0){p.pickT=0;turnover(t,'DOUBLE DRIBBLE');return null;}return[p.x,p.y,p.pickT>0.4?0:0.3];}
   // last-second heave from anywhere
-  if(!G.buzz&&G.clock<=2.6&&G.clock>0.15&&G.state==='play'&&d>26&&G.human!==t){emit('heave',p);doShot(p,null);return null;}
+  // no heaves from behind the line through the top of his own three-point arc: run it up and let it go once past that line
+  if(!G.buzz&&G.clock<=2.6&&G.clock>0.15&&G.state==='play'&&d>26&&G.human!==t){if(dp>CW-HOOPS[0]-23.75)return[hx,HY,1];emit('heave',p);doShot(p,null);return null;}
   // pointing out the open man, then passing to him
   if(p.pointT>0){p.pointT-=dt;if(p.pointT<=0){const m=p.pointTo;p.pointTo=null;if(m&&m.down<=0&&laneOpen(p.x,p.y,m.x,m.y,t,2.2)){doPass(p,m);return null;}}else return[p.x,p.y,0.15];}
   // breakaway: nobody back
