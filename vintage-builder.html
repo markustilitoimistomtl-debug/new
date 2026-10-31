@@ -173,7 +173,7 @@ function toast(msg,ms=3500){let t=document.querySelector('.toast');if(!t){t=docu
 /* ============ read the game file ============ */
 function readGame(text){
   const lines=text.split('\n');
-  const want=/^(const (VOX_DATA|SFX_DATA|MUSIC_LONG|TM_KEY|NAMEOFF|HEMAP|PB|TN_META|JX_META|LINE_META|ABBR|LEAGUE_REC|KITS|DEFAULT_LOOK|DEFAULT_MUSIC_USE)\b|let MUSIC_LONG\b|Object\.assign\((VOX|SFX)_DATA|VOX_DATA\.|SFX_DATA\.)/;
+  const want=/^(const (VOX_DATA|SFX_DATA|MUSIC_LONG|TM_KEY|NAMEOFF|HEMAP|PB|TN_META|JX_META|LINE_META|ABBR|LEAGUE_REC|KITS|DEFAULT_LOOK|DEFAULT_MUSIC_USE)\b|let MUSIC_LONG\b|Object\.assign\((VOX|SFX)_DATA|Object\.assign\(HEMAP|VOX_DATA\.|SFX_DATA\.)/;
   let code='';for(const l of lines)if(want.test(l))code+=l+'\n';
   const a=text.indexOf('const LEAGUE=[\n');const b=text.indexOf(']];',a);if(a<0||b<0)throw new Error('This does not look like the Vintage Basket game file (no team list found).');
   code+=text.slice(a,b+3)+'\n';
@@ -234,7 +234,8 @@ async function rowParts(kind,c,ctx){const len=await lenOf(c);let label=[];const 
   else if(kind==='pb'){const m=c.orig?S.meta.pb[ctx.key]:(fillsOf(c.text)[0]?.pos==='start'?{he:0}:{});
     if(m&&m.he!=null&&Math.random()<0.6){out.push(...fill('P'),{pause:0.06},{src:c.src,off:m.he});}else out.push({src:c.src});}
   else if(kind==='arr'){const pre=ctx.pre;const H=c.orig?S.hemap[ctx.cat+c.i]:null;
-    if(pre==='P'){const nm=fill('P');if(H&&H[0]==='rep')out.push({src:c.src,dur:H[1]},...nm,{src:c.src,off:H[2]});else if(H&&H[0]==='ins')out.push({src:c.src,dur:H[1]},{pause:0.06},...nm,{src:c.src,off:H[1]});
+    if(pre==='P'&&H&&H[0]==='none')out.push({src:c.src});   // said without the name
+    else if(pre==='P'){const nm=fill('P');if(H&&H[0]==='rep')out.push({src:c.src,dur:H[1]},...nm,{src:c.src,off:H[2]});else if(H&&H[0]==='ins')out.push({src:c.src,dur:H[1]},{pause:0.06},...nm,{src:c.src,off:H[1]});
       else{const F=c.orig?[]:fillsOf(c.text);const cut=+c.cut;if(F[0]&&F[0].pos==='mid'&&cut>0)out.push({src:c.src,dur:cut},...nm,{src:c.src,off:cut});else out.push(...nm,{pause:0.15},{src:c.src});}}
     else if(pre==='X'){out.push(...fill('A'),{pause:0.05},{src:c.src});}
     else if(ctx.cat==='atm1a'||ctx.cat==='atm5a'||ctx.cat==='atm6a'){out.push({src:c.src},...fill('A'));}
