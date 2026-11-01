@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<title>Välilehtitallennin</title>
+<style>
+  :root { --bg:#fff; --fg:#1d1b22; --dim:#6b6675; --line:#d9d5e0; --acc:#d93025; --field:#f5f3f8; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1c1824; --fg:#ece8f2; --dim:#a39cad; --line:#3a3346; --field:#26212f; } }
+  body { margin:0; width:300px; background:var(--bg); color:var(--fg); font:14px/1.4 system-ui, sans-serif; }
+  main { padding:14px; display:flex; flex-direction:column; gap:12px; }
+  h1 { font-size:15px; margin:0; display:flex; align-items:center; gap:8px; }
+  h1 .dot { width:10px; height:10px; border-radius:50%; background:var(--acc); }
+  label.f { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--dim); }
+  select { font:inherit; color:var(--fg); background:var(--field); border:1px solid var(--line); border-radius:6px; padding:6px 8px; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .chk { display:flex; gap:8px; align-items:center; font-size:13px; }
+  button { font:600 15px system-ui, sans-serif; border:0; border-radius:8px; padding:11px; cursor:pointer; background:var(--acc); color:#fff; }
+  button.stop { background:var(--fg); color:var(--bg); }
+  button:disabled { opacity:.5; cursor:default; }
+  .status { font-size:12px; color:var(--dim); min-height:1em; }
+  .status.err { color:var(--acc); }
+  .timer { font:600 26px ui-monospace, monospace; text-align:center; }
+  .hint { font-size:11px; color:var(--dim); }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1><span class="dot"></span>Välilehtitallennin</h1>
+
+  <div id="setup">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <label class="f">Resoluutio
+        <select id="res"></select>
+      </label>
+      <div class="row">
+        <label class="f">Kuvataajuus
+          <select id="fps"><option value="60">60 fps</option><option value="30">30 fps</option></select>
+        </label>
+        <label class="f">Tiedostomuoto
+          <select id="format"><option value="auto">Automaattinen</option><option value="mp4">MP4</option><option value="webm">WebM</option></select>
+        </label>
+      </div>
+      <label class="chk"><input type="checkbox" id="audio"> Tallenna välilehden ääni</label>
+      <label class="chk"><input type="checkbox" id="exact"> Tarkka 16:9-koko (mustat reunat tarvittaessa)</label>
+    </div>
+  </div>
+
+  <div id="live" hidden>
+    <div class="timer" id="timer">00:00</div>
+    <div class="status" id="liveInfo"></div>
+  </div>
+
+  <button id="go">Aloita tallennus</button>
+  <div class="status" id="status"></div>
+  <div class="hint">Pikanäppäin: Alt+Shift+R. Tallenteet menevät Lataukset-kansion alikansioon "Välilehtitallennin".</div>
+</main>
+<script src="settings.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

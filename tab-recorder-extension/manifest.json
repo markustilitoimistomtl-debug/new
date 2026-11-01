@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Välilehtitallennin",
+  "version": "1.0.0",
+  "description": "Tallentaa selainvälilehden kuvan ja äänen videoksi valittavalla resoluutiolla (oletus 1440p).",
+  "minimum_chrome_version": "116",
+  "permissions": ["tabCapture", "offscreen", "downloads", "storage", "activeTab"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "Välilehtitallennin",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png" }
+  },
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "commands": {
+    "toggle-recording": {
+      "suggested_key": { "default": "Alt+Shift+R" },
+      "description": "Aloita / lopeta tallennus"
+    }
+  }
+}
