@@ -46,6 +46,50 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 const wrapA = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
 const hyp = Math.hypot;
 
+
+// ---------------------------------------------------------------- kielet / languages
+const TXT = {
+  en: {
+    t1: 'TABLE&nbsp;', t2: 'HOCKEY', logo: 'TABLE HOCKEY',
+    sub: 'Players move only in their slots and spin on their rods. The puck bounces off the boards, the goal frame and the players – into the air too.',
+    b1: '1 player vs. computer', b2: '2 players', b0: 'Watch: computer vs. computer', bres: 'Resume game',
+    diff: 'Difficulty', d0: 'Easy', d1: 'Normal', d2: 'Hard', plen: 'Period length', autog: 'Automatic goalie',
+    k1: '<b>Home (blue)</b><br><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move player along its slot<br><kbd>Q</kbd>/<kbd>E</kbd> spin counter-/clockwise<br><kbd>Space</kbd> shoot (full spin)<br><kbd>Tab</kbd> switch player (otherwise automatic)<br>Mouse (1 player): player follows the cursor in its slot, left/right button = spin, wheel = turn',
+    k2: '<b>Away (red, 2 players)</b><br>Arrow keys: move along slot<br><kbd>,</kbd>/<kbd>.</kbd> spin<br><kbd>/</kbd> shoot (<kbd>-</kbd> on Nordic keyboards)<br><kbd>Enter</kbd> switch player<br><br><kbd>P</kbd>/<kbd>Esc</kbd> pause · <kbd>H</kbd> hitboxes · <kbd>M</kbd> sound',
+    drop: 'Puck drop at centre ice…', goalH: 'GOAL! HOME', goalA: 'GOAL! AWAY', ot: 'Tied – overtime! Next goal wins.',
+    pend: n => 'End of period ' + n, homeW: 'HOME WINS', awayW: 'AWAY WINS', tie: 'TIE GAME', stuck: 'Puck stuck – new drop',
+    shots: 'SHOTS ON GOAL', home: 'HOME', away: 'AWAY', period: 'PERIOD', overtime: 'OVERTIME', otShort: 'OT', goals: 'SCORE',
+    newGame: 'Space / Enter = new game', watch: 'WATCH MODE – computer vs. computer',
+    hint: m => (m ? 'Sound off (M)' : 'M = sound') + '  ·  H = hitboxes  ·  P = pause', title: 'Table Hockey'
+  },
+  fi: {
+    t1: 'PÖYTÄ', t2: 'KIEKKO', logo: 'PÖYTÄKIEKKO',
+    sub: 'Ukot liikkuvat vain urissaan ja pyörivät akselinsa ympäri. Kiekko kimpoaa laidoista, maalikehikosta ja ukoista – myös ilmaan.',
+    b1: '1 pelaaja vs. tietokone', b2: '2 pelaajaa', b0: 'Katsele: tietokone vs. tietokone', bres: 'Jatka peliä',
+    diff: 'Vaikeustaso', d0: 'Helppo', d1: 'Normaali', d2: 'Vaikea', plen: 'Erän pituus', autog: 'Automaattinen maalivahti',
+    k1: '<b>Koti (sininen)</b><br><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ukko liikkuu urassaan<br><kbd>Q</kbd>/<kbd>E</kbd> pyöritys vasta-/myötäpäivään<br><kbd>Välilyönti</kbd> laukaus (täysi kierros)<br><kbd>Tab</kbd> vaihda ukkoa (muuten automaattinen)<br>Hiiri (1 pelaaja): liike = ukko seuraa urassaan, vasen/oikea nappi = pyöritys, rulla = kierto',
+    k2: '<b>Vieras (punainen, 2 pelaajaa)</b><br>Nuolinäppäimet: liike urassa<br><kbd>,</kbd>/<kbd>.</kbd> pyöritys<br><kbd>-</kbd> laukaus<br><kbd>Enter</kbd> vaihda ukkoa<br><br><kbd>P</kbd>/<kbd>Esc</kbd> tauko · <kbd>H</kbd> osuma-alueet · <kbd>M</kbd> äänet',
+    drop: 'Kiekko pudotetaan keskiympyrään…', goalH: 'MAALI! KOTI', goalA: 'MAALI! VIERAS', ot: 'Tasapeli – jatkoaika! Seuraava maali ratkaisee.',
+    pend: n => n + '. erä päättyi', homeW: 'KOTI VOITTI', awayW: 'VIERAS VOITTI', tie: 'TASAPELI', stuck: 'Kiekko jumissa – uusi pudotus',
+    shots: 'LAUKAUKSET', home: 'KOTI', away: 'VIERAS', period: 'ERÄ', overtime: 'JATKOAIKA', otShort: 'JA', goals: 'MAALIT',
+    newGame: 'Välilyönti / Enter = uusi peli', watch: 'KATSELUTILA – tietokone vs. tietokone',
+    hint: m => (m ? 'Äänet pois (M)' : 'M = äänet') + '  ·  H = osuma-alueet  ·  P = tauko', title: 'Pöytäkiekko'
+  }
+};
+let LANG = 'en';
+try { const l = localStorage.getItem('tablehockey.lang'); if (l && TXT[l]) LANG = l; } catch (e) { }
+const T = k => TXT[LANG][k];
+function applyLang() {
+  document.documentElement.lang = LANG; document.title = T('title');
+  document.querySelectorAll('[data-i]').forEach(el => { el.innerHTML = T(el.dataset.i); });
+  document.getElementById('lang').value = LANG;
+}
+document.getElementById('lang').onchange = e => {
+  LANG = e.target.value; try { localStorage.setItem('tablehockey.lang', LANG); } catch (er) { }
+  applyLang(); if (bgCanvas) renderStatic();
+};
+applyLang();
+
 // ---------------------------------------------------------------- canvas & kuvat
 const cv = document.getElementById('c');
 const mainCtx = cv.getContext('2d');
@@ -175,8 +219,8 @@ function updateLoops(dt) {
   rod = Math.min(1.4, rod);
   const rattle = 0.6 + Math.random() * 0.8;
   const on = !muted && !G.paused;
-  loops.rod.g.gain.setTargetAtTime(on ? rod * 0.16 * rattle : 0, t, 0.02);
-  loops.rod2.g.gain.setTargetAtTime(on ? rod * 0.12 : 0, t, 0.03);
+  loops.rod.g.gain.setTargetAtTime(on ? rod * 0.05 * rattle : 0, t, 0.02);
+  loops.rod2.g.gain.setTargetAtTime(on ? rod * 0.035 : 0, t, 0.03);
   loops.rod.f.frequency.setTargetAtTime(900 + rod * 500, t, 0.05);
   const sp = puck.hidden || puck.falling || puck.z > 0.05 ? 0 : Math.min(1, hyp(puck.vx, puck.vy) / 220);
   loops.slide.g.gain.setTargetAtTime(on ? sp * 0.07 : 0, t, 0.03);
@@ -195,7 +239,8 @@ function snd(type, vol = 1) {
   lastSnd[type] = now;
   vol = Math.min(1, vol);
   const g = AC.createGain(); g.connect(AC.destination);
-  if (type === 'hit' || type === 'board' || type === 'ice' || type === 'net' || type === 'tick' || type === 'groove') {
+  if (type === 'board') { boardKnock(vol); return; }
+  if (type === 'hit' || type === 'ice' || type === 'net' || type === 'tick' || type === 'groove') {
     const s = AC.createBufferSource(); s.buffer = noiseBuf();
     const f = AC.createBiquadFilter(); f.type = 'bandpass';
     const conf = { hit: [2600, 6, 0.05], board: [520, 2, 0.09], ice: [1500, 3, 0.04], net: [900, 1, 0.12], tick: [4200, 9, 0.018], groove: [1900, 5, 0.028] }[type];
@@ -232,6 +277,25 @@ function snd(type, vol = 1) {
     const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900; o.connect(f); f.connect(g);
     g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.4); o.start(now); o.stop(now + 0.4);
   }
+}
+// kiekon kopsahdus laitaan: ontto muovilaidan "kop" – oma tunnistettava äänensä
+function boardKnock(vol) {
+  const now = AC.currentTime;
+  const out = AC.createGain(); out.gain.value = 0.9 * vol; out.connect(AC.destination);
+  // laidan resonanssit (ontto muovi), pieni sävelkorkeuden pudotus iskussa
+  [[235, 0.55, 0.11], [470, 0.3, 0.07], [690, 0.18, 0.05]].forEach(([fr, a, d]) => {
+    const o = AC.createOscillator(); o.type = 'sine';
+    const f0 = fr * rnd(0.95, 1.05);
+    o.frequency.setValueAtTime(f0 * 1.35, now); o.frequency.exponentialRampToValueAtTime(f0, now + 0.012);
+    const g = AC.createGain(); g.gain.setValueAtTime(0.0001, now); g.gain.exponentialRampToValueAtTime(a, now + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0005, now + d);
+    o.connect(g); g.connect(out); o.start(now); o.stop(now + d + 0.02);
+  });
+  // terävä isku (kiekon reuna osuu)
+  const s = AC.createBufferSource(); s.buffer = noiseBuf();
+  const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1800;
+  const g = AC.createGain(); g.gain.setValueAtTime(0.35, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.014);
+  s.connect(f); f.connect(g); g.connect(out); s.start(now, Math.random() * 0.2, 0.03);
 }
 function synthHorn() {
   if (!AC) return;
@@ -518,7 +582,7 @@ function stepFigure(f, dt) {
   }
   f.ang = wrapA(f.ang + f.angVel * dt);
   f.click = (f.click || 0) + Math.abs(f.angVel) * dt;
-  if (f.click > 0.9) { f.click = 0; snd('tick', Math.min(1, Math.abs(f.angVel) / 30) * 0.5); }
+  if (f.click > 0.9) { f.click = 0; snd('tick', Math.min(1, Math.abs(f.angVel) / 30) * 0.3); }
 }
 
 function hitCapsule(ax, ay, bx, by, r, vax, vay, vbx, vby, e, liftK, kind) {
@@ -607,7 +671,7 @@ function collideBoards() {
       puck.vx -= vt * tx * 0.08; puck.vy -= vt * ty * 0.08;
       puck.spin -= vt * 0.3;
       if (-vn > 80 && Math.random() < 0.3 && puck.z < 1) { puck.vz += -vn * rnd(0, 0.09); puck.tumbleRate = rnd(8, 20); }
-      snd('board', -vn / 160);
+      snd('board', 0.25 + -vn / 140);
     }
   }
   if (puck.z + PUCK_H > DOME_Z) { puck.z = DOME_Z - PUCK_H; if (puck.vz > 0) puck.vz *= -0.4; snd('board', 0.2); }
@@ -759,14 +823,14 @@ function dropPuck() {
 function faceoff(delay = 1.2) {
   puck.hidden = true; puck.falling = false;
   G.state = 'drop'; G.timer = delay;
-  message('Kiekko pudotetaan keskiympyrään…', delay);
+  message(T('drop'), delay);
 }
 function goalScored(team) {
   if (G.state !== 'play') return;
   G.score[team]++;
   G.shots[team]++;
   G.state = 'goal'; G.timer = 3.2;
-  message(team === 0 ? 'MAALI! KOTI' : 'MAALI! VIERAS', 3, true);
+  message(team === 0 ? T('goalH') : T('goalA'), 3, true);
   snd('horn');
   G.goalFlash = 1.6; G.goalTeam = team;
   if (G.overtime) { G.timer = 3.2; G.endAfterGoal = true; }
@@ -804,16 +868,16 @@ function endPeriod() {
   if (G.period >= 3 && G.score[0] !== G.score[1] || G.overtime) { gameOver(); return; }
   if (G.period >= 3) {
     G.overtime = true; G.period = 4; G.clock = G.periodLen;
-    G.state = 'periodEnd'; G.timer = 3; message('Tasapeli – jatkoaika! Seuraava maali ratkaisee.', 3, true);
+    G.state = 'periodEnd'; G.timer = 3; message(T('ot'), 3, true);
     return;
   }
   G.state = 'periodEnd'; G.timer = 3;
-  message(G.period + '. erä päättyi', 3, true);
+  message(T('pend')(G.period), 3, true);
   G.period++; G.clock = G.periodLen;
 }
 function gameOver() {
   G.state = 'over'; puck.hidden = true;
-  const w = G.score[0] > G.score[1] ? 'KOTI VOITTI' : G.score[1] > G.score[0] ? 'VIERAS VOITTI' : 'TASAPELI';
+  const w = G.score[0] > G.score[1] ? T('homeW') : G.score[1] > G.score[0] ? T('awayW') : T('tie');
   message(w + '  ' + G.score[0] + '–' + G.score[1], 999, true);
 }
 
@@ -865,7 +929,7 @@ function update(dt) {
     if (sp < 4 && (!near || puck.z > 0.5)) G.stuckT += dt;
     else if (sp < 2) G.stuckT += dt * 0.5;
     else G.stuckT = 0;
-    if (G.stuckT > 4.5) { message('Kiekko jumissa – uusi pudotus', 1.4); faceoff(1.2); }
+    if (G.stuckT > 4.5) { message(T('stuck'), 1.4); faceoff(1.2); }
   }
 }
 
@@ -995,8 +1059,9 @@ function drawLogo(c) {
   const oc = document.createElement('canvas'); oc.width = 600; oc.height = 150;
   const o = oc.getContext('2d');
   o.font = 'italic 900 92px system-ui, sans-serif'; o.textAlign = 'center'; o.textBaseline = 'middle';
-  o.lineWidth = 10; o.strokeStyle = '#ffffff'; o.strokeText('PÖYTÄKIEKKO', 300, 78);
-  o.fillStyle = '#2b3f9e'; o.fillText('PÖYTÄKIEKKO', 300, 78);
+  const fs = Math.min(92, 92 * 560 / o.measureText(T('logo')).width); o.font = `italic 900 ${fs}px system-ui, sans-serif`;
+  o.lineWidth = 10; o.strokeStyle = '#ffffff'; o.strokeText(T('logo'), 300, 78);
+  o.fillStyle = '#2b3f9e'; o.fillText(T('logo'), 300, 78);
   // affiini: kuvan vasen-ylä -> maailma (-10, 52.5), oikea-ylä -> (10, 52.5), vasen-ala -> (-10, 47.5)
   const p0 = P(-10, 52.5), p1 = P(10, 52.5), p2 = P(-10, 47.5);
   c.save();
@@ -1136,7 +1201,7 @@ function drawScoreboard() {
     c.shadowColor = col; c.shadowBlur = 10; c.fillStyle = col; c.fillText(txt, cx, cy); c.shadowBlur = 0;
   };
   const lab = (txt, cx, cy, size) => { c.font = `600 ${size}px system-ui, sans-serif`; c.fillStyle = '#d7dbe3'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, cx, cy); };
-  lab('LAUKAUKSET', VW / 2, y + h * 0.12, h * 0.1);
+  lab(T('shots'), VW / 2, y + h * 0.12, h * 0.1);
   led(String(G.shots[0]).padStart(2, ' '), x + w * 0.12, y + h * 0.24, h * 0.2);
   led(String(G.shots[1]).padStart(2, ' '), x + w * 0.88, y + h * 0.24, h * 0.2);
   const cl = Math.ceil(G.clock), mm = Math.floor(cl / 60), ss = cl % 60;
@@ -1144,12 +1209,12 @@ function drawScoreboard() {
   // joukkueet
   c.fillStyle = TEAM_COL[0]; roundRect(c, x + w * 0.04, y + h * 0.5, w * 0.24, h * 0.17, 4); c.fill();
   c.fillStyle = TEAM_COL[1]; roundRect(c, x + w * 0.72, y + h * 0.5, w * 0.24, h * 0.17, 4); c.fill();
-  lab('KOTI', x + w * 0.16, y + h * 0.585, h * 0.12); lab('VIERAS', x + w * 0.84, y + h * 0.585, h * 0.12);
-  lab(G.overtime ? 'JATKOAIKA' : 'ERÄ', VW / 2, y + h * 0.58, h * 0.1);
-  led(G.overtime ? 'JA' : String(G.period), VW / 2, y + h * 0.75, h * 0.2, '#ffb020');
+  lab(T('home'), x + w * 0.16, y + h * 0.585, h * 0.12); lab(T('away'), x + w * 0.84, y + h * 0.585, h * 0.12);
+  lab(G.overtime ? T('overtime') : T('period'), VW / 2, y + h * 0.58, h * 0.1);
+  led(G.overtime ? T('otShort') : String(G.period), VW / 2, y + h * 0.75, h * 0.2, '#ffb020');
   led(String(G.score[0]), x + w * 0.3, y + h * 0.83, h * 0.3);
   led(String(G.score[1]), x + w * 0.7, y + h * 0.83, h * 0.3);
-  lab('MAALIT', VW / 2, y + h * 0.93, h * 0.08);
+  lab(T('goals'), VW / 2, y + h * 0.93, h * 0.08);
 }
 function sbSize() { const w = Math.min(440, VW * 0.46); return { w, h: w * 0.27 }; }
 function roundRect(c, x, y, w, h, r) {
@@ -1202,7 +1267,7 @@ function render() {
     c.fillStyle = G.msgBig ? '#ffd23a' : '#ffffff'; c.fillText(G.msg, VW / 2, y);
     if (G.state === 'over') {
       c.font = `600 ${Math.min(20, VW / 40)}px system-ui, sans-serif`;
-      c.fillStyle = '#fff'; c.fillText('Välilyönti / Enter = uusi peli', VW / 2, y + 60);
+      c.fillStyle = '#fff'; c.fillText(T('newGame'), VW / 2, y + 60);
     }
     c.globalAlpha = 1;
   }
@@ -1213,10 +1278,10 @@ function render() {
   c.font = '12px system-ui, sans-serif'; c.fillStyle = 'rgba(220,226,236,0.55)'; c.textAlign = 'left'; c.textBaseline = 'bottom';
   if (G.mode === 0 && !G.demo) {
     c.font = '700 14px system-ui, sans-serif'; c.fillStyle = 'rgba(255,210,58,0.85)'; c.textAlign = 'left'; c.textBaseline = 'top';
-    c.fillText('KATSELUTILA – tietokone vs. tietokone', 14, 14);
+    c.fillText(T('watch'), 14, 14);
     c.font = '12px system-ui, sans-serif'; c.fillStyle = 'rgba(220,226,236,0.55)'; c.textBaseline = 'bottom';
   }
-  c.fillText((muted ? 'Äänet pois (M)' : 'M = äänet') + '  ·  H = osuma-alueet  ·  P = tauko', 12, VH - 10);
+  c.fillText(T('hint')(muted), 12, VH - 10);
 }
 
 // ---------------------------------------------------------------- käynnistys

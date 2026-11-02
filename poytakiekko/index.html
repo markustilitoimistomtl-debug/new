@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pöytäkiekko</title>
+<title>Table Hockey</title>
 <style>
   html,body{margin:0;height:100%;background:#0d1016;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#e8ecf2}
   canvas{display:block;width:100vw;height:100vh;cursor:crosshair}
@@ -30,38 +30,27 @@
 <canvas id="c"></canvas>
 <div id="menu">
   <div class="card">
-    <h1><span class="b">PÖYTÄ</span><span class="r">KIEKKO</span></h1>
-    <p class="sub">Ukot liikkuvat vain urissaan ja pyörivät akselinsa ympäri. Kiekko kimpoaa laidoista, maalikehikosta ja ukoista – myös ilmaan.</p>
+    <div style="float:right"><select id="lang" aria-label="Language"><option value="en">English</option><option value="fi">Suomi</option></select></div>
+    <h1><span class="b" data-i="t1"></span><span class="r" data-i="t2"></span></h1>
+    <p class="sub" data-i="sub"></p>
     <div class="row">
-      <button class="primary" id="b1">1 pelaaja vs. tietokone</button>
-      <button id="b2">2 pelaajaa</button>
-      <button id="b0">Katsele: tietokone vs. tietokone</button>
-      <button id="bres" style="display:none">Jatka peliä</button>
+      <button class="primary" id="b1" data-i="b1"></button>
+      <button id="b2" data-i="b2"></button>
+      <button id="b0" data-i="b0"></button>
+      <button id="bres" style="display:none" data-i="bres"></button>
     </div>
     <div class="row">
-      <label>Vaikeustaso
-        <select id="diff"><option value="0">Helppo</option><option value="1" selected>Normaali</option><option value="2">Vaikea</option></select>
+      <label><span data-i="diff"></span>
+        <select id="diff"><option value="0" data-i="d0"></option><option value="1" selected data-i="d1"></option><option value="2" data-i="d2"></option></select>
       </label>
-      <label>Erän pituus
+      <label><span data-i="plen"></span>
         <select id="plen"><option value="60">1 min</option><option value="120">2 min</option><option value="180" selected>3 min</option><option value="300">5 min</option></select>
       </label>
-      <label><input type="checkbox" id="autog" checked> Automaattinen maalivahti</label>
+      <label><input type="checkbox" id="autog" checked> <span data-i="autog"></span></label>
     </div>
     <div class="keys">
-      <div><b>Koti (sininen)</b><br>
-        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ukko liikkuu urassaan<br>
-        <kbd>Q</kbd>/<kbd>E</kbd> pyöritys vasta-/myötäpäivään<br>
-        <kbd>Välilyönti</kbd> laukaus (täysi kierros)<br>
-        <kbd>Tab</kbd> vaihda ukkoa (muuten automaattinen)<br>
-        Hiiri (1 pelaaja): liike = ukko seuraa urassaan, vasen/oikea nappi = pyöritys, rulla = kierto
-      </div>
-      <div><b>Vieras (punainen, 2 pelaajaa)</b><br>
-        Nuolinäppäimet: liike urassa<br>
-        <kbd>,</kbd>/<kbd>.</kbd> pyöritys<br>
-        <kbd>-</kbd> laukaus<br>
-        <kbd>Enter</kbd> vaihda ukkoa<br><br>
-        <kbd>P</kbd>/<kbd>Esc</kbd> tauko · <kbd>H</kbd> osuma-alueet · <kbd>M</kbd> äänet
-      </div>
+      <div data-i="k1"></div>
+      <div data-i="k2"></div>
     </div>
   </div>
 </div>
