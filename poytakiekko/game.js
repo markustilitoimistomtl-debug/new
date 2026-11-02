@@ -54,7 +54,7 @@ const TXT = {
     sub: 'Players move only in their slots and spin on their rods. The puck bounces off the boards, the goal frame and the players – into the air too.',
     b1: '1 player vs. computer', b2: '2 players', b0: 'Watch: computer vs. computer', bres: 'Resume game',
     diff: 'Difficulty', d0: 'Easy', d1: 'Normal', d2: 'Hard', plen: 'Period length', autog: 'Automatic goalie',
-    k1: '<b>Home (blue)</b><br><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move player along its slot<br><kbd>Q</kbd>/<kbd>E</kbd> spin counter-/clockwise<br><kbd>Space</kbd> shoot (full spin)<br><kbd>Tab</kbd> switch player (otherwise automatic)<br>Mouse (1 player): player follows the cursor in its slot, left/right button = spin, wheel = turn',
+    k1: '<b>Home (blue)</b><br><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move player along its slot<br><kbd>Q</kbd>/<kbd>E</kbd> spin counter-/clockwise<br><kbd>Space</kbd> shoot (up to ¾ turn)<br><kbd>Tab</kbd> switch player (otherwise automatic)<br>Mouse (1 player): player follows the cursor in its slot, left/right button = spin, wheel = turn<br><i>The wrist turns at most ¾ of a turn at a time – then a short pause to re-grip the rod.</i>',
     k2: '<b>Away (red, 2 players)</b><br>Arrow keys: move along slot<br><kbd>,</kbd>/<kbd>.</kbd> spin<br><kbd>/</kbd> shoot (<kbd>-</kbd> on Nordic keyboards)<br><kbd>Enter</kbd> switch player<br><br><kbd>P</kbd>/<kbd>Esc</kbd> pause · <kbd>H</kbd> hitboxes · <kbd>M</kbd> sound',
     drop: 'Puck drop at centre ice…', goalH: 'GOAL! HOME', goalA: 'GOAL! AWAY', ot: 'Tied – overtime! Next goal wins.',
     pend: n => 'End of period ' + n, homeW: 'HOME WINS', awayW: 'AWAY WINS', tie: 'TIE GAME', stuck: 'Puck stuck – new drop',
@@ -67,7 +67,7 @@ const TXT = {
     sub: 'Ukot liikkuvat vain urissaan ja pyörivät akselinsa ympäri. Kiekko kimpoaa laidoista, maalikehikosta ja ukoista – myös ilmaan.',
     b1: '1 pelaaja vs. tietokone', b2: '2 pelaajaa', b0: 'Katsele: tietokone vs. tietokone', bres: 'Jatka peliä',
     diff: 'Vaikeustaso', d0: 'Helppo', d1: 'Normaali', d2: 'Vaikea', plen: 'Erän pituus', autog: 'Automaattinen maalivahti',
-    k1: '<b>Koti (sininen)</b><br><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ukko liikkuu urassaan<br><kbd>Q</kbd>/<kbd>E</kbd> pyöritys vasta-/myötäpäivään<br><kbd>Välilyönti</kbd> laukaus (täysi kierros)<br><kbd>Tab</kbd> vaihda ukkoa (muuten automaattinen)<br>Hiiri (1 pelaaja): liike = ukko seuraa urassaan, vasen/oikea nappi = pyöritys, rulla = kierto',
+    k1: '<b>Koti (sininen)</b><br><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ukko liikkuu urassaan<br><kbd>Q</kbd>/<kbd>E</kbd> pyöritys vasta-/myötäpäivään<br><kbd>Välilyönti</kbd> laukaus (enintään ¾ kierrosta)<br><kbd>Tab</kbd> vaihda ukkoa (muuten automaattinen)<br>Hiiri (1 pelaaja): liike = ukko seuraa urassaan, vasen/oikea nappi = pyöritys, rulla = kierto<br><i>Ranne kääntyy enintään ¾ kierrosta kerrallaan – sitten lyhyt tauko otteen vaihtoon.</i>',
     k2: '<b>Vieras (punainen, 2 pelaajaa)</b><br>Nuolinäppäimet: liike urassa<br><kbd>,</kbd>/<kbd>.</kbd> pyöritys<br><kbd>-</kbd> laukaus<br><kbd>Enter</kbd> vaihda ukkoa<br><br><kbd>P</kbd>/<kbd>Esc</kbd> tauko · <kbd>H</kbd> osuma-alueet · <kbd>M</kbd> äänet',
     drop: 'Kiekko pudotetaan keskiympyrään…', goalH: 'MAALI! KOTI', goalA: 'MAALI! VIERAS', ot: 'Tasapeli – jatkoaika! Seuraava maali ratkaisee.',
     pend: n => n + '. erä päättyi', homeW: 'KOTI VOITTI', awayW: 'VIERAS VOITTI', tie: 'TASAPELI', stuck: 'Kiekko jumissa – uusi pudotus',
@@ -330,7 +330,7 @@ function makeFigures() {
       const f = {
         team, kind, idx: i, ax, ay, bx, by, len, dx: (bx - ax) / len, dy: (by - ay) / len,
         t: kind === 'goalie' ? 0.5 : (i <= 2 ? 0.45 : 0.35), vel: 0,
-        ang: ATTACK_DIR[team], angVel: 0, spinLeft: 0, spinDir: 1,
+        ang: ATTACK_DIR[team], angVel: 0, spinLeft: 0, spinDir: 1, twist: 0, regrip: 0, idleT: 0,
         cmdMove: 0, cmdRot: null, cmdHeading: null, targetT: null,
         x: 0, y: 0, ai: { next: 0, cool: 0 }
       };
@@ -444,13 +444,13 @@ function humanControl(team, dt) {
   } else act.cmdMove = 0;
 
   if (team === 0 && G.mode === 1 && mouse.wheel) {
-    act.spinLeft = 0; act.angVel += -mouse.wheel * 7; mouse.wheel = 0;
+    if (act.regrip <= 0) { act.spinLeft = 0; act.angVel += -mouse.wheel * 7; } mouse.wheel = 0;
   }
   if (c.spinReq) {
     c.spinReq = 0;
-    // laukaus: täysi kierros siihen suuntaan joka lähettää kiekon kohti maalia
-    act.spinDir = bestSpinDir(act) || (rot ? Math.sign(rot) : 1);
-    act.spinLeft = Math.PI * 2;
+    // laukaus: enintään 3/4 kierrosta siihen suuntaan joka lähettää kiekon kohti maalia
+    const dir = bestSpinDir(act) || (rot ? Math.sign(rot) : 1);
+    if (act.regrip <= 0) { act.spinDir = dir; act.spinLeft = MAX_TWIST; }
   }
   // pyöritys kiihtyy pidettäessä: lyhyt painallus = tarkka säätö, pitkä = kova pyöräytys
   if (rot) { c.rotHold = (c.rotHold || 0) + dt; act.spinLeft = 0; act.cmdRot = rot * Math.min(34, 4 + 75 * c.rotHold * c.rotHold * 4); act.cmdHeading = null; }
@@ -466,11 +466,14 @@ function bestSpinDir(f) {
 }
 
 // ---------------------------------------------------------------- tekoäly
+// Ranne kääntyy enintään 3/4 kierrosta kerrallaan; sen jälkeen ote vaihdetaan (lyhyt tauko).
+const MAX_TWIST = Math.PI * 1.5;
 const AI_LEVEL = [
-  { spin: 20, move: 46, think: 0.24, noise: 0.5, quality: 0.52, hands: 1 },
-  { spin: 28, move: 62, think: 0.12, noise: 0.25, quality: 0.6, hands: 2 },
-  { spin: 34, move: 80, think: 0.05, noise: 0.1, quality: 0.66, hands: 2 }
+  { spin: 20, move: 46, think: 0.24, noise: 0.5, quality: 0.52, hands: 1, regrip: 0.42, gReact: 0.55, gMove: 30 },
+  { spin: 28, move: 62, think: 0.12, noise: 0.25, quality: 0.6, hands: 2, regrip: 0.34, gReact: 0.42, gMove: 40 },
+  { spin: 34, move: 80, think: 0.06, noise: 0.1, quality: 0.66, hands: 2, regrip: 0.28, gReact: 0.32, gMove: 50 }
 ];
+const HUMAN_REGRIP = 0.3;
 function aiTeam(team, dt) {
   const lv = AI_LEVEL[G.diff];
   const fl = teamFigs(team, false).map(f => [f, puckDistToFig(f)]).sort((a, b) => a[1] - b[1]);
@@ -478,15 +481,46 @@ function aiTeam(team, dt) {
   for (const f of teamFigs(team)) {
     if (f.kind === 'goalie') { aiGoalie(f, dt, lv); continue; }
     if (hands.has(f)) aiSkater(f, dt, lv);
-    else { f.cmdMove = 0; f.targetT = null; f.cmdRot = null; if (f.spinLeft <= 0) f.cmdHeading = ATTACK_DIR[team] + 0.5; }
+    else { f.cmdMove = 0; f.targetT = null; f.cmdRot = null; f.ai.phase = null; if (f.spinLeft <= 0) f.cmdHeading = ATTACK_DIR[team] + 0.5; }
   }
 }
 const BLADE_ANG = Math.atan2(2.85, 1.25);   // terän keskikohdan suunta suhteessa katsesuuntaan
+const DEG = Math.PI / 180;
+// kulma nykyisestä suunnasta kontaktisuuntaan pyörimissuunnassa s (0..2π)
+function angTo(f, target, s) { let a = s * (target - f.ang); a %= Math.PI * 2; if (a < 0) a += Math.PI * 2; return a; }
 function aiSkater(f, dt, lv) {
   f.ai.next -= dt; f.ai.cool -= dt;
+  const team = f.team, gy = GOAL_Y[1 - team];
+  // käynnissä oleva laukaus: viritys -> pyöräytys
+  if (f.ai.phase === 'wind' || f.ai.phase === 'regrip') {
+    const dx = puck.x - f.x, dy = puck.y - f.y, d = hyp(dx, dy);
+    f.ai.phaseT -= dt;
+    if (d > 6.2 || puck.z > 1.2 || f.ai.phaseT <= 0) { f.ai.phase = null; f.cmdRot = null; }
+    else {
+      const s = f.ai.s, hc = Math.atan2(dy, dx) - BLADE_ANG, a = angTo(f, hc, s);
+      if (f.ai.phase === 'regrip') {
+        // odota että ote on vaihdettu (ranne vapaana)
+        f.cmdRot = 0; f.cmdHeading = null;
+        if (Math.abs(f.twist) < 0.01 && f.regrip <= 0) f.ai.phase = 'wind';
+        return;
+      }
+      const need = a + 50 * DEG;                 // kontaktiin + läpivienti
+      const room = MAX_TWIST - f.twist * s;      // ranteen liikkumavara tähän suuntaan
+      if (a >= 75 * DEG && a <= 230 * DEG && need <= room + 0.05) {
+        f.spinDir = s; f.spinLeft = Math.min(need, room); f.cmdRot = null;
+        f.ai.phase = null; f.ai.cool = 0.4; f.cmdMove = 0;
+      } else if (need > room + 0.05 && a >= 75 * DEG && a <= 230 * DEG) {
+        f.ai.phase = 'regrip';                    // ranne lopussa: vaihda ote ensin
+      } else if (a < 75 * DEG) {
+        f.cmdRot = -s * 9; f.cmdHeading = null;   // kierrä taaksepäin vauhdinottoon (ei kiekon läpi)
+      } else {
+        f.cmdRot = s * 9; f.cmdHeading = null;    // kiekko melkein takana: käännä eteenpäin hitaasti
+      }
+      return;
+    }
+  }
   if (f.ai.next > 0) return;
   f.ai.next = lv.think * rnd(0.7, 1.3);
-  const team = f.team, gy = GOAL_Y[1 - team];
   const px = puck.x + puck.vx * 0.06, py = puck.y + puck.vy * 0.06;
   const dx = px - f.x, dy = py - f.y, d = hyp(dx, dy);
   const reach = d > 1.0 && d < 6.0 && puck.z < 1.2 && !puck.falling;
@@ -504,9 +538,8 @@ function aiSkater(f, dt, lv) {
     const slow = hyp(puck.vx, puck.vy) < 25;
     if (Math.abs(q) > lv.quality || (ownZone && Math.abs(q) > 0.1) || (slow && f.ai.stall > 1.1) || (!slow && f.ai.stall > 0.5 && Math.abs(q) > 0.3)) {
       f.ai.stall = 0;
-      f.spinDir = Math.sign(q) * (Math.random() < lv.noise * 0.15 ? -1 : 1);
-      f.spinLeft = Math.PI * 2 * rnd(0.8, 1.1);
-      f.ai.cool = 0.35;
+      f.ai.s = Math.sign(q) * (Math.random() < lv.noise * 0.15 ? -1 : 1) || 1;
+      f.ai.phase = 'wind'; f.ai.phaseT = 1.6;
       f.cmdMove = 0;
       return;
     }
@@ -521,37 +554,53 @@ function aiSkater(f, dt, lv) {
   f.cmdRot = null;
   f.maxMove = lv.move;
 }
+// Maalivahti: ihmisen reaktioaika. Ei ehdi reagoida koviin laukauksiin, vaan
+// asemoituu ennakoivasti kun hyökkääjä virittää laukausta tai vaihtaa otetta,
+// ja puhdistaa kiekon, joka pysähtyy ulottuville.
 function aiGoalie(f, dt, lv) {
-  const team = f.team, gy = GOAL_Y[team], out = team === 0 ? 1 : -1;
+  const team = f.team, out = team === 0 ? 1 : -1, gy = GOAL_Y[team];
   f.ai.next -= dt; f.ai.cool -= dt;
   f.ai.gt = (f.ai.gt || 0) - dt;
   if (f.ai.gt <= 0) {
-    f.ai.gt = lv.think * 1.3;
-    let tx = puck.x * 0.55;
-    const vyIn = -puck.vy * out;
-    if (vyIn > 20) {
-      const tt = (puck.y - f.y) / -puck.vy;
-      if (tt > 0 && tt < 1.5) tx = puck.x + puck.vx * tt;
-    }
+    f.ai.gt = lv.gReact * rnd(0.8, 1.25);
+    let tx = f.ai.tx ?? 0;
+    const sp = hyp(puck.vx, puck.vy);
     if (puck.hidden || puck.falling) tx = 0;
-    tx += rnd(-1, 1) * lv.noise * 3;
-    f.ai.tx = clamp(tx, -GW / 2 - 0.5, GW / 2 + 0.5);
+    else if (sp < 110) {
+      tx = puck.x * 0.5;                          // perusasento kiekon puolelle
+      // ennakointi: vastustaja virittää / vaihtaa otetta kiekon vieressä
+      let att = null, bd = 6.2;
+      for (const o of figs) if (o.team !== team) {
+        const dd = hyp(o.x - puck.x, o.y - puck.y);
+        if (dd < bd) { bd = dd; att = o; }
+      }
+      if (att && (att.regrip > 0 || att.ai.phase === 'wind' || att.ai.phase === 'regrip' || (Math.abs(att.angVel) < 3 && sp < 30))) {
+        const dx = puck.x - att.x, dy = puck.y - att.y, d = hyp(dx, dy) || 1;
+        const s = att.ai.s || bestSpinDir(att) || 1;
+        const vx = -dy / d * s, vy = dx / d * s;   // laukauksen suunta = terän tangentti
+        if (vy * -out > 0.2) {
+          const tt = (gy - puck.y) / vy;
+          tx = puck.x + vx * tt;
+        }
+      }
+    }
+    // (kovassa vauhdissa olevaan kiekkoon ei ehditä reagoida: pidetään vanha asento)
+    tx += rnd(-1, 1) * lv.noise * 2.5;
+    f.ai.tx = clamp(tx, -GW / 2 + 0.3, GW / 2 - 0.3);
   }
   f.targetT = slotClosestT(f, f.ai.tx ?? 0, f.y);
-  f.maxMove = lv.move * 0.9;
-  f.cmdHeading = ATTACK_DIR[team];
-  f.cmdRot = null;
-  // puhdistus: kiekko hiljaa edessä
+  f.maxMove = lv.gMove;
+  if (f.spinLeft <= 0) { f.cmdHeading = ATTACK_DIR[team]; f.cmdRot = null; }
+  // puhdistus: kiekko pysähtynyt ulottuville
   const dx = puck.x - f.x, dy = puck.y - f.y, d = hyp(dx, dy);
   if (f.ai.next <= 0) {
-    f.ai.next = lv.think;
-    if (d < 5.5 && hyp(puck.vx, puck.vy) < 45 && puck.z < 1 && f.ai.cool <= 0) {
-      // kierrä niin, että terän liike vie kiekkoa poispäin omasta maalista (tai sivuun)
+    f.ai.next = lv.gReact * 0.5;
+    if (d < 5.5 && hyp(puck.vx, puck.vy) < 30 && puck.z < 1 && f.ai.cool <= 0 && f.regrip <= 0) {
       const ty2 = dx / d;
       f.spinDir = ty2 * out >= 0 ? 1 : -1;
       if (Math.abs(ty2) < 0.25) f.spinDir = dx > 0 ? -out : out;
-      f.spinLeft = Math.PI * 2;
-      f.ai.cool = 0.6;
+      f.spinLeft = Math.max(0, MAX_TWIST - f.twist * f.spinDir);
+      f.ai.cool = 0.8;
     }
   }
 }
@@ -561,6 +610,7 @@ function stepFigure(f, dt) {
   const maxMove = f.maxMove || 78;
   let want = f.cmdMove;
   if (f.targetT != null) want = clamp((f.targetT - f.t) * f.len * 16, -maxMove, maxMove);
+  if (f.regrip > 0) want = 0;                    // käsi irti tangosta otetta vaihdettaessa
   const acc = 1100;
   f.vel += clamp(want - f.vel, -acc * dt, acc * dt);
   f.t += f.vel * dt / f.len;
@@ -568,7 +618,13 @@ function stepFigure(f, dt) {
   updatePos(f);
   const maxSpin = isAI(f.team) ? AI_LEVEL[G.diff].spin : 34;
   const angAcc = 420;
-  if (f.spinLeft > 0) {
+  if (f.regrip > 0) {
+    // otteen vaihto: ukko pysyy paikallaan
+    f.regrip -= dt;
+    f.angVel *= Math.exp(-40 * dt);
+    f.spinLeft = 0;
+    if (f.regrip <= 0) { f.regrip = 0; f.twist = 0; f.idleT = 0; }
+  } else if (f.spinLeft > 0) {
     f.angVel += clamp(f.spinDir * maxSpin - f.angVel, -angAcc * 2 * dt, angAcc * 2 * dt);
     f.spinLeft -= Math.abs(f.angVel) * dt;
   } else if (f.cmdRot != null) {
@@ -580,7 +636,20 @@ function stepFigure(f, dt) {
   } else {
     f.angVel *= Math.exp(-7 * dt);
   }
-  f.ang = wrapA(f.ang + f.angVel * dt);
+  // ranteen kierto: enintään 3/4 kierrosta samaan suuntaan, sitten pysähdys ja otteen vaihto
+  const nt = f.twist + f.angVel * dt;
+  if (Math.abs(nt) >= MAX_TWIST && Math.sign(f.angVel) === Math.sign(nt)) {
+    f.twist = Math.sign(nt) * MAX_TWIST;
+    f.angVel = 0; f.spinLeft = 0;
+    f.regrip = isAI(f.team) ? AI_LEVEL[G.diff].regrip * rnd(0.85, 1.2) : HUMAN_REGRIP;
+  } else {
+    f.twist = nt;
+    f.ang = wrapA(f.ang + f.angVel * dt);
+  }
+  // levossa oleva ranne palautuu (ote vaihtuu huomaamatta kun ukkoa ei pyöritetä)
+  const resting = f.regrip <= 0 && f.spinLeft <= 0 && Math.abs(f.angVel) < 1.2 && (f.cmdRot == null || f.cmdRot === 0);
+  f.idleT = resting ? (f.idleT || 0) + dt : 0;
+  if (f.idleT > 0.35) f.twist = 0;
   f.click = (f.click || 0) + Math.abs(f.angVel) * dt;
   if (f.click > 0.9) { f.click = 0; snd('tick', Math.min(1, Math.abs(f.angVel) / 30) * 0.3); }
 }
