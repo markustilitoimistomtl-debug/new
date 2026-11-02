@@ -488,10 +488,8 @@ const BLADE_ANG = Math.atan2(2.85, 1.25);   // terän keskikohdan suunta suhtees
 const DEG = Math.PI / 180;
 // kulma nykyisestä suunnasta kontaktisuuntaan pyörimissuunnassa s (0..2π)
 function angTo(f, target, s) { let a = s * (target - f.ang); a %= Math.PI * 2; if (a < 0) a += Math.PI * 2; return a; }
-function aiSkater(f, dt, lv) {
-  f.ai.next -= dt; f.ai.cool -= dt;
-  const team = f.team, gy = GOAL_Y[1 - team];
-  // käynnissä oleva laukaus: viritys -> pyöräytys
+// käynnissä oleva laukaus / puhdistus: viritys taaksepäin -> pyöräytys (ranne max 3/4 kierrosta)
+function windShot(f, dt) {
   if (f.ai.phase === 'wind' || f.ai.phase === 'regrip') {
     const dx = puck.x - f.x, dy = puck.y - f.y, d = hyp(dx, dy);
     f.ai.phaseT -= dt;
@@ -502,7 +500,7 @@ function aiSkater(f, dt, lv) {
         // odota että ote on vaihdettu (ranne vapaana)
         f.cmdRot = 0; f.cmdHeading = null;
         if (Math.abs(f.twist) < 0.01 && f.regrip <= 0) f.ai.phase = 'wind';
-        return;
+        return true;
       }
       const need = a + 50 * DEG;                 // kontaktiin + läpivienti
       const room = MAX_TWIST - f.twist * s;      // ranteen liikkumavara tähän suuntaan
@@ -516,9 +514,15 @@ function aiSkater(f, dt, lv) {
       } else {
         f.cmdRot = s * 9; f.cmdHeading = null;    // kiekko melkein takana: käännä eteenpäin hitaasti
       }
-      return;
+      return true;
     }
   }
+  return false;
+}
+function aiSkater(f, dt, lv) {
+  f.ai.next -= dt; f.ai.cool -= dt;
+  const team = f.team, gy = GOAL_Y[1 - team];
+  if (windShot(f, dt)) return;
   if (f.ai.next > 0) return;
   f.ai.next = lv.think * rnd(0.7, 1.3);
   const px = puck.x + puck.vx * 0.06, py = puck.y + puck.vy * 0.06;
@@ -560,6 +564,7 @@ function aiSkater(f, dt, lv) {
 function aiGoalie(f, dt, lv) {
   const team = f.team, out = team === 0 ? 1 : -1, gy = GOAL_Y[team];
   f.ai.next -= dt; f.ai.cool -= dt;
+  if (windShot(f, dt)) return;
   f.ai.gt = (f.ai.gt || 0) - dt;
   if (f.ai.gt <= 0) {
     f.ai.gt = lv.gReact * rnd(0.8, 1.25);
@@ -588,18 +593,33 @@ function aiGoalie(f, dt, lv) {
     tx += rnd(-1, 1) * lv.noise * 2.5;
     f.ai.tx = clamp(tx, -GW / 2 + 0.3, GW / 2 - 0.3);
   }
-  f.targetT = slotClosestT(f, f.ai.tx ?? 0, f.y);
-  f.maxMove = lv.gMove;
+  // hidas kiekko lähellä: siirrä maalivahtia sivulle niin, että lapa ylettyy kiekkoon
+  const psp = hyp(puck.vx, puck.vy);
+  if (!puck.hidden && !puck.falling && psp < 40 && puck.z < 1 && Math.abs(puck.y - f.y) < 6.5 && Math.abs(puck.x) < 13) {
+    f.ai.reachT = (f.ai.reachT || 0) + dt;
+    if (f.ai.reachT > lv.gReact * 0.6) {
+      const lx = -Math.sin(ATTACK_DIR[team]);     // lapa on maalivahdin vasemmalla puolella
+      f.ai.tx = puck.x - lx * 1.9;
+      f.ai.gt = lv.gReact;                         // pidä tämä tavoite hetken
+      f.targetT = slotClosestT(f, f.ai.tx, f.y);
+      f.maxMove = lv.gMove * 1.2;
+    } else { f.targetT = slotClosestT(f, f.ai.tx ?? 0, f.y); f.maxMove = lv.gMove; }
+  } else {
+    f.ai.reachT = 0;
+    f.targetT = slotClosestT(f, f.ai.tx ?? 0, f.y);
+    f.maxMove = lv.gMove;
+  }
   if (f.spinLeft <= 0) { f.cmdHeading = ATTACK_DIR[team]; f.cmdRot = null; }
   // puhdistus: kiekko pysähtynyt ulottuville
   const dx = puck.x - f.x, dy = puck.y - f.y, d = hyp(dx, dy);
   if (f.ai.next <= 0) {
     f.ai.next = lv.gReact * 0.5;
-    if (d < 5.5 && hyp(puck.vx, puck.vy) < 30 && puck.z < 1 && f.ai.cool <= 0 && f.regrip <= 0) {
+    if (d < 5.2 && hyp(puck.vx, puck.vy) < 30 && puck.z < 1 && f.ai.cool <= 0 && f.regrip <= 0) {
       const ty2 = dx / d;
-      f.spinDir = ty2 * out >= 0 ? 1 : -1;
-      if (Math.abs(ty2) < 0.25) f.spinDir = dx > 0 ? -out : out;
-      f.spinLeft = Math.max(0, MAX_TWIST - f.twist * f.spinDir);
+      let dir = ty2 * out >= 0 ? 1 : -1;
+      if (Math.abs(ty2) < 0.25) dir = dx > 0 ? -out : out;
+      // ranne max 3/4 kierrosta: jos tähän suuntaan ei ole tilaa, vaihda suuntaa tai korjaa otetta
+      f.ai.s = dir; f.ai.phase = 'wind'; f.ai.phaseT = 1.2;
       f.ai.cool = 0.8;
     }
   }
@@ -674,9 +694,9 @@ function hitCapsule(ax, ay, bx, by, r, vax, vay, vbx, vby, e, liftK, kind) {
   puck.vx -= vt * tx * 0.12; puck.vy -= vt * ty * 0.12;
   puck.spin += vt * 0.6;
   const imp = -vn;
-  if (liftK > 0 && imp > 35 && Math.random() < 0.55) {
+  if (liftK > 0 && imp > 35 && Math.random() < 0.28) {
     puck.vz += imp * liftK * Math.random();
-    if (puck.vz > 20) puck.tumbleRate = rnd(12, 34) * (Math.random() < 0.5 ? -1 : 1);
+    if (puck.vz > 20 && Math.random() < 0.5) puck.tumbleRate = rnd(12, 34) * (Math.random() < 0.5 ? -1 : 1);
   }
   return imp;
 }
@@ -739,7 +759,7 @@ function collideBoards() {
       const tx = -ny, ty = nx, vt = puck.vx * tx + puck.vy * ty;
       puck.vx -= vt * tx * 0.08; puck.vy -= vt * ty * 0.08;
       puck.spin -= vt * 0.3;
-      if (-vn > 80 && Math.random() < 0.3 && puck.z < 1) { puck.vz += -vn * rnd(0, 0.09); puck.tumbleRate = rnd(8, 20); }
+      if (-vn > 80 && Math.random() < 0.15 && puck.z < 1) { puck.vz += -vn * rnd(0, 0.09); if (Math.random() < 0.5) puck.tumbleRate = rnd(8, 20); }
       snd('board', 0.25 + -vn / 140);
     }
   }
@@ -761,7 +781,7 @@ function collideGoals() {
       // tolpat
       for (const sx of [-1, 1]) {
         const imp = hitCapsule(sx * GW / 2, gy, sx * GW / 2, gy, POST_R, 0, 0, 0, 0, 0.72, 0.25, 'post');
-        if (imp) { snd('post', imp / 120); if (Math.random() < 0.4) puck.tumbleRate = rnd(10, 30); }
+        if (imp) { snd('post', imp / 120); if (Math.random() < 0.2) puck.tumbleRate = rnd(10, 30); }
       }
       // verkon sivut ja takaosa (pehmeä)
       const nets = [[-GW / 2, gy, -GW / 2, back], [GW / 2, gy, GW / 2, back], [-GW / 2, back, GW / 2, back]];
@@ -825,6 +845,11 @@ function stepPuck(dt) {
       snd(ground > 0 ? 'net' : 'ice', -puck.vz / 200);
       puck.vz = -puck.vz * (ground > 0 ? 0.18 : 0.38);
       puck.tumbleRate *= 0.6;
+      // joka toinen alastulo: kiekko lätsähtää lappeelleen ja pysähtyy lähes paikalleen kierimisen sijaan
+      if (Math.random() < 0.5) {
+        puck.tumbleRate = 0; puck.tumble = Math.round(puck.tumble / Math.PI) * Math.PI;
+        puck.vz = Math.min(puck.vz, 12); puck.vx *= 0.35; puck.vy *= 0.35;
+      }
       // epätasainen pomppu
       puck.vx += rnd(-1, 1) * Math.abs(puck.vz) * 0.08; puck.vy += rnd(-1, 1) * Math.abs(puck.vz) * 0.08;
     } else {
@@ -1185,7 +1210,7 @@ function drawPuck() {
   const c = ctxRef.c;
   if (puck.hidden) return;
   const img = IMGS.puck;
-  const airborne = puck.z > 0.05 || Math.abs(puck.tumbleRate) > 2;
+  const airborne = puck.z > 0.05 || Math.abs(puck.tumbleRate) > 5;
   // varjo
   if (!puck.falling) {
     const g = P(puck.x, puck.y, 0);
