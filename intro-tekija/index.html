@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Introtekijä</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;700;900&family=Oswald:wght@500;700&family=Permanent+Marker&family=Playfair+Display:wght@700;900&family=Roboto+Slab:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0f1218;--panel:#171b23;--line:#2a313e;--text:#e9edf3;--muted:#9aa5b5;--acc:#ff3d4a}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line)}
+  header h1{font-size:18px;margin:0;letter-spacing:.03em}
+  header h1 b{color:var(--acc)}
+  header .sp{flex:1}
+  main{display:grid;grid-template-columns:minmax(0,1fr) 380px;height:calc(100% - 53px)}
+  @media (max-width:900px){main{grid-template-columns:1fr;height:auto}}
+  #stage{padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+  #wrap{position:relative;flex:1;min-height:240px;display:flex;align-items:center;justify-content:center;background:#05070a;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  #wrap.drag{outline:3px dashed var(--acc);outline-offset:-8px}
+  canvas#cv{max-width:100%;max-height:100%;display:block;background:#000}
+  .transport{display:flex;align-items:center;gap:10px}
+  .transport input[type=range]{flex:1;accent-color:var(--acc)}
+  #time{font-variant-numeric:tabular-nums;color:var(--muted);min-width:110px;text-align:right}
+  #segs{position:relative;height:10px;border-radius:5px;overflow:hidden;background:#222a36}
+  #segs div{position:absolute;top:0;bottom:0}
+  button,.btn{font:inherit;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:#222a36;color:var(--text);cursor:pointer}
+  button:hover,.btn:hover{background:#2b3442}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+  button.primary:hover{filter:brightness(1.1)}
+  button:disabled{opacity:.5;cursor:default}
+  aside{border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:6px 0 30px}
+  details{border-bottom:1px solid var(--line)}
+  summary{cursor:pointer;padding:12px 16px;font-weight:700;display:flex;align-items:center;gap:8px;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:'▸';color:var(--muted);transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary .tog{margin-left:auto}
+  .body{padding:2px 16px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .body .full{grid-column:1/-1}
+  label{display:flex;flex-direction:column;gap:4px;color:var(--muted);font-size:12px}
+  label.row{flex-direction:row;align-items:center;gap:8px;color:var(--text);font-size:13px}
+  input[type=text],input[type=number],select,textarea{font:inherit;color:var(--text);background:#0f131a;border:1px solid var(--line);border-radius:7px;padding:7px 8px;width:100%}
+  textarea{min-height:120px;resize:vertical}
+  input[type=color]{width:100%;height:34px;border:1px solid var(--line);border-radius:7px;background:#0f131a;padding:2px}
+  .hint{color:var(--muted);font-size:12px}
+  #drop{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;pointer-events:none}
+  #exportBox{position:fixed;inset:0;background:rgba(5,7,10,.75);display:none;align-items:center;justify-content:center;z-index:10}
+  #exportBox .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px;width:min(440px,calc(100% - 32px))}
+  progress{width:100%;height:14px;accent-color:var(--acc)}
+  a.dl{display:inline-block;margin-top:12px;color:#fff;background:var(--acc);padding:9px 14px;border-radius:8px;text-decoration:none;font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <h1>Intro<b>tekijä</b></h1>
+  <span class="hint">Videon otsikko, lopputekstit ja tilaa/tykkää-muistutukset</span>
+  <span class="sp"></span>
+  <label class="btn" style="flex-direction:row">Lataa klippi<input type="file" id="file" accept="video/*" hidden></label>
+  <button id="saveProj" title="Tallenna asetukset tiedostoon">Tallenna projekti</button>
+  <label class="btn" style="flex-direction:row" title="Avaa tallennettu projekti">Avaa projekti<input type="file" id="loadProj" accept=".json,application/json" hidden></label>
+  <button class="primary" id="export">Tallenna video</button>
+</header>
+<main>
+  <section id="stage">
+    <div id="wrap">
+      <canvas id="cv" width="2560" height="1440"></canvas>
+      <div id="drop"></div>
+    </div>
+    <div id="segs"></div>
+    <div class="transport">
+      <button id="play">▶ Toista</button>
+      <button id="rew" title="Alkuun">⏮</button>
+      <input type="range" id="scrub" min="0" max="1000" value="0" step="1">
+      <span id="time">0:00.0 / 0:00.0</span>
+    </div>
+    <div class="hint" id="info">Vedä videotiedosto esikatseluun tai valitse ”Lataa klippi”. Kaikki tapahtuu omalla koneellasi – videota ei lähetetä minnekään.</div>
+  </section>
+  <aside>
+    <details open>
+      <summary>Video ja tallennus</summary>
+      <div class="body">
+        <label>Resoluutio
+          <select data-k="out.res">
+            <option value="auto">Klipin oma, enintään 1440p (suositus)</option>
+            <option value="2560x1440">2560×1440 (1440p)</option>
+            <option value="1920x1080">1920×1080 (Full HD)</option>
+            <option value="1280x720">1280×720 (HD)</option>
+            <option value="3840x2160">3840×2160 (4K)</option>
+            <option value="1080x1920">1080×1920 (Shorts, pysty)</option>
+            <option value="clip">Klipin oma koko (myös yli 1440p)</option>
+          </select>
+        </label>
+        <label>Kuvataajuus
+          <select data-k="out.fps"><option value="auto">Klipin oma</option><option value="60">60 fps</option><option value="50">50 fps</option><option value="30">30 fps</option><option value="25">25 fps</option><option value="24">24 fps</option></select>
+        </label>
+        <label>Klipin sovitus
+          <select data-k="out.fit"><option value="contain">Koko kuva (mustat reunat)</option><option value="cover">Täytä ruutu (rajaa)</option></select>
+        </label>
+        <label>Laatu (bittinopeus)
+          <select data-k="out.quality"><option value="max">Paras – säilytä alkuperäinen laatu</option><option value="high">Korkea</option><option value="std">Normaali (pienempi tiedosto)</option></select>
+        </label>
+        <label>Klipin äänenvoimakkuus
+          <input type="range" min="0" max="1" step="0.05" data-k="out.vol">
+        </label>
+        <p class="hint full" id="fmtHint"></p>
+      </div>
+    </details>
+
+    <details open>
+      <summary>Introteksti <span class="tog"><input type="checkbox" data-k="intro.on" title="Käytössä"></span></summary>
+      <div class="body">
+        <label class="full">Otsikko<input type="text" data-k="intro.title"></label>
+        <label class="full">Alaotsikko (valinnainen)<input type="text" data-k="intro.sub"></label>
+        <label>Siirtymä
+          <select data-k="intro.anim">
+            <option value="fade">Häivytys</option>
+            <option value="zoom">Zoomaus</option>
+            <option value="slideL">Liuku vasemmalta</option>
+            <option value="slideR">Liuku oikealta</option>
+            <option value="slideUp">Nousu alhaalta</option>
+            <option value="wipe">Pyyhkäisy</option>
+            <option value="type">Kirjoituskone</option>
+            <option value="letters">Kirjain kerrallaan</option>
+            <option value="blur">Tarkentuminen</option>
+            <option value="across">Ruudun poikki (juokseva)</option>
+          </select>
+        </label>
+        <label>Sijainti
+          <select data-k="intro.pos">
+            <option value="center">Keskellä</option>
+            <option value="lower">Alakolmannes</option>
+            <option value="top">Ylhäällä</option>
+          </select>
+        </label>
+        <label>Näyttötapa
+          <select data-k="intro.mode">
+            <option value="overlay">Klipin päällä</option>
+            <option value="card">Oma introruutu ennen klippiä</option>
+          </select>
+        </label>
+        <label>Introruudun pituus (s)<input type="number" min="1" max="30" step="0.5" data-k="intro.cardDur"></label>
+        <label>Alkaa (s)<input type="number" min="0" step="0.1" data-k="intro.start"></label>
+        <label>Kesto (s)<input type="number" min="0.5" step="0.1" data-k="intro.dur"></label>
+        <label>Sisääntulo (s)<input type="number" min="0.1" step="0.1" data-k="intro.inT"></label>
+        <label>Poistuminen (s)<input type="number" min="0.1" step="0.1" data-k="intro.outT"></label>
+        <label>Fontti
+          <select data-k="intro.font">
+            <option value="Montserrat">Montserrat</option>
+            <option value="Bebas Neue">Bebas Neue</option>
+            <option value="Oswald">Oswald</option>
+            <option value="Playfair Display">Playfair Display</option>
+            <option value="Roboto Slab">Roboto Slab</option>
+            <option value="Permanent Marker">Permanent Marker</option>
+            <option value="system-ui">Järjestelmäfontti</option>
+          </select>
+        </label>
+        <label>Koko (%)<input type="number" min="2" max="30" step="0.5" data-k="intro.size"></label>
+        <label>Tekstin väri<input type="color" data-k="intro.color"></label>
+        <label>Korostusväri<input type="color" data-k="intro.accent"></label>
+        <label class="row full"><input type="checkbox" data-k="intro.box"> Taustapalkki tekstin alle</label>
+        <label class="row full"><input type="checkbox" data-k="intro.shadow"> Varjo</label>
+        <label>Introruudun väri 1<input type="color" data-k="intro.bg1"></label>
+        <label>Introruudun väri 2<input type="color" data-k="intro.bg2"></label>
+      </div>
+    </details>
+
+    <details>
+      <summary>Tilaa- ja tykkää-muistutus <span class="tog"><input type="checkbox" data-k="cta.on" title="Käytössä"></span></summary>
+      <div class="body">
+        <label class="row"><input type="checkbox" data-k="cta.like"> Tykkää-nappi</label>
+        <label class="row"><input type="checkbox" data-k="cta.sub"> Tilaa-nappi</label>
+        <label class="row"><input type="checkbox" data-k="cta.bell"> Ilmoituskello</label>
+        <label class="row"><input type="checkbox" data-k="cta.cursor"> Hiiren osoitin ”klikkaa”</label>
+        <label>Näkyy klipissä kohdassa (s)<input type="number" min="0" step="0.5" data-k="cta.at"></label>
+        <label>Kesto (s)<input type="number" min="2" step="0.5" data-k="cta.dur"></label>
+        <label>Toista uudelleen klipin lopussa
+          <select data-k="cta.repeat"><option value="no">Ei</option><option value="yes">Kyllä (ennen loppua)</option></select>
+        </label>
+        <label>Sijainti
+          <select data-k="cta.pos">
+            <option value="bl">Alhaalla vasemmalla</option>
+            <option value="bc">Alhaalla keskellä</option>
+            <option value="br">Alhaalla oikealla</option>
+            <option value="tr">Ylhäällä oikealla</option>
+            <option value="c">Keskellä</option>
+          </select>
+        </label>
+        <label>Kieli
+          <select data-k="cta.lang"><option value="fi">Suomi</option><option value="en">English</option></select>
+        </label>
+        <label>Koko (%)<input type="number" min="40" max="200" step="5" data-k="cta.scale"></label>
+        <label class="full">Oma teksti napin yläpuolelle (valinnainen)<input type="text" data-k="cta.note"></label>
+      </div>
+    </details>
+
+    <details>
+      <summary>Lopputekstit <span class="tog"><input type="checkbox" data-k="credits.on" title="Käytössä"></span></summary>
+      <div class="body">
+        <label class="full">Teksti (rivi kerrallaan, # = otsikkorivi, tyhjä rivi = väli)
+          <textarea data-k="credits.text"></textarea>
+        </label>
+        <label>Näyttötapa
+          <select data-k="credits.mode">
+            <option value="card">Oma ruutu klipin jälkeen</option>
+            <option value="overlay">Klipin lopun päällä</option>
+          </select>
+        </label>
+        <label>Tyyli
+          <select data-k="credits.style">
+            <option value="scroll">Rullaava</option>
+            <option value="pages">Sivu kerrallaan (häivytys)</option>
+          </select>
+        </label>
+        <label>Kesto (s)<input type="number" min="2" max="120" step="0.5" data-k="credits.dur"></label>
+        <label>Fontti
+          <select data-k="credits.font">
+            <option value="Montserrat">Montserrat</option>
+            <option value="Bebas Neue">Bebas Neue</option>
+            <option value="Oswald">Oswald</option>
+            <option value="Playfair Display">Playfair Display</option>
+            <option value="Roboto Slab">Roboto Slab</option>
+            <option value="system-ui">Järjestelmäfontti</option>
+          </select>
+        </label>
+        <label>Tekstin väri<input type="color" data-k="credits.color"></label>
+        <label>Otsikkorivien väri<input type="color" data-k="credits.accent"></label>
+        <label>Taustaväri<input type="color" data-k="credits.bg"></label>
+      </div>
+    </details>
+    <div style="padding:14px 16px" class="hint">Asetukset tallentuvat automaattisesti tähän selaimeen. ”Tallenna projekti” tallentaa ne tiedostoon. Videotiedostoa ei tallenneta projektiin.</div>
+  </aside>
+</main>
+<div id="exportBox"><div class="card">
+  <h3 style="margin:0 0 6px">Tallennetaan videota…</h3>
+  <p class="hint" id="expMsg">Video nauhoitetaan reaaliajassa, joten tallennus kestää yhtä kauan kuin video. Pidä tämä välilehti näkyvissä.</p>
+  <progress id="expProg" max="1" value="0"></progress>
+  <div id="expDone"></div>
+  <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end"><button id="expCancel">Peruuta</button></div>
+</div></div>
+<video id="vid" playsinline preload="auto" hidden></video>
+<script src="app.js"></script>
+</body>
+</html>
