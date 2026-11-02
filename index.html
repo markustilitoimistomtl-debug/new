@@ -2578,13 +2578,13 @@ function whoParts(id){if(!id)return null;const nm=id.n,k='pn_'+nm,rec=!!VOX.buf[
   const big=s.pts>30||[s.pts,s.reb,s.ast,s.stl,s.blk].filter(v=>v>=10).length>=2,whole=!!VOX.buf['pbn_'+id.no],num=id.no!==0&&(whole||!!(VOX.buf.pb_num&&VOX.buf['pnum_'+id.no])),   // number 0 is never read out
   pos=!!VOX.buf['ppos_'+id.pos];
   const fn=nm.split(' ')[0],ln=nm.slice(fn.length+1)||nm,ch=['last','last','last','full','full'];
-  if(num)ch.push('numlast','numlast','numfull');if(num&&pos)ch.push('posnumlast');if(big)ch.push('first','first','first','first');
+  if(num)ch.push('numlast','numlast','numlast');if(pos)ch.push('poslast','poslast');   // only: full name, surname, number + surname, position + surname (never the first name alone)
   let o=ch[(Math.random()*ch.length)|0];
   if(!rec){const su=surClip(id),nb=num&&whole?{k:'pbn_'+id.no,gap:0.05}:null;   // imported player: recorded surname and/or the number, never a synthetic voice
     if(su&&nb)return Math.random()<0.4?[su]:[nb,su];return su?[su]:nb?[nb]:null;}
-  if(!off&&(o==='last'||o==='first'||o==='numlast'||o==='posnumlast'))o=num?'numfull':'full';
+  if(!off)o='full';   // no surname split recorded: the full name
   const N=whole?[{k:'pbn_'+id.no,gap:0.05}]:[{k:'pb_num'},{k:'pnum_'+id.no,gap:0.02}];   // number 0 has no whole-phrase take
-  return o==='full'?[{k}]:o==='last'?[{k,off}]:o==='first'?[{k,dur:off}]:o==='numfull'?[...N,{k}]:o==='numlast'?[...N,{k,off}]:[{k:'ppos_'+id.pos},...N,{k,off}];}
+  return o==='full'?[{k}]:o==='last'?[{k,off}]:o==='numlast'?[...N,{k,off}]:[{k:'ppos_'+id.pos},{k,off}];}
 // the surname part of a recorded name that matches an imported player's surname
 let SUR=null;
 function surClip(id){if(!SUR){SUR={};for(const n in (VOX_DATA.pn||{})){const o=NAMEOFF[n];if(o)SUR[n.slice(n.indexOf(' ')+1).toLowerCase()]={k:'pn_'+n,off:o};}}
