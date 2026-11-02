@@ -2466,19 +2466,23 @@ function introLine(){if(attract||!AC||!sound||!G)return 0;const k=G.teams[0].key
   const sp=stateParts(),n=keys.length+(sp?1:0);if(!n)return 0;
   const L=sp&&Math.random()<1/n?sp:keys.length?tplParts('ti',keys[(Math.random()*keys.length)|0],{}):sp;if(!L)return 0;
   VOX.busyUntil=0;if(!vxParts(L,{prio:2}))return 0;return VOX.busyUntil-AC.currentTime;}
-// leading scorers compared (Tony 2.11.), once a quarter in the 2nd-4th: "X is the leading scorer for A with n points. Y for B is trailing with his n points."
+// leading scorers compared (Tony 2.11.): in the 2nd-4th quarter, when a new player takes over as the game's leading scorer
+// "X is the leading scorer for A with n points. Y for B is trailing with his n points."
 const CMP={a:[0.21,1.68],b:[2.08,2.30],c:[2.66,2.97],d:[3.91,4.12],e:[4.49,5.77],f:[6.03,6.42]};
-function scorerCmp(){const S=VOX.st;if(G.state!=='play'||G.q<2||G.q>4||!AC||!sound||!VOX.buf.cmp0)return;S.cmpQ=S.cmpQ||{};if(S.cmpQ[G.q])return;
-  const left=G.clock/G.qLen0;if(left>0.85||left<0.15||Math.random()>0.004)return;
-  if(AC.currentTime<VOX.busyUntil||AC.currentTime-VOX.lastLine<12)return;
+function scorerCmp(){const S=VOX.st;if(!G||!AC||!sound||!VOX.buf.cmp0)return;const now=AC.currentTime;
   const top=t=>{let b=null;for(const id of G.teams[t].R.P){const s=G.stats[id.n];if(s&&(!b||s.pts>b.pts))b=s;}return b;};
   let x=top(0),y=top(1),tx=0;if(!x||!y)return;if(y.pts>x.pts){[x,y]=[y,x];tx=1;}
-  if(x.pts===y.pts||y.pts<4||!VOX.buf['pnum_'+x.pts]||!VOX.buf['pnum_'+y.pts])return;
+  if(x.pts>y.pts&&S.cmpLead!==x.id.n){const was=S.cmpLead;S.cmpLead=x.id.n;   // the leader changed (a tie keeps the old one)
+    if(was&&G.q>=2&&G.q<=4)S.cmpPend=now+20;}
+  if(!S.cmpPend||now>S.cmpPend){S.cmpPend=0;return;}
+  if(G.state!=='play'||G.q<2||G.q>4||now<VOX.busyUntil||now-VOX.lastLine<6||now-(S.cmpAt||-99)<60)return;
+  S.cmpN=S.cmpN||{};if((S.cmpN[G.q]||0)>=2){S.cmpPend=0;return;}   // at most twice a quarter
+  if(x.pts===y.pts||y.pts<2||!VOX.buf['pnum_'+x.pts]||!VOX.buf['pnum_'+y.pts]){S.cmpPend=0;return;}
   const P=whoParts(x.id),P2=whoParts(y.id),A=tonyTeam(tx),B=tonyTeam(1-tx);if(!P||!P2||!A||!B)return;
   const k='cmp0',seg=a=>({k,off:a[0],dur:a[1]-a[0],gap:0}),g=L=>L.map(q=>Object.assign({gap:0.04},q));
   const L=[...g(P),seg(CMP.a),{pause:0.03},...g(A),seg(CMP.b),{pause:0.03},{k:'pnum_'+x.pts,gap:0.04},seg(CMP.c),{pause:0.35},
     ...g(P2),seg(CMP.d),{pause:0.03},...g(B),seg(CMP.e),{pause:0.03},{k:'pnum_'+y.pts,gap:0.04},seg(CMP.f)];
-  if(vxParts(L,{min:12}))S.cmpQ[G.q]=1;}
+  if(vxParts(L,{prio:1})){S.cmpPend=0;S.cmpAt=now;S.cmpN[G.q]=(S.cmpN[G.q]||0)+1;}}
 /* ---------- analyst (Carla): home-team colour commentary by position ---------- */
 const anT=id=>G.teams.findIndex(T=>T.R.P.includes(id));
 const anBench=id=>{const t=anT(id);return t>=0&&G.teams[t].R.P.indexOf(id)>=5;};
