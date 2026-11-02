@@ -124,6 +124,7 @@ const STORY=[
  ['Player hurt','medical',['tn:t_medical']],['Timeout','break',['jn:j_break']],['Shot denied at the rim','denied',['jn:j_denied']],
  ['Big men on the boards','bigs',['tn:t_bigs','jn:j_pound']],['Shot clock running down','clock',['tn:t_clock','jn:j_clock']],
  ['Visitors ahead early in the 4th','awaywork',['tn:t_awaywork']],
+ ['New leading scorer, quarters 2-4 (both teams\' top scorers compared)','lead',['tn:t_lead']],
  ['Quarter summary','summary',Array.from({length:20},(_,i)=>'tn:s'+(i+1))]];
 const PB_LAB={num:'"Number" before a jersey number',loft:'Long three in the air',settle:'Settles for a jumper',pass:'Pass',sinks3:'Sinks a three',miss:'Missed shot',
  rim:'Off the rim',tov:'Turnover',steal:'Steal',reb:'Rebound',lob:'Alley-oop lob',crush:'Dunk finish',spin:'Spin move',pick:'Picked his pocket, breakaway',
@@ -220,11 +221,11 @@ function playerParts(){const ks=Object.keys(S.obj.pn);if(!ks.length)return{parts
 function numParts(){const ks=Object.keys(S.obj.pnum).filter(k=>+k>0&&+k<20);const n=rnd(ks.length?ks:['7']);return S.obj.pnum[n]?{parts:[{src:S.obj.pnum[n].src}],label:'#'+n}:{parts:[],label:''};}
 
 /* ============ phrase markers → game metadata ============ */
-const MARK={X:'A',Y:'B',P:'P',P2:'P2','#':'X'};
+const MARK={X:'A',Y:'B',P:'P',P2:'P2','#':'X','#2':'X2'};
 function tokens(text){return String(text||'').trim().split(/\s+/).filter(Boolean);}
 // where the fills go: returns [{f,pos:'start'|'end'|'mid'}] in order
 function fillsOf(text){const t=tokens(text).map(w=>w.replace(/[.,!?;:'’"]+$/,'').replace(/^['"]+/,''));const out=[];
-  t.forEach((w,i)=>{const m=w.replace(/'s$/,'');if(MARK[m])out.push({f:MARK[m]+(w.endsWith("'s")&&MARK[m]!=='P'&&MARK[m]!=='P2'&&MARK[m]!=='X'?'n':''),pos:i===0?'start':i===t.length-1?'end':'mid'});});return out;}
+  t.forEach((w,i)=>{const m=w.replace(/'s$/,'');if(MARK[m])out.push({f:MARK[m]+(w.endsWith("'s")&&MARK[m]!=='P'&&MARK[m]!=='P2'&&MARK[m]!=='X'&&MARK[m]!=='X2'?'n':''),pos:i===0?'start':i===t.length-1?'end':'mid'});});return out;}
 function metaFor(c,len){const F=fillsOf(c.text),cuts=String(c.cut||'').split(/[,;\s]+/).map(Number).filter(x=>x>0&&x<len);let ci=0;const p=[];let at=0;
   for(const f of F){if(f.pos==='start'){p.push({f:f.f});continue;}if(f.pos==='end')continue;const cut=cuts[ci++];if(cut==null)return{err:'Mark where the name goes: give a cut time in seconds.'};p.push([at,cut],{f:f.f});at=cut;}
   p.push([at,len]);for(const f of F)if(f.pos==='end')p.push({f:f.f});return{p,len};}
@@ -233,7 +234,7 @@ function metaFor(c,len){const F=fillsOf(c.text),cuts=String(c.cut||'').split(/[,
 async function rowParts(kind,c,ctx){const len=await lenOf(c);let label=[];const out=[];
   const team=randomTeam(),other=rnd(Object.keys(S.teams).filter(k=>k!==team));
   const fill=f=>{if(f==='A'||f==='An'){const r=teamParts(team);label.push(r.label);return r.parts;}if(f==='B'||f==='Bn'||f==='V'){const r=teamParts(other);label.push(r.label);return r.parts;}
-    if(f==='P'||f==='P2'){const r=playerParts();label.push(r.label);return r.parts;}if(f==='X'){const r=numParts();label.push(r.label);return r.parts;}return[];};
+    if(f==='P'||f==='P2'){const r=playerParts();label.push(r.label);return r.parts;}if(f==='X'||f==='X2'){const r=numParts();label.push(r.label);return r.parts;}return[];};
   if(kind==='tpl'){const M=c.orig?S.meta[ctx.v][ctx.key]:metaFor(c,len);if(!M||M.err){toast(M&&M.err||'No timing for this line yet.');return[{src:c.src}];}
     for(const p of M.p){if(Array.isArray(p))out.push({src:c.src,off:p[0],dur:p[1]-p[0],gap:0});else out.push({pause:0.03},...fill(p.f));}}
   else if(kind==='pb'){const m=c.orig?S.meta.pb[ctx.key]:(fillsOf(c.text)[0]?.pos==='start'?{he:0}:{});
@@ -289,7 +290,7 @@ let ROWS={};let rid=0;
 function reg(o){const id='r'+(rid++);ROWS[id]=o;return id;}
 
 VIEWS.story=()=>{ROWS={};let h=`<h2>GAME SITUATIONS</h2><p class="lead">Storylines from Tony (play-by-play) and Jeni (analyst). The game picks one line from the situation when it happens, once a quarter at most.</p>
-  <div class="guide">Length <b>${LEN_TXT('story')}</b>. X = the team the line is about, Y = the other team, P = a player, # = a number (points).</div>${filterBox()}`;
+  <div class="guide">Length <b>${LEN_TXT('story')}</b>. X = the team the line is about, Y = the other team, P = a player, P2 = a second player, # = a number (points), #2 = a second number.</div>${filterBox()}`;
   for(const[lab,cat,keys]of STORY){const rows=[];let n=0;
     for(const vk of keys){const[v,key]=vk.split(':');const all=Object.keys(S.obj[v]).filter(k=>k===key||k.startsWith(key+'~')).sort((a,b)=>S.obj[v][a].orig===S.obj[v][b].orig?0:S.obj[v][a].orig?-1:1);
       for(const k of all){const c=S.obj[v][k];const nm=c.orig?`${lab} ${ABC(n++)}`:'';if(!match(lab+' '+nm+' '+c.text))continue;
@@ -303,7 +304,7 @@ VIEWS.story=()=>{ROWS={};let h=`<h2>GAME SITUATIONS</h2><p class="lead">Storylin
   const jx=Object.keys(S.obj.jx).sort().map((k,i)=>{const c=S.obj.jx[k];return rowHTML(reg({kind:'tpl',ctx:{v:'jx',key:k},c,del:()=>delete S.obj.jx[k],imp:x=>{S.obj.jx[k]=Object.assign(x,{orig:false});}}),'Jeni one-liner (once a game)',`One-liner ${ABC(i)}`,c,{tags:fillTags(S.meta.jx[k]),cutOK:true,lk:'story'});});
   h+=`<h3>JENI ONE-LINERS</h3>${TABLE_HEAD}${jx.join('')}</tbody></table>`;
   return h;};
-function fillTags(M){if(!M||!M.p)return'';const f=M.p.filter(p=>!Array.isArray(p)).map(p=>({A:'X',An:"X's",B:'Y',Bn:"Y's",V:'visitors',P:'P',P2:'P2',X:'#'}[p.f]||p.f));return f.length?`<span class="tag">${esc(f.join(' · '))}</span>`:'';}
+function fillTags(M){if(!M||!M.p)return'';const f=M.p.filter(p=>!Array.isArray(p)).map(p=>({A:'X',An:"X's",B:'Y',Bn:"Y's",V:'visitors',P:'P',P2:'P2',X:'#',X2:'#2'}[p.f]||p.f));return f.length?`<span class="tag">${esc(f.join(' · '))}</span>`:'';}
 function addVariant(v,key,x){let n=2;while(S.obj[v][key+'~'+n])n++;S.obj[v][key+'~'+n]=Object.assign(x,{orig:false});}
 
 VIEWS.pb=()=>{ROWS={};let h=`<h2>PLAY-BY-PLAY</h2><p class="lead">Tony's short calls during play. A line can start with the player's name (write P first), with "He", or with no name.</p>
