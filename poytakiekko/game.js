@@ -147,7 +147,7 @@ let AC = null, muted = false, hornAudio = null;
 function audio() {
   if (!AC) {
     try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; }
-    try { hornAudio = new Audio('../air_horn_celebration_%231-1793072890431.mp3'); hornAudio.volume = 0.55; } catch (e) { hornAudio = null; }
+    try { hornAudio = new Audio('assets/maalitorvi.mp3'); hornAudio.volume = 0.55; } catch (e) { hornAudio = null; }
     if (AC) initLoops();
   }
   if (AC && AC.state === 'suspended') AC.resume();
@@ -773,7 +773,7 @@ function goalScored(team) {
 }
 function startGame(mode) {
   audio();
-  G.mode = mode;
+  G.mode = mode; G.demo = false;
   G.diff = +document.getElementById('diff').value;
   G.periodLen = +document.getElementById('plen').value;
   G.autoGoalie = document.getElementById('autog').checked;
@@ -796,6 +796,7 @@ function togglePause() {
 }
 document.getElementById('b1').onclick = () => startGame(1);
 document.getElementById('b2').onclick = () => startGame(2);
+document.getElementById('b0').onclick = () => startGame(0);
 document.getElementById('bres').onclick = () => { document.getElementById('menu').classList.add('hidden'); G.paused = false; audio(); };
 
 function endPeriod() {
@@ -846,7 +847,7 @@ function update(dt) {
   } else if (G.state === 'periodEnd') {
     G.timer -= dt; if (G.timer <= 0) faceoff(1.2);
   } else if (G.state === 'play') {
-    if (G.mode !== 0) G.clock -= dt;
+    if (!G.demo) G.clock -= dt;
     if (G.clock <= 0) { G.clock = 0; puck.hidden = true; endPeriod(); return; }
     // laukaukset
     for (let gi = 0; gi < 2; gi++) {
@@ -1210,6 +1211,11 @@ function render() {
   }
   // ohjevihje
   c.font = '12px system-ui, sans-serif'; c.fillStyle = 'rgba(220,226,236,0.55)'; c.textAlign = 'left'; c.textBaseline = 'bottom';
+  if (G.mode === 0 && !G.demo) {
+    c.font = '700 14px system-ui, sans-serif'; c.fillStyle = 'rgba(255,210,58,0.85)'; c.textAlign = 'left'; c.textBaseline = 'top';
+    c.fillText('KATSELUTILA – tietokone vs. tietokone', 14, 14);
+    c.font = '12px system-ui, sans-serif'; c.fillStyle = 'rgba(220,226,236,0.55)'; c.textBaseline = 'bottom';
+  }
   c.fillText((muted ? 'Äänet pois (M)' : 'M = äänet') + '  ·  H = osuma-alueet  ·  P = tauko', 12, VH - 10);
 }
 
@@ -1233,4 +1239,4 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 // demotila valikon taustalla: tietokone vs. tietokone
-G.mode = 0; G.diff = 1; makeFigures(); faceoff(0.8);
+G.mode = 0; G.demo = true; G.diff = 1; makeFigures(); faceoff(0.8);
