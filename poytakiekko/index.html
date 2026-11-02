@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pöytäkiekko</title>
+<style>
+  html,body{margin:0;height:100%;background:#0d1016;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#e8ecf2}
+  canvas{display:block;width:100vw;height:100vh;cursor:crosshair}
+  #menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(6,8,12,.72);backdrop-filter:blur(3px)}
+  #menu.hidden{display:none}
+  .card{background:#151a23;border:1px solid #2a3343;border-radius:14px;padding:26px 30px;max-width:640px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  h1{margin:0 0 4px;font-size:34px;letter-spacing:.06em}
+  h1 span.b{color:#3d8bff} h1 span.r{color:#ff4a3a}
+  .sub{color:#9aa6b8;margin:0 0 18px;font-size:14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+  button{font:inherit;font-weight:600;padding:11px 18px;border-radius:9px;border:1px solid #3a4558;background:#1f2633;color:#e8ecf2;cursor:pointer}
+  button:hover{background:#2a3445}
+  button.primary{background:#2a6ff0;border-color:#2a6ff0}
+  button.primary:hover{background:#3a7cff}
+  label{font-size:14px;color:#c4ccd8;display:flex;align-items:center;gap:8px}
+  select{font:inherit;background:#1f2633;color:#e8ecf2;border:1px solid #3a4558;border-radius:7px;padding:5px 8px}
+  .keys{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;font-size:13px;color:#aeb8c8;line-height:1.55}
+  .keys b{color:#fff}
+  kbd{background:#0c1017;border:1px solid #3a4558;border-bottom-width:2px;border-radius:4px;padding:0 5px;font-size:12px;color:#fff}
+  @media (max-width:560px){.keys{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="menu">
+  <div class="card">
+    <h1><span class="b">PÖYTÄ</span><span class="r">KIEKKO</span></h1>
+    <p class="sub">Ukot liikkuvat vain urissaan ja pyörivät akselinsa ympäri. Kiekko kimpoaa laidoista, maalikehikosta ja ukoista – myös ilmaan.</p>
+    <div class="row">
+      <button class="primary" id="b1">1 pelaaja vs. tietokone</button>
+      <button id="b2">2 pelaajaa</button>
+      <button id="bres" style="display:none">Jatka peliä</button>
+    </div>
+    <div class="row">
+      <label>Vaikeustaso
+        <select id="diff"><option value="0">Helppo</option><option value="1" selected>Normaali</option><option value="2">Vaikea</option></select>
+      </label>
+      <label>Erän pituus
+        <select id="plen"><option value="60">1 min</option><option value="120">2 min</option><option value="180" selected>3 min</option><option value="300">5 min</option></select>
+      </label>
+      <label><input type="checkbox" id="autog" checked> Automaattinen maalivahti</label>
+    </div>
+    <div class="keys">
+      <div><b>Koti (sininen)</b><br>
+        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ukko liikkuu urassaan<br>
+        <kbd>Q</kbd>/<kbd>E</kbd> pyöritys vasta-/myötäpäivään<br>
+        <kbd>Välilyönti</kbd> laukaus (täysi kierros)<br>
+        <kbd>Tab</kbd> vaihda ukkoa (muuten automaattinen)<br>
+        Hiiri (1 pelaaja): liike = ukko seuraa urassaan, vasen/oikea nappi = pyöritys, rulla = kierto
+      </div>
+      <div><b>Vieras (punainen, 2 pelaajaa)</b><br>
+        Nuolinäppäimet: liike urassa<br>
+        <kbd>,</kbd>/<kbd>.</kbd> pyöritys<br>
+        <kbd>-</kbd> laukaus<br>
+        <kbd>Enter</kbd> vaihda ukkoa<br><br>
+        <kbd>P</kbd>/<kbd>Esc</kbd> tauko · <kbd>H</kbd> osuma-alueet · <kbd>M</kbd> äänet
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/sprites.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
