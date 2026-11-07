@@ -100,6 +100,15 @@ select{width:100%;font-family:var(--f-body);font-weight:600;font-size:14px;backg
 #bPass{background:rgba(43,87,198,.8)}
 .tbtn.on{filter:brightness(1.4);transform:scale(.95)}
 #ibar{top:calc(10px + env(safe-area-inset-top,0px))}
+#board{cursor:pointer;min-height:38px}
+#board:not(.open) #tools{display:none}
+#board.score #mid,#board.clock .tm,#board.ev .tm,#board.ev #mid{display:none}
+#tick{display:flex;align-items:center;min-height:34px;max-width:min(62vw,560px);overflow:hidden;white-space:nowrap}
+#tickT{font-family:var(--f-disp);font-weight:700;font-size:30px;line-height:1;color:var(--led);text-shadow:3px 3px 0 var(--hot),0 0 14px rgba(255,178,30,.45);letter-spacing:.02em}
+#tickT.det{font-family:var(--f-body);font-size:17px;font-weight:700;color:var(--ink);text-shadow:none;letter-spacing:0}
+#tickT.run{display:inline-block;animation:tickrun var(--rt,8s) linear forwards}
+@keyframes tickrun{0%,12%{transform:translateX(0)}100%{transform:translateX(var(--rx,0))}}
+#banner,#pbar{display:none!important}
 @media (max-width:520px){#board{flex-wrap:nowrap;gap:5px;padding:3px 5px;top:calc(4px + env(safe-area-inset-top,0px));right:4px;max-width:calc(100% - 8px)}#board .chip{font-size:10px;padding:2px 4px}#board .tm{gap:4px}#mid{min-width:4.2em}#per{font-size:8px}#tools{gap:3px}#board .tb{min-width:24px;padding:4px 3px;font-size:10px}#board .sc{font-size:17px}#clock{font-size:15px}}
 @media (max-width:760px){#ibar{top:auto;bottom:calc(64px + env(safe-area-inset-bottom,0px))}.ov{padding-top:104px}}
 input[type=range]{width:100%;accent-color:var(--led)}
@@ -111,7 +120,8 @@ input[type=range]{width:100%;accent-color:var(--led)}
 </head>
 <body>
 <div id="app">
-  <div id="board">
+  <div id="board" class="score">
+    <div id="tick" hidden><span id="tickT">GOAL!</span></div>
     <div class="tm"><span class="tcol"><span class="chip" id="c0">HAM</span><span class="ppl" id="pl0"></span></span><span class="sc" id="s0">0</span></div>
     <div id="mid"><span id="clock">4:00</span><span id="per">1ST · SOG 0–0</span></div>
     <div class="tm"><span class="sc" id="s1">0</span><span class="tcol"><span class="chip" id="c1">QUE</span><span class="ppl" id="pl1"></span></span></div>
@@ -132,7 +142,8 @@ input[type=range]{width:100%;accent-color:var(--led)}
       <div id="joy"><div id="knobBase" hidden><div id="knob" style="left:55px;top:55px"></div></div></div>
       <div id="btns"><div class="tbtn" id="bPass">PASS</div><div class="tbtn" id="bShoot">SHOOT</div></div>
     </div>
-    <div class="ov" id="menu">
+    <div class="ov" id="splash" hidden><button class="big" id="splashGo" style="font-size:22px;padding:18px 28px">VINTAGE PUCK<br><span style="font-size:13px;font-family:var(--f-body)">click to start</span></button></div>
+    <div class="ov" id="menu" hidden>
       <div class="card">
         <h1>VINTAGE PUCK</h1>
         <p class="sub">26 cities still waiting for the NHL · 1990s hockey</p>
@@ -893,8 +904,10 @@ function penKind(kind,off,sev){
   if(sev==='minor'&&k==='CHECKING FROM BEHIND'&&Math.random()<0.4)sev='major';
   return[k,sev];
 }
+let PENCALL=0.19;   // share of spotted infractions the referee actually calls
 function callPenalty(off,kind,sev,gm,force){
   if(!force&&G.state!=='play')return false;
+  if(!force&&!G.delayedAssess&&Math.random()>PENCALL)return false;
   if(off.box||off.role==='G')return false;
   [kind,sev]=penKind(kind,off,sev);
   if(!force&&!G.delayedAssess&&G.state==='play'){const P=G.puck;const ctl=P.owner?P.owner.t:(P.pass?P.pass.from.t:G.lastTeam);
@@ -2166,7 +2179,7 @@ function hook(type,d){
     case'setup':if(G.ghosts.length&&!Arena.mus&&!Arena.goalSong)Arena.playBreak(Arena.pickBreak(),{gain:0.7});break;
     case'save':SND.save();break;
     case'drop':Theme.stop(1);if((Arena.mus||Arena.musKey)){Arena.stopMusic(Arena.goalSong?3:0.7);}Arena.goalSong=false;break;
-    case'momentum':SND.surge();Arena.cheer(0.5);Arena.fx('airhorn',0.45);setTimeout(()=>Arena.paSay(Arena.pick('pa_mom')),700);break;
+    case'momentum':SND.surge();Arena.cheer(0.5);Tick.push('MOMENTUM',`${G.teams[d].R.city} ${G.teams[d].R.nick} · team momentum boost`,1);Arena.fx('airhorn',0.45);setTimeout(()=>Arena.paSay(Arena.pick('pa_mom')),700);break;
     case'punch':SND.punch(d);if(d)shake=0.12;break;
     case'fight':if(!Arena.cheer(0.7))SND.crowd(8);showBanner('FIGHT!',`${G.teams[d.a.t].key} ${d.a.id.n} vs ${G.teams[d.b.t].key} ${d.b.id.n}`,2.5);break;
     case'gloves':SND.crowd(5);break;
@@ -2744,8 +2757,24 @@ function seRender(){
 function openSeason(){seLoad();paused=false;Music.stop();Arena.theme();['menu','final','inter','pre','pbar','ibar','touch','banner'].forEach(i=>$(i).hidden=true);if(!attract)startAttract();$('season').hidden=false;seRender();}
 
 let penT=0;
-function showPen(t,dur){$('pbT').textContent=t;$('pbar').hidden=false;penT=dur;}
-function showBanner(t,s,dur){$('bTitle').textContent=t;$('bText').textContent=s;$('banner').hidden=false;bannerT=dur;}
+// Scoreboard ticker: events take the scoreboard's place (title 6 s, then the names) instead of covering the ice
+const Tick={q:[],cur:null,T:0,hold:null,
+  push(title,det,pri=1){const e={title:String(title).toUpperCase(),det:det||'',pri};
+    if(this.cur&&pri>this.cur.pri){this.q.unshift(this.cur.ph==='t'?this.cur:{...this.cur,ph:'d'});this.start(e);return;}
+    if(!this.cur)this.start(e);else if(this.q.length<4)this.q.push(e);},
+  start(e){this.cur=Object.assign(e,{ph:e.ph||'t'});this.T=this.cur.ph==='t'?6:5;this.show();},
+  show(){const el=$('tickT'),c=this.hold?{title:this.hold,ph:'t'}:this.cur;
+    if(!c){$('board').classList.remove('ev');$('tick').hidden=true;return;}
+    $('board').classList.add('ev');$('tick').hidden=false;
+    el.className=c.ph==='t'?'':'det';el.textContent=c.ph==='t'?c.title:c.det;el.style.removeProperty('--rx');
+    if(c.ph==='d')requestAnimationFrame(()=>{const over=el.scrollWidth-$('tick').clientWidth;if(over>4){el.style.setProperty('--rx',-(over+8)+'px');el.style.setProperty('--rt',Math.max(4,over/40+2)+'s');el.classList.add('run');}});},
+  tick(dt){if(this.hold||!this.cur)return;this.T-=dt;if(this.T>0)return;
+    if(this.cur.ph==='t'&&this.cur.det){this.cur.ph='d';this.T=5;this.show();return;}
+    this.cur=null;const n=this.q.shift();if(n)this.start(n);else this.show();},
+  setHold(t){this.hold=t;this.show();},
+  clear(){this.q=[];this.cur=null;this.hold=null;this.show();}};
+function showPen(t,dur){Tick.push('PENALTY',t,2);}
+function showBanner(t,s,dur){if(t==='PAUSED')return;Tick.push(t.replace(/!$/,'')+(/!$/.test(t)?'!':''),s,/GOAL|HAT|SCORES/.test(t)?3:/FIGHT|BRAWL/.test(t)?2:1);}
 function chip(el,t){const T=G.teams[t];el.textContent=T.key;el.style.background=T.R.pri;el.style.color=T.R.sec==='#111111'||T.R.sec===T.R.pri?'#ffffff':T.R.sec;el.style.boxShadow=`inset 0 -3px 0 ${T.R.sec}`;}
 function sheetHTML(){
   let h='';
@@ -2841,7 +2870,8 @@ function frame(now){
     while(sim>1e-6){const h=Math.min(1/120,sim);step(h);sim-=h;}
   }
   if(attract&&G&&(G.state==='pend'||G.state==='final'))startAttract();
-  if(bannerT>0){bannerT-=dt;if(bannerT<=0)$('banner').hidden=true;}
+  if(!paused)Tick.tick(dt);
+  {const b=$('board'),m=Math.floor(performance.now()/16000)%2?'clock':'score';if(!b.classList.contains(m)){b.classList.remove('clock','score');b.classList.add(m);}}
   {const want=!attract&&G&&G.mom&&G.mom[0]>0&&['play','faceoff','stop','goal','setup'].includes(G.state)&&sound&&!paused;
    if(want&&!Crowd.on)Crowd.start();else if(!want&&Crowd.on)Crowd.stop();}
   if(infoT>0&&!paused){infoT-=dt;if(infoT<=0)$('ibar').hidden=true;}
@@ -2945,15 +2975,27 @@ function onFS(){document.body.classList.toggle('fs',isFS());$('tFull').textConte
 document.addEventListener('fullscreenchange',onFS);document.addEventListener('webkitfullscreenchange',onFS);
 if(!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen))$('tFull').hidden=true;
 $('tFull').onclick=toggleFS;
+{let hideT=null;$('board').addEventListener('click',e=>{const b=$('board');if(e.target.closest('#tools')){clearTimeout(hideT);hideT=setTimeout(()=>b.classList.remove('open'),6000);return;}
+  b.classList.toggle('open');clearTimeout(hideT);if(b.classList.contains('open'))hideT=setTimeout(()=>b.classList.remove('open'),6000);});}
 for(const ev of['pointerdown','mousedown','touchend','keydown','click'])document.addEventListener(ev,()=>{ac();Arena.unlock();if(!$('menu').hidden||!$('season').hidden||(G&&G.state==='pregame'&&G.pre&&G.pre.ph===0))Arena.theme();},true);
-// try to start the menu theme right away; if the browser blocks autoplay it begins on the first click or key
-try{Arena.theme();}catch(e){}
+// Startup: the theme starts first and the menu appears one second after it is playing.
+// If the browser blocks sound before a click, a title screen asks for the click first.
+(function boot(){
+  const e=AD.theme&&sound?Theme.ensure():null;
+  if(!e){$('menu').hidden=false;return;}
+  let done=false;
+  const go=()=>{if(done)return;done=true;setTimeout(()=>{$('splash').hidden=true;if(attract&&$('season').hidden)$('menu').hidden=false;},1000);};
+  e.addEventListener('playing',go,{once:true});
+  $('splashGo').onclick=()=>{ac();Arena.unlock();Theme.play();setTimeout(go,2500);};
+  Theme.want=true;try{e.volume=Theme.vol;const p=e.play();if(p&&p.catch)p.catch(()=>{if(!done)$('splash').hidden=false;});}catch(x){$('splash').hidden=false;}
+  setTimeout(()=>{if(!done&&e.paused)$('splash').hidden=false;},1800);
+})();
 {const r=$('rinkW'),o=$('rinkWV');const show=()=>{o.textContent=r.value+'%';};
   r.value=clamp(+opts.rw||90,40,100);show();r.oninput=()=>{opts.rw=+r.value;show();save();sz();};}
 seg('segMarks','marks');seg('segOrient','orient');seg('segFit','fit');
 for(const[id,k]of[['segOrient','orient'],['segFit','fit']]){for(const b of $(id).querySelectorAll('button'))b.setAttribute('aria-pressed',+b.dataset.v===(+opts[k]||0)?'true':'false');$(id).addEventListener('click',()=>setTimeout(()=>{sz();camX=NX;camY=100;fitLab();}));}
 function fitLab(){const f=+opts.fit||0;$('rinkWL').textContent=f===0?'RINK SIZE (SHARE OF HEIGHT / WIDTH)':f===2?'RINK SIZE (SHARE OF HEIGHT)':'RINK SIZE (SHARE OF WIDTH)';}fitLab();for(const b of $('segMarks').querySelectorAll('button'))b.setAttribute('aria-pressed',+b.dataset.v===(+opts.marks||0)?'true':'false');
-$('tPause').onclick=()=>{if(attract)return;paused=!paused;if(paused)Vox.stop();tc('tPause',paused?'▶':'II');if(paused)showBanner('PAUSED','',1e9);else{$('banner').hidden=true;bannerT=0;}};
+$('tPause').onclick=()=>{if(attract)return;paused=!paused;if(paused)Vox.stop();tc('tPause',paused?'▶':'II');Tick.setHold(paused?'PAUSED':null);};
 $('tSound').onclick=()=>{sound=!sound;if(!sound){Vox.stop();Arena.stopMusic(0.1);Theme.stop(0.1);}else if(!$('menu').hidden||!$('season').hidden){ac();Arena.theme();}$('tSound').style.opacity=sound?1:0.45;ac();if(!sound)Music.stop();else if(G&&!attract&&(G.state==='pregame'||G.state==='pend'||G.state==='final'))Music.play();};
 $('tSpeed').onclick=()=>{speed=speed===1?2:speed===2?4:1;tc('tSpeed',speed+'×');};
 
