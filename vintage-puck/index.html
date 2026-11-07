@@ -160,8 +160,9 @@ input[type=range]{width:100%;accent-color:var(--led)}
           </div></div>
         <div><div class="lab">FIT RINK TO WINDOW / SCREEN</div>
           <div class="seg" id="segFit">
-            <button data-v="0" aria-pressed="true">Width</button>
-            <button data-v="1" aria-pressed="false">Height</button>
+            <button data-v="0" aria-pressed="true">Auto</button>
+            <button data-v="1" aria-pressed="false">Width</button>
+            <button data-v="2" aria-pressed="false">Height</button>
           </div></div>
         <div><div class="lab" id="rinkWL">RINK SIZE (SHARE OF WIDTH)</div>
           <div class="rangeRow"><input type="range" id="rinkW" min="40" max="100" step="1" value="90" aria-label="Rink size, percent of the window width or height"><output id="rinkWV">90%</output></div></div>
@@ -170,6 +171,7 @@ input[type=range]{width:100%;accent-color:var(--led)}
             <button data-v="0" aria-pressed="true">Off</button>
             <button data-v="1" aria-pressed="false">On</button>
           </div></div>
+        <div class="help" id="sndHint" hidden style="color:var(--led)">♪ Click anywhere to start the music (the browser keeps sound off until you do)</div>
         <button class="big" id="start">START GAME</button>
         <button class="ghost" id="seasonBtn">VPHL SEASON MODE</button>
         <div class="help">Touch: left thumb skates, SHOOT (hold for a slapshot), PASS. On defense the buttons become CHECK and SWITCH. Checking from behind is a hook, and checking a player without the puck is interference.<br>Keyboard: arrows/WASD, Space = shoot/check, X = pass/switch, P = pause, F = fullscreen.</div>
@@ -1751,8 +1753,9 @@ let rinkPath=null;
 function sz(){
   const r=$('stage').getBoundingClientRect();cw=r.width;ch=r.height;dpr=Math.min(2,window.devicePixelRatio||1);
   cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);
-  const o=+opts.orient||0,fh=+opts.fit===1;
-  ROT=o===1||(o===0&&cw>ch*1.05);   // horizontal: the rink lies on its side
+  const o=+opts.orient||0,f=+opts.fit||0;
+  ROT=o===1||(o===0&&cw>ch*1.05);
+  const fh=f===2||(f===0&&ROT);   // auto: horizontal rink fits the height, vertical the width   // horizontal: the rink lies on its side
   const along=fh?(ROT?W:H):(ROT?H:W);  // rink extent along the fitted screen axis
   S=(fh?ch:cw)*clamp(+opts.rw||90,40,100)/100/along;
   buildRink();
@@ -2159,10 +2162,10 @@ function hook(type,d){
     case'check':if(Math.random()<0.25&&AD.hit1)Arena.fx('hit1',0.55);else SND.check();shake=0.25;break;
     case'bighit':if(AD.hit1)Arena.fx('hit1',0.8);break;
     case'post':SND.post();break;
-    case'whistle':SND.whistle();if(G.state==='stop'&&!G.pendingPS&&!Arena.mus&&Math.random()<0.3&&(G.time-(Arena.lastStop||-99))>40){Arena.lastStop=G.time;setTimeout(()=>{if(G&&G.state==='stop')Arena.music(Arena.pickAny(['stop','organ']),{gain:0.7});},350);}break;
+    case'whistle':SND.whistle();if(G.state==='stop'&&!G.pendingPS&&!Arena.mus&&Math.random()<0.75&&(G.time-(Arena.lastStop||-99))>10){Arena.lastStop=G.time;setTimeout(()=>{if(!G||G.state!=='stop')return;if(Math.random()<0.18)playOrgan((Math.random()*3)|0);else Arena.music(Arena.pickAny(['stop','organ','organ']),{gain:0.7});},350);}break;
     case'save':SND.save();break;
-    case'faceoff':if(Math.random()<0.5&&!Arena.mus)setTimeout(()=>playOrgan((Math.random()*3)|0),350);break;
-    case'drop':if((Arena.mus||Arena.musKey)&&Arena.musKey!=='theme'){Arena.stopMusic(Arena.goalSong?3:0.7);}Arena.goalSong=false;break;
+    case'faceoff':if(Math.random()<0.12&&!Arena.mus)setTimeout(()=>playOrgan((Math.random()*3)|0),350);break;
+    case'drop':Theme.stop(1);if((Arena.mus||Arena.musKey)){Arena.stopMusic(Arena.goalSong?3:0.7);}Arena.goalSong=false;break;
     case'momentum':SND.surge();Arena.cheer(0.5);Arena.fx('airhorn',0.45);setTimeout(()=>Arena.paSay(Arena.pick('pa_mom')),700);break;
     case'punch':SND.punch(d);if(d)shake=0.12;break;
     case'fight':if(!Arena.cheer(0.7))SND.crowd(8);showBanner('FIGHT!',`${G.teams[d.a.t].key} ${d.a.id.n} vs ${G.teams[d.b.t].key} ${d.b.id.n}`,2.5);break;
@@ -2202,6 +2205,13 @@ function hook(type,d){
 /* ---------- arena audio: menu theme, PA calls, goal songs, stoppage stingers, intermission loops ---------- */
 const AD=window.ARENA_DATA||{};
 const AKEYS=p=>Object.keys(AD).filter(k=>k.startsWith(p));
+const Theme={el:null,want:false,vol:0.7,fadeT:null,
+  ensure(){if(!this.el&&AD.theme){this.el=new Audio('data:audio/mpeg;base64,'+AD.theme);this.el.loop=true;this.el.preload='auto';}return this.el;},
+  play(){const e=this.ensure();if(!e||!sound)return;this.want=true;clearInterval(this.fadeT);e.volume=this.vol;if(e.paused){try{const p=e.play();if(p&&p.catch)p.catch(()=>{});}catch(x){}}},
+  stop(f=1){this.want=false;const e=this.el;if(!e||e.paused)return;clearInterval(this.fadeT);const v0=e.volume,n=Math.max(1,Math.round(f*20));let i=0;
+    this.fadeT=setInterval(()=>{i++;try{e.volume=Math.max(0,v0*(1-i/n));}catch(x){}if(i>=n){clearInterval(this.fadeT);e.pause();e.currentTime=0;}},50);},
+  duck(on){const e=this.el;if(e&&!e.paused&&this.want)try{e.volume=on?0.32:this.vol;}catch(x){}},
+  playing(){return!!this.el&&!this.el.paused;}};
 const Arena={bufs:{},pend:{},mus:null,musKey:null,mg:null,pa:null,rev:null,duck:1,list:null,lastPick:{},
   dec(k){if(this.bufs[k])return Promise.resolve(this.bufs[k]);if(this.pend[k])return this.pend[k];if(!AD[k]||!AC)return Promise.reject();
     const bin=atob(AD[k]),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
@@ -2229,8 +2239,8 @@ const Arena={bufs:{},pend:{},mus:null,musKey:null,mg:null,pa:null,rev:null,duck:
   paSay(k,delay=0){if(!AC||!sound||!k)return;this.dec(k).then(b=>{const s=AC.createBufferSource();s.buffer=b;s.connect(this.paOut());s.start(AC.currentTime+delay);
       this.setDuck(0.3);setTimeout(()=>{if(!Vox.busy())this.setDuck(1);},(delay+b.duration+0.4)*1000);}).catch(()=>{});},
   fx(k,gain=0.7){if(!AC||!sound||!k)return;this.dec(k).then(b=>{const s=AC.createBufferSource(),g=AC.createGain();g.gain.value=gain;s.buffer=b;s.connect(g).connect(AC.destination);s.start();}).catch(()=>{});},
-  theme(){if(this.musKey==='theme'||!AC||!sound)return;Music.stop();this.music('theme',{loop:true,gain:0.7,fadeIn:1.2});},
-  intermission(){const next=()=>{if(!G||G.state!=='pend'||$('inter').hidden)return;this.music(this.pickAny(['inter','dance','rock']),{gain:0.75,onend:next,xfade:0.05});};next();},
+  theme(){if(!sound)return;Music.stop();Theme.play();},
+  intermission(){const next=()=>{if(!G||G.state!=='pend'||$('inter').hidden)return;if(Math.random()<0.12){Music.play();setTimeout(()=>{Music.stop();next();},22000);return;}this.music(this.pickAny(['inter','dance','rock']),{gain:0.75,onend:next,xfade:0.05});};next();},
   inGame(){return!!G&&!attract;},
   // crowd bed: recorded loops cross-faded end to end while a game is on
   amb:null,ambT:null,
@@ -2284,7 +2294,7 @@ const Vox={buf:null,loading:false,srcs:[],g:null,until:0,prio:0,q:null,last:{},s
     for(const id of ids){if(id==='|'){t+=0.32;continue;}
       const[off,dur]=VD.clips[id];const s=a.createBufferSource();s.buffer=this.buf;s.connect(this.g);s.start(t,off,dur);this.srcs.push(s);t+=dur;}
     this.until=t;this.prio=prio;
-    Arena.setDuck(0.3);clearTimeout(this.dk);this.dk=setTimeout(()=>{if(!this.busy())Arena.setDuck(1);},(t-a.currentTime+0.35)*1000);
+    Arena.setDuck(0.3);Theme.duck(true);clearTimeout(this.dk);this.dk=setTimeout(()=>{if(!this.busy()){Arena.setDuck(1);Theme.duck(false);}},(t-a.currentTime+0.35)*1000);
     if(Music.gain){try{Music.gain.gain.setTargetAtTime(0.32,a.currentTime,0.08);Music.gain.gain.setTargetAtTime(0.9,t,0.4);}catch(e){}}
   },
   stop(fade){if(!AC||!this.g)return;const t=AC.currentTime;try{this.g.gain.setTargetAtTime(0.0001,t,fade||0.05);}catch(e){}
@@ -2521,7 +2531,7 @@ function startShowAudio(S){
 function stopShowAudio(S){if(!S||!S.g)return;const g=S.g,ns=S.nodes||[];S.g=null;try{g.gain.setTargetAtTime(0.0001,AC.currentTime,0.15);setTimeout(()=>{for(const n of ns)try{n.stop();}catch(e){}try{g.disconnect();}catch(e){}},900);}catch(e){}}
 function preTick(dt){
   const S=G.pre;if(!S)return;S.T+=dt*(G.human<0?speed:1);const u=S.T-5;
-  if(S.ph===0&&S.T>5){S.ph=1;$('preCard').hidden=true;$('pre').classList.add('clear');$('preSkip').hidden=false;Music.stop();Arena.stopMusic(1.5);startShowAudio(S);showBanner(SHOWN[S.kind][0],SHOWN[S.kind][1],3);}
+  if(S.ph===0&&S.T>5){S.ph=1;$('preCard').hidden=true;$('pre').classList.add('clear');$('preSkip').hidden=false;Music.stop();Arena.stopMusic(1.5);Theme.stop(1.5);startShowAudio(S);showBanner(SHOWN[S.kind][0],SHOWN[S.kind][1],3);}
   if(S.ph===1){
     if(S.kind==='car'){const w=u*0.55;S.x=NX+Math.sin(w)*24;S.y=100-Math.cos(w)*62;S.a=Math.atan2(Math.sin(w)*62,Math.cos(w)*24);}
     if(S.kind==='skater'){const w=u*0.6;S.x=NX+Math.sin(w)*25;S.y=100+Math.sin(2*w)*48;S.trail.push([S.x,S.y,G.time]);if(S.trail.length>60)S.trail.shift();}
@@ -2821,6 +2831,7 @@ function frame(now){
   if(infoT>0&&!paused){infoT-=dt;if(infoT<=0)$('ibar').hidden=true;}
   if(penT>0&&!paused){penT-=dt;if(penT<=0)$('pbar').hidden=true;}
   if(!attract&&G&&G.state==='pregame'&&!paused)preTick(dt);
+  {const h=$('sndHint'),want=!$('menu').hidden&&sound&&!!AD.theme&&!Theme.playing();if(h.hidden===want)h.hidden=!want;}
   if(!attract&&G&&!paused)Vox.tick();
   {const on=!attract&&G&&!paused&&sound&&!['pregame','pend','final'].includes(G.state);if(on&&!Arena.amb)Arena.ambOn();else if(!on&&Arena.amb)Arena.ambOff();}
   if(!attract&&G&&G.state==='pend')interTick();
@@ -2880,7 +2891,7 @@ function startGame(x){
 function dropFirst(){
   if(!G||G.state!=='pregame')return;
   stopShowAudio(G.pre);G.pre=null;$('preSkip').hidden=true;$('pre').classList.remove('clear');voxCloser();
-  $('pre').hidden=true;Music.stop();if(Arena.musKey==='theme')Arena.stopMusic(1.2);
+  $('pre').hidden=true;Music.stop();Theme.stop(1.2);
   $('touch').hidden=!(G.human>=0&&coarse());
   faceoff(NX,100);
 }
@@ -2918,16 +2929,16 @@ function onFS(){document.body.classList.toggle('fs',isFS());$('tFull').textConte
 document.addEventListener('fullscreenchange',onFS);document.addEventListener('webkitfullscreenchange',onFS);
 if(!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen))$('tFull').hidden=true;
 $('tFull').onclick=toggleFS;
-for(const ev of['pointerdown','mousedown','touchend','keydown'])document.addEventListener(ev,()=>{ac();if(!$('menu').hidden||!$('season').hidden||(G&&G.state==='pregame'&&G.pre&&G.pre.ph===0))Arena.theme();},true);
+for(const ev of['pointerdown','mousedown','touchend','keydown','click'])document.addEventListener(ev,()=>{ac();if(!$('menu').hidden||!$('season').hidden||(G&&G.state==='pregame'&&G.pre&&G.pre.ph===0))Arena.theme();},true);
 // try to start the menu theme right away; if the browser blocks autoplay it begins on the first click or key
-try{ac();Arena.theme();}catch(e){}
+try{Arena.theme();}catch(e){}
 {const r=$('rinkW'),o=$('rinkWV');const show=()=>{o.textContent=r.value+'%';};
   r.value=clamp(+opts.rw||90,40,100);show();r.oninput=()=>{opts.rw=+r.value;show();save();sz();};}
 seg('segMarks','marks');seg('segOrient','orient');seg('segFit','fit');
 for(const[id,k]of[['segOrient','orient'],['segFit','fit']]){for(const b of $(id).querySelectorAll('button'))b.setAttribute('aria-pressed',+b.dataset.v===(+opts[k]||0)?'true':'false');$(id).addEventListener('click',()=>setTimeout(()=>{sz();camX=NX;camY=100;fitLab();}));}
-function fitLab(){$('rinkWL').textContent=+opts.fit===1?'RINK SIZE (SHARE OF HEIGHT)':'RINK SIZE (SHARE OF WIDTH)';}fitLab();for(const b of $('segMarks').querySelectorAll('button'))b.setAttribute('aria-pressed',+b.dataset.v===(+opts.marks||0)?'true':'false');
+function fitLab(){const f=+opts.fit||0;$('rinkWL').textContent=f===0?'RINK SIZE (SHARE OF HEIGHT / WIDTH)':f===2?'RINK SIZE (SHARE OF HEIGHT)':'RINK SIZE (SHARE OF WIDTH)';}fitLab();for(const b of $('segMarks').querySelectorAll('button'))b.setAttribute('aria-pressed',+b.dataset.v===(+opts.marks||0)?'true':'false');
 $('tPause').onclick=()=>{if(attract)return;paused=!paused;if(paused)Vox.stop();tc('tPause',paused?'▶':'II');if(paused)showBanner('PAUSED','',1e9);else{$('banner').hidden=true;bannerT=0;}};
-$('tSound').onclick=()=>{sound=!sound;if(!sound){Vox.stop();Arena.stopMusic(0.1);}else if(!$('menu').hidden||!$('season').hidden){ac();Arena.theme();}$('tSound').style.opacity=sound?1:0.45;ac();if(!sound)Music.stop();else if(G&&!attract&&(G.state==='pregame'||G.state==='pend'||G.state==='final'))Music.play();};
+$('tSound').onclick=()=>{sound=!sound;if(!sound){Vox.stop();Arena.stopMusic(0.1);Theme.stop(0.1);}else if(!$('menu').hidden||!$('season').hidden){ac();Arena.theme();}$('tSound').style.opacity=sound?1:0.45;ac();if(!sound)Music.stop();else if(G&&!attract&&(G.state==='pregame'||G.state==='pend'||G.state==='final'))Music.play();};
 $('tSpeed').onclick=()=>{speed=speed===1?2:speed===2?4:1;tc('tSpeed',speed+'×');};
 
 if(/[?&]debug/.test(location.search))window.__vp={get G(){return G},Vox,voice,Arena,startBrawl,intoBench,boardHit,freeze,startFight,setSpeed:v=>{speed=v;},sz};
