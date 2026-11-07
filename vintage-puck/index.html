@@ -2483,7 +2483,7 @@ function startShowAudio(S){
 function stopShowAudio(S){if(!S||!S.g)return;const g=S.g,ns=S.nodes||[];S.g=null;try{g.gain.setTargetAtTime(0.0001,AC.currentTime,0.15);setTimeout(()=>{for(const n of ns)try{n.stop();}catch(e){}try{g.disconnect();}catch(e){}},900);}catch(e){}}
 function preTick(dt){
   const S=G.pre;if(!S)return;S.T+=dt*(G.human<0?speed:1);const u=S.T-5;
-  if(S.ph===0&&S.T>5){S.ph=1;$('preCard').hidden=true;$('pre').classList.add('clear');$('preSkip').hidden=false;Music.stop();startShowAudio(S);showBanner(SHOWN[S.kind][0],SHOWN[S.kind][1],3);}
+  if(S.ph===0&&S.T>5){S.ph=1;$('preCard').hidden=true;$('pre').classList.add('clear');$('preSkip').hidden=false;Music.stop();Arena.stopMusic(1.5);startShowAudio(S);showBanner(SHOWN[S.kind][0],SHOWN[S.kind][1],3);}
   if(S.ph===1){
     if(S.kind==='car'){const w=u*0.55;S.x=NX+Math.sin(w)*24;S.y=100-Math.cos(w)*62;S.a=Math.atan2(Math.sin(w)*62,Math.cos(w)*24);}
     if(S.kind==='skater'){const w=u*0.6;S.x=NX+Math.sin(w)*25;S.y=100+Math.sin(2*w)*48;S.trail.push([S.x,S.y,G.time]);if(S.trail.length>60)S.trail.shift();}
@@ -2823,7 +2823,7 @@ const coarse=()=>matchMedia('(pointer:coarse)').matches||'ontouchstart' in windo
 function startAttract(){attract=true;newGame({human:-1,wear:!!+opts.marks,minutes:20,hook,home:opts.home,away:opts.away});G.hook=hook;chip($('c0'),1);chip($('c1'),0);}
 function startGame(x){
   x=x||{};const hum=x.human!=null?x.human:opts.human;
-  ac();attract=false;paused=false;speed=1;Arena.stopMusic(0.8);Arena.warm(['pa_pen','pa_pen2','pa_pen3','pa_duo','pa_mom1','pa_mom2','airhorn','hit1'].concat(AKEYS('slap'),[Arena.teamHorn(opts.home)]));
+  ac();attract=false;paused=false;speed=1;Arena.warm(['pa_pen','pa_pen2','pa_pen3','pa_duo','pa_mom1','pa_mom2','airhorn','hit1'].concat(AKEYS('slap'),[Arena.teamHorn(opts.home)]));
   ['menu','inter','final','banner','season','ibar','pbar'].forEach(i=>$(i).hidden=true);
   newGame({human:hum,wear:!!+opts.marks,minutes:x.minutes||opts.minutes,hook,home:opts.home,away:opts.away,pregame:true,season:x.season||null});
   chip($('c0'),1);chip($('c1'),0);
@@ -2835,14 +2835,14 @@ function startGame(x){
   $('preGo').textContent=hum>=0?'DROP THE PUCK':'DROP THE PUCK (AUTO)';
   $('pre').hidden=false;$('pre').classList.remove('clear');$('preCard').hidden=false;$('preSkip').hidden=true;
   G.pre={kind:SHOWS[(Math.random()*SHOWS.length)|0],T:0,ph:0,trail:[],shirts:[],win:Math.random()<0.3};
-  Music.play();
+  if(AD.theme)Arena.theme();else Music.play();
   Vox.reset();{let n=0;const go=()=>{if(!G||G.state!=='pregame')return;if(Vox.buf)voxIntro();else if(n++<12)setTimeout(go,300);};setTimeout(go,700);}
   try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{});}catch(e){}
 }
 function dropFirst(){
   if(!G||G.state!=='pregame')return;
   stopShowAudio(G.pre);G.pre=null;$('preSkip').hidden=true;$('pre').classList.remove('clear');voxCloser();
-  $('pre').hidden=true;Music.stop();
+  $('pre').hidden=true;Music.stop();if(Arena.musKey==='theme')Arena.stopMusic(1.2);
   $('touch').hidden=!(G.human>=0&&coarse());
   faceoff(NX,100);
 }
@@ -2880,7 +2880,9 @@ function onFS(){document.body.classList.toggle('fs',isFS());$('tFull').textConte
 document.addEventListener('fullscreenchange',onFS);document.addEventListener('webkitfullscreenchange',onFS);
 if(!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen))$('tFull').hidden=true;
 $('tFull').onclick=toggleFS;
-for(const ev of['pointerdown','keydown'])document.addEventListener(ev,()=>{if(!$('menu').hidden||!$('season').hidden){ac();Arena.theme();}},true);
+for(const ev of['pointerdown','mousedown','touchend','keydown'])document.addEventListener(ev,()=>{ac();if(!$('menu').hidden||!$('season').hidden||(G&&G.state==='pregame'&&G.pre&&G.pre.ph===0))Arena.theme();},true);
+// try to start the menu theme right away; if the browser blocks autoplay it begins on the first click or key
+try{ac();Arena.theme();}catch(e){}
 {const r=$('rinkW'),o=$('rinkWV');const show=()=>{o.textContent=r.value+'%';};
   r.value=clamp(+opts.rw||90,40,100);show();r.oninput=()=>{opts.rw=+r.value;show();save();sz();};}
 seg('segMarks','marks');seg('segOrient','orient');seg('segFit','fit');
