@@ -803,7 +803,7 @@ function gearPick(p,dt){
 function endMom(t){
   let any=false;
   if(G.mom[t]>0){G.mom[t]=0;any=true;}
-  if(G.duo[t]){delete G.pairs[G.duo[t].key];G.duo[t]=null;any=true;}
+
   if(any){const P=G.puck;pop('MOMENTUM BROKEN',clamp(P.x,10,W-10),P.y);emit('momEnd',t);}
 }
 function throwCaps(){
@@ -1236,7 +1236,8 @@ function carrierAI(p,dt){
   const t=p.t,a=along(t,p.y);const dl=!!G.delayed&&G.delayed.off.t!==t;
   if(G.pulled[1-t]&&a>5&&a<170&&laneOpen(p.x,p.y,NX,attGY(t),t)&&Math.random()<2*dt){doShot(p,0.7,0);return null;}
   if((p.oneT||0)>G.time&&a>3&&a<60){doShot(p,rnd(0.6,1),0);return null;}
-  {const dp=duoPartner(p);
+  if(!p.cycDec){p.cycDec=true;p.cyc=!duoPartner(p)&&Math.random()<CYCK;}
+  {const dp=duoPartner(p)||(p.cyc?cycMate(p):null);
    if(dp&&a<45){
      // set play: carry it below the goal line, work it there while the partner finds a shooting spot, then feed the one-timer
      if(a<0.5){
@@ -1244,7 +1245,7 @@ function carrierAI(p,dt){
        p.duoT+=dt;const pa=along(t,dp.y),open=openness(dp);
        const ready=dp.duoSpot&&hyp(dp.x-dp.duoSpot[0],dp.y-dp.duoSpot[1])<3;
        if((p.duoT>p.duoBake&&ready&&pa>3&&pa<30&&open>3.5&&laneOpen(p.x,p.y,dp.x,dp.y,t)&&Math.random()<3*dt)||p.duoT>p.duoBake+2.6){
-         p.duoT=0;doPass(p,dp,true);emit('duoPass',{p,dp});return null;}
+         p.duoT=0;const isDuo=duoPartner(p)===dp;doPass(p,dp,isDuo);if(!isDuo&&G.puck.pass)G.puck.pass.cyc=true;emit('duoPass',{p,dp,duo:isDuo});return null;}
        if(Math.abs(p.x-NX)>8)p.duoDir=p.x<NX?1:-1;
        return[NX+p.duoDir*9,yAlong(t,-5.2+Math.sin(G.time*2+p.phase)*0.6),0.55];
      }
@@ -1297,7 +1298,7 @@ function playerAI(p,dt){
     const v2=P.vx*P.vx+P.vy*P.vy||1;const tc=Math.max(0,((p.x-P.x)*P.vx+(p.y-P.y)*P.vy)/v2);
     return[P.x+P.vx*tc,P.y+P.vy*tc,1];
   }
-  if(P.owner&&P.owner.t===t&&duoPartner(P.owner)===p&&along(t,P.owner.y)<45)return duoSpot(p,P.owner);
+  if(P.owner&&P.owner.t===t&&playMate(P.owner)===p&&along(t,P.owner.y)<45)return duoSpot(p,P.owner);
   if(P.owner&&P.owner.t===t&&p.role!=='LD'&&p.role!=='RD'&&duoScreen(t)===p)return[NX+Math.sin(G.time*1.5+p.phase)*0.8,yAlong(t,4.2),0.9];
   if(P.owner&&P.owner.t===t){const[x,y]=offenseTarget(p,P.owner.x,P.owner.y);return[x,y,0.85];}
   if(G.chaser[t]===p){
@@ -1313,6 +1314,13 @@ function playerAI(p,dt){
   if(G.lastTeam===t&&!P.owner){const[x,y]=offenseTarget(p,P.x,P.y);return[x,y,0.8];}
   const[x,y]=defenseTarget(p);return[x,y,0.9];
 }
+let CYCK=0.3;   // share of ordinary attacks that go below the goal line and feed the slot
+function cycMate(p){
+  const m=p.cycMate;if(m&&G.on.includes(m)&&m.down<=0&&!m.crash)return m;
+  const f=G.on.filter(q=>q.t===p.t&&q!==p&&q.role!=='G'&&q.role[1]!=='D'&&q.down<=0&&!q.crash);
+  const gy=attGY(p.t);f.sort((a,b)=>hyp(a.x-NX,a.y-gy)-hyp(b.x-NX,b.y-gy));p.cycMate=f[0]||null;return p.cycMate;
+}
+const playMate=c=>c?(duoPartner(c)||(c.cyc&&c.cycMate&&G.on.includes(c.cycMate)?c.cycMate:null)):null;
 const DUO_SPOTS=[[0,11],[-4,8],[4,8],[0,19],[-11,17],[11,17],[-6,5],[6,5]];
 function duoSpot(p,c){
   // the shooter hunts for the open ice: lane from the passer, room from defenders, a look at the net
@@ -1326,7 +1334,7 @@ function duoSpot(p,c){
   return[p.duoSpot[0],p.duoSpot[1],1];
 }
 function duoScreen(t){
-  const c=G.puck.owner;if(!c||c.t!==t||along(t,c.y)>=0.5)return null;const dp=duoPartner(c);if(!dp)return null;
+  const c=G.puck.owner;if(!c||c.t!==t||along(t,c.y)>=0.5)return null;const dp=playMate(c);if(!dp)return null;
   if(G.duoScr&&G.duoScr.c===c&&G.duoScr.p.t===t&&G.on.includes(G.duoScr.p)&&G.duoScr.p.down<=0)return G.duoScr.p;
   const f=G.on.filter(q=>q.t===t&&q!==c&&q!==dp&&q.role!=='G'&&q.role[1]!=='D'&&q.down<=0).sort((a,b)=>hyp(a.x-NX,a.y-attGY(t))-hyp(b.x-NX,b.y-attGY(t)))[0];
   G.duoScr=f?{c,p:f}:null;return f||null;
@@ -1599,7 +1607,7 @@ function goalScored(goalY){
   G.sheet.push(ev);
   if(str==='PP'){const m=G.pens.filter(p=>p.t===ot&&(p.sev==='minor'||p.sev==='double')).sort((a,b)=>a.left-b.left)[0];
     if(m){if(m.sev==='double'&&m.left>m.dur/2)m.left=m.dur/2;else releasePen(m);}}
-  P.vx=P.vy=0;P.owner=null;P.shot=null;P.pass=null;G.lastGoalY=goalY;G.goalScrum=false;
+  P.vx=P.vy=0;P.owner=null;P.shot=null;P.pass=null;G.lastGoalY=goalY;G.goalScrum=false;G.lampT=G.time;
   G.state='goal';G.stateT=ev.hat?7.5:3.2;
   emit('goal',ev);
 }
@@ -1720,9 +1728,9 @@ function updatePuck(dt){
     const rel=hyp(P.vx-p.vx,P.vy-p.vy);
     const lim=(P.pass&&P.pass.to===p)?100:(P.pass&&P.pass.duo)?40:(P.shot?45:72);
     if(rel<lim){
-      const duoRx=P.pass&&P.pass.duo&&P.pass.to===p,ic=P.pass&&P.pass.from.t!==p.t;
+      const duoRx=P.pass&&(P.pass.duo||P.pass.cyc)&&P.pass.to===p,ic=P.pass&&P.pass.from.t!==p.t;
       if(duoRx)p.oneT=G.time+1.0;
-      P.owner=p;P.vx=P.vy=0;P.pass=null;P.shot=null;p.protect=0.35;p.hold=0;
+      P.owner=p;P.vx=P.vy=0;P.pass=null;P.shot=null;p.protect=0.35;p.hold=0;p.cycDec=false;p.cycMate=null;
       addTouch(p);G.lastTeam=p.t;emit('stick');
       if(ic&&G.state==='play')emit('intercept',{p});
       if(G.human===p.t)G.ctrl=p;
@@ -1835,6 +1843,18 @@ function drawNets(c){
     c.moveTo(NX-PHW,gy);c.lineTo(NX-PHW,gy+dir*NETD*0.85);c.quadraticCurveTo(NX-PHW,gy+dir*NETD,NX-PHW+1,gy+dir*NETD);
     c.lineTo(NX+PHW-1,gy+dir*NETD);c.quadraticCurveTo(NX+PHW,gy+dir*NETD,NX+PHW,gy+dir*NETD*0.85);c.lineTo(NX+PHW,gy);c.stroke();
     c.restore();});
+}
+function drawLamps(c){
+  // goal lamps behind the nets; the scoring end spins red for ~6 s
+  for(const gy of[GLT,GLB]){
+    const y=gy===GLT?GLT-NETD-2.6:GLB+NETD+2.6,on=G.lampT!=null&&G.lastGoalY===gy&&G.time-G.lampT<6.5;
+    if(on){const a=G.time*7;
+      for(const k of[0,Math.PI]){const g=c.createRadialGradient(NX,y,0.5,NX,y,15);g.addColorStop(0,'rgba(255,40,30,.55)');g.addColorStop(1,'rgba(255,40,30,0)');
+        c.fillStyle=g;c.beginPath();c.moveTo(NX,y);c.arc(NX,y,15,a+k-0.32,a+k+0.32);c.closePath();c.fill();}
+      const h=c.createRadialGradient(NX,y,0,NX,y,4.5);h.addColorStop(0,'rgba(255,60,40,.5)');h.addColorStop(1,'rgba(255,60,40,0)');c.fillStyle=h;c.beginPath();c.arc(NX,y,4.5,0,7);c.fill();}
+    c.fillStyle='#2a2f3a';c.fillRect(NX-1.3,y-0.35+(gy===GLT?-0.9:0.9),2.6,0.7);
+    c.fillStyle=on?'#ff3a2a':'#5a1a1a';c.beginPath();c.arc(NX,y,1.05,0,7);c.fill();
+    c.fillStyle=on?'rgba(255,220,200,.9)':'rgba(255,255,255,.18)';c.beginPath();c.arc(NX-0.3,y-0.3,0.33,0,7);c.fill();}
 }
 function drawStar(c,x,y,r){c.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*0.45:r;c.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}c.closePath();c.fill();}
 function hairCol(n){let h=0;for(const ch of n)h=(h*17+ch.charCodeAt(0))%997;return['#3b2616','#6b4423','#1d1410','#a4783f','#5a3a22'][h%5];}
@@ -1950,7 +1970,28 @@ function drawZam(c,Z){
   c.restore();
 }
 
+let camZ=1;
+function zoomFocus(){
+  // returns [x,y] when the camera should close in by 30%
+  if(!G||attract)return null;const P=G.puck;
+  if(G.state==='brawl'&&G.brawl)return[G.brawl.x,G.brawl.y];
+  if(G.state==='fight'&&G.fight)return[G.fight.x,G.fight.y];
+  if(G.jam)return[G.jam.x,G.jam.y];
+  if((G.state==='faceoff'||(G.state==='setup'&&G.setup&&G.setup.T>1.5))&&hyp(P.x-NX,P.y-100)<1)return[NX,100];
+  if(G.state==='play'&&!P.owner){for(const gy of[GLT,GLB]){if(hyp(P.x-NX,P.y-gy)<9&&G.on.filter(q=>q.role!=='G'&&hyp(q.x-P.x,q.y-P.y)<8).length>=4)return[P.x,P.y];}}
+  if(G.state==='stop'&&G.scrambleZ&&G.time<G.scrambleZ)return[P.x,P.y];
+  return null;
+}
 function render(dt){
+  if(!rink||!G)return;
+  const zf=zoomFocus();
+  if(zf){G.zf=zf;G.zfT=G.time+1.2;}                 // hold a moment so the camera doesn't pump
+  const zon=!!zf||(G.zfT&&G.time<G.zfT);
+  camZ+=((zon?1.3:1)-camZ)*Math.min(1,dt*2.2);
+  const S0=S;S=S0*camZ;
+  try{renderCore(dt,zon?G.zf:null);}finally{S=S0;}
+}
+function renderCore(dt,zf){
   if(!rink||!G)return;
   const P=G.puck;
   let tx=P.x+P.vx*0.15,ty=P.y+P.vy*0.25;
@@ -1958,6 +1999,7 @@ function render(dt){
   if(G.state==='pregame'){tx=G.pre&&G.pre.cx!=null?G.pre.cx:NX;ty=G.pre&&G.pre.cy!=null?G.pre.cy:100;}
   if(G.state==='fight'&&G.fight){tx=G.fight.x;ty=G.fight.y;}
   if(G.state==='brawl'&&G.brawl){tx=G.brawl.x;ty=G.brawl.y;}
+  if(zf){tx=zf[0];ty=zf[1];}
   const vw=(ROT?ch:cw)/S,vh=(ROT?cw:ch)/S;   // view extent across (world x) and along (world y) the rink
   const kx=Math.min(1,dt*4),ky=Math.min(1,dt*5);
   camX+=((vw>=W?NX:clamp(tx,vw/2-6,W+6-vw/2))-camX)*kx;
@@ -1980,6 +2022,7 @@ function render(dt){
   }
   ctx.restore();
   drawNets(ctx);
+  drawLamps(ctx);
   drawBoxed(ctx);
   for(const pr of G.props){
     if(pr.k==='cap'){const u=(G.time-pr.st)/0.9;if(u<0)continue;const k=Math.min(1,u),z=u<1?Math.sin(u*Math.PI)*6:0;
@@ -2017,7 +2060,7 @@ function render(dt){
   ctx.font=`700 ${fsz}px "Chakra Petch", system-ui, sans-serif`;
   if(G.state!=='pend'&&!showOnly)for(const p of G.on.concat(G.ghosts||[])){
     if(p.down>0)continue;const J=G.teams[p.t].J;
-    const[nx,ny]=toS(p.x,p.y);ctx.fillStyle=J.num;ctx.fillText(p.id.no,nx,ny+0.5);
+    const[nx,ny]=toS(p.x-p.fx*1.05,p.y-p.fy*1.05);ctx.fillStyle=J.num;ctx.fillText(p.id.no,nx,ny+0.5);
   }
   ctx.font=`700 ${Math.max(7,fsz*0.8)}px "Chakra Petch", system-ui, sans-serif`;
   for(const p of G.players)if(p.box&&p.bx){ctx.fillStyle=G.teams[p.t].J.num;const[bx,by]=toS(p.bx+0.3,p.by);ctx.fillText(p.id.no,bx,by);}
@@ -2176,7 +2219,8 @@ function hook(type,d){
     case'bighit':if(AD.hit1)Arena.fx('hit1',0.8);break;
     case'post':SND.post();break;
     case'whistle':SND.whistle();break;
-    case'setup':if(G.ghosts.length&&!Arena.mus&&!Arena.goalSong)Arena.playBreak(Arena.pickBreak(),{gain:0.7});break;
+    case'setup':if(!Arena.mus&&!Arena.goalSong){const early=(G.breakN||0)<2;   // the first two stoppages of a game always get a recorded song
+      if(early||G.ghosts.length){G.breakN=(G.breakN||0)+1;Arena.playBreak(early?Arena.pickBreak(null,true):Arena.pickBreak(),{gain:0.7});}}break;
     case'save':SND.save();break;
     case'drop':Theme.stop(1);if((Arena.mus||Arena.musKey)){Arena.stopMusic(Arena.goalSong?3:0.7);}Arena.goalSong=false;break;
     case'momentum':SND.surge();Arena.cheer(0.5);Tick.push('MOMENTUM',`${G.teams[d].R.city} ${G.teams[d].R.nick} · team momentum boost`,1);Arena.fx('airhorn',0.45);setTimeout(()=>Arena.paSay(Arena.pick('pa_mom')),700);break;
@@ -2261,7 +2305,7 @@ const Arena={bufs:{},pend:{},mus:null,musKey:null,mg:null,pa:null,rev:null,duck:
   setDuck(v){this.duck=v;const m=this.mus;if(!m)return;clearInterval(m.fade);try{m.e.volume=Math.min(1,m.base*v);}catch(x){}},
   // break playlist: the songs supplied for stoppages and intermissions plus the original synth organ riffs
   BREAK:['organ1','organ2','organ3','dance1','dance2','dance3','dance4','rock1','rock2','rock3','rock4','midi0','midi1','midi2'],
-  pickBreak(extra){const L=this.BREAK.filter(k=>k.startsWith('midi')||AD[k]).concat(extra||[]);let k;do k=L[(Math.random()*L.length)|0];while(L.length>1&&k===this.lastBreak);this.lastBreak=k;return k;},
+  pickBreak(extra,mp3){const L=this.BREAK.filter(k=>mp3?!!AD[k]:(k.startsWith('midi')||AD[k])).concat(extra||[]);let k;do k=L[(Math.random()*L.length)|0];while(L.length>1&&k===this.lastBreak);this.lastBreak=k;return k;},
   playBreak(k,o){if(k.startsWith('midi')){this.stopMusic(0.2);playOrgan(+k.slice(4)||0);if(o&&o.onend)setTimeout(()=>{if(o.alive())o.onend();},4500);return;}
     if(k==='chip'){this.stopMusic(0.2);Music.play();setTimeout(()=>{Music.stop();if(o&&o.alive())o.onend();},22000);return;}
     this.music(k,Object.assign({gain:0.75},o||{}));},
