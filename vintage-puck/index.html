@@ -316,7 +316,7 @@ function newGame(opts){
     human:opts.human,ctrl:null,hook:opts.hook||null,stuckT:0,assignT:0,stopDot:null,
     stats:{},inPrev:{shoot:false,pass:false},charge:0,lastTeam:0,
     sheet:[],pens:[],inf:{},ejected:{},fights:0,fightCd:0,fight:null,pops:[],zam:null,rm:4/opts.minutes,pulled:[false,false],delayed:null,chances:{},half:{},hp:0,streakFirst:[null,null],pairs:{},duo:[null,null],streak:[0,0],mom:[-99,-99],hot:{},sa:[0,0],jam:null,jamCd:0,fo:[0,0],interPh:-1,interSkip:0,netOff:[null,null],ps:null,so:null,pendingPS:null,soWinner:null,
-    wear:new Uint8Array(GW*GH),wearDirty:true,props:[],sitting:{},boxDisp:[],fought:{},brawl:null,brawled:false,
+    wear:new Uint8Array(GW*GH),wearDirty:true,props:[],ghosts:[],setup:null,sitting:{},boxDisp:[],fought:{},brawl:null,brawled:false,
     teams:[mkTeam(opts.home,true),mkTeam(opts.away,false)],players:[],on:[],
     puck:{x:NX,y:100,vx:0,vy:0,owner:null,touches:[],shot:null,pass:null,through:null,ice:null}};
   wearPix.fill(0);
@@ -377,17 +377,49 @@ function lineupPose(){
     const i=['LW','C','RW','LD','RD'].indexOf(p.role);
     p.x=NX-24+i*12;p.y=top?126.5:73.5;p.fx=0;p.fy=top?-1:1;}
 }
-function faceoff(fx,fy){
+const FOPOS={C:[0,2.6],LW:[-13,5],RW:[13,5],LD:[-11,17],RD:[11,17],X:[5,9]};
+function foTarget(p,fx,fy){
+  if(p.role==='G')return[NX,ownGY(p.t)+(attTop(p.t)?-2.5:2.5)];
+  const s=attTop(p.t)?1:-1,m=mir(p.t),o=FOPOS[p.role]||[0,9];
+  const q={x:clamp(fx+o[0]*m,4,W-4),y:clamp(fy+o[1]*s,GLT+2,GLB-2),vx:0,vy:0};boardCollide(q,SR,0);return[q.x,q.y];
+}
+// After a whistle the teams skate into the faceoff instead of appearing there: a line that has been out
+// a while changes (the old one skates off, the new one comes over the boards), otherwise the five on the ice line up.
+function beginSetup(fx,fy){
+  const P=G.puck;P.x=fx;P.y=fy;P.vx=P.vy=0;P.owner=null;P.shot=null;P.pass=null;P.through=null;P.ice=null;P.air=null;G.jam=null;G.fight=null;
+  for(const t of[0,1]){const want=lateTrail(t)&&along(t,fy)<=125;if(want&&!G.pulled[t])finishPull(t,true);else if(!want)returnGoalie(t);}
+  G.ghosts=[];
+  for(let t=0;t<2;t++){const T=G.teams[t];let ch=false;
+    if(T.lineT>40){T.line=(T.line+1)%T.R.F.length;T.lineT=0;ch=true;}
+    if(T.pairT>50){T.pair=(T.pair+1)%T.R.D.length;T.pairT=0;ch=true;}
+    if(!ch)continue;
+    const old=new Map(G.players.filter(p=>p.t===t&&!p.box&&!p.bench&&p.role!=='G').map(p=>[p,p.id]));
+    applyLines(t);
+    for(const[p,id]of old){if(p.id===id||p.crash)continue;
+      G.ghosts.push({t,id,role:p.role,x:p.x,y:p.y,vx:p.vx,vy:p.vy,fx:p.fx,fy:p.fy,down:0,phase:p.phase,stumble:0,noHelm:p.noHelm,noStick:p.noStick,ghost:true});
+      Object.assign(p,{x:SR+0.6,y:BENCHY[t]+rnd(-3,3),vx:5,vy:0,fx:1,fy:0,noHelm:false,noStick:false,down:0,stumble:0,slow:0,pin:0,wc:null,wcc:-1});}}
+  refreshOn();
+  for(const p of G.players){p.toBench=false;p.hurt=false;}
+  for(const p of G.on)p.foT=foTarget(p,fx,fy);
+  G.setup={fx,fy,T:0};G.state='setup';G.stuckT=0;emit('setup',G.setup);
+}
+function updateGhosts(dt){
+  for(const q of G.ghosts){const tx=SR+0.4,ty=BENCHY[q.t],dx=tx-q.x,dy=ty-q.y,d=hyp(dx,dy)||1;
+    const sp=Math.min(17,d*3);q.vx+=(dx/d*sp-q.vx)*Math.min(1,dt*3);q.vy+=(dy/d*sp-q.vy)*Math.min(1,dt*3);
+    q.x+=q.vx*dt;q.y+=q.vy*dt;const v=hyp(q.vx,q.vy);if(v>1){q.fx=q.vx/v;q.fy=q.vy/v;}if(d<1.6)q.gone=true;}
+  G.ghosts=G.ghosts.filter(q=>!q.gone);
+}
+function faceoff(fx,fy,skated){
   const P=G.puck;P.x=fx;P.y=fy;P.vx=P.vy=0;P.owner=null;P.shot=null;P.pass=null;P.through=null;P.touches=[];
-  G.props=[];G.fight=null;G.netOff=[null,null];P.ice=null;P.air=null;G.jam=null;
+  G.props=[];G.fight=null;G.netOff=[null,null];P.ice=null;P.air=null;G.jam=null;G.ghosts=[];G.setup=null;
   for(let t=0;t<2;t++){const T=G.teams[t];
-    if(T.lineT>40){T.line=(T.line+1)%T.R.F.length;T.lineT=0;}
-    if(T.pairT>50){T.pair=(T.pair+1)%T.R.D.length;T.pairT=0;}
+    if(!skated){if(T.lineT>40){T.line=(T.line+1)%T.R.F.length;T.lineT=0;}
+    if(T.pairT>50){T.pair=(T.pair+1)%T.R.D.length;T.pairT=0;}}
     applyLines(t);}
   refreshOn();
   G.delayed=null;
   for(const t of[0,1]){const want=lateTrail(t)&&along(t,fy)<=125;if(want&&!G.pulled[t])finishPull(t,true);else if(!want)returnGoalie(t);}
-  const POS={C:[0,2.6],LW:[-13,5],RW:[13,5],LD:[-11,17],RD:[11,17],X:[5,9]};
+  const POS=FOPOS;
   for(const p of G.on){
     p.vx=p.vy=0;p.down=0;p.dash=0;p.noPick=0;p.hold=0;p.slow=0;p.noHelm=false;p.noStick=false;p.gearT=0;p.toBench=false;p.hurt=false;p.stumble=0;p.crash=null;p.pin=0;p.pose=null;p.gl=0;p.bp=null;p.third=null;p.gs=null;
     const s=attTop(p.t)?1:-1,m=mir(p.t);
@@ -1377,6 +1409,10 @@ function step(dt){
       if(G.period>=4&&S.result==='goal'){G.state='final';emit('final');return;}
       faceoff(NX,100);}
     return;}
+  if(G.state==='setup'){const Su=G.setup;Su.T+=dt;updatePlayers(dt,'setup');updateGhosts(dt);
+    const ready=G.on.every(p=>p.crash||p.down>0||!p.foT||hyp(p.x-p.foT[0],p.y-p.foT[1])<1.1);
+    if((ready&&!G.ghosts.length&&Su.T>0.8)||Su.T>16)faceoff(Su.fx,Su.fy,true);
+    G.inPrev={shoot:IN.shoot,pass:IN.pass};return;}
   if(G.state==='faceoff'){G.stateT-=dt;if(G.stateT<=0)dropPuck();updatePlayers(dt,'still');return;}
   if(G.state==='brawl'){updatePlayers(dt,'brawl');updateBrawl(dt);P.vx*=0.97;P.vy*=0.97;P.x+=P.vx*dt;P.y+=P.vy*dt;boardCollide(P,PR,0.4);G.inPrev={shoot:IN.shoot,pass:IN.pass};return;}
   if(G.state==='fight'){updatePlayers(dt,'fight');updateFight(dt);P.vx*=0.98;P.vy*=0.98;P.x+=P.vx*dt;P.y+=P.vy*dt;boardCollide(P,PR,0.4);G.inPrev={shoot:IN.shoot,pass:IN.pass};return;}
@@ -1387,7 +1423,7 @@ function step(dt){
       if(G.state==='goal'&&G.period>=4){G.state='final';emit('final');return;}
       if(G.state==='goal'&&!G.goalScrum&&G.lastGoalY&&Math.random()<(DEBUG_BRAWL?0.5:0.03)){G.goalScrum=true;const fy=G.lastGoalY===GLT?1:-1;if(startBrawl('scrum',NX,G.lastGoalY+fy*4,{after:'goal'})){emit('goalScrum');return;}}
       if(G.pendingPS){const q=G.pendingPS;G.pendingPS=null;startPS('ps',q.t,q.slot,q.id);return;}
-      if(G.state==='goal')faceoff(NX,100);else faceoff(G.stopDot[0],G.stopDot[1]);}
+      if(G.state==='goal')beginSetup(NX,100);else beginSetup(G.stopDot[0],G.stopDot[1]);}
     G.inPrev={shoot:IN.shoot,pass:IN.pass};
     return;}
   if(G.state!=='play')return;
@@ -1457,6 +1493,8 @@ function updatePlayers(dt,mode){
       let dvx=0,dvy=0;
       if(mode==='still'){if(isG){const r=goalieAI(p);const dx=r[0]-p.x,dy=r[1]-p.y,d=hyp(dx,dy);if(d>0.3){dvx=dx/d*Math.min(maxS,d*3);dvy=dy/d*Math.min(maxS,d*3);}}}
       else if(mode==='glide'){const f=Math.exp(-1.5*dt);dvx=p.vx*f;dvy=p.vy*f;if(isG){const r=goalieAI(p);dvx=(r[0]-p.x)*3;dvy=(r[1]-p.y)*3;}}
+      else if(mode==='setup'){const r=p.foT||[p.x,p.y];const dx=r[0]-p.x,dy=r[1]-p.y,d=hyp(dx,dy);
+        if(d>0.25){const sp=Math.min(maxS*(isG?0.5:0.62),d*2.2);dvx=dx/d*sp;dvy=dy/d*sp;}}
       else if(mode==='fight'||mode==='brawl'){const r=mode==='brawl'?brawlRingAI(p):fightRingAI(p);const dx=r[0]-p.x,dy=r[1]-p.y,d=hyp(dx,dy);if(d>0.6){dvx=dx/d*Math.min(maxS*r[2],d*2);dvy=dy/d*Math.min(maxS*r[2],d*2);}}
       else if(G.human===p.t&&G.ctrl===p&&!p.toBench){const h=humanControl(p,dt);dvx=h.dvx*maxS;dvy=h.dvy*maxS;if(G.state!=='play')return;}
       else{
@@ -1948,7 +1986,7 @@ function render(dt){
     if(G.state==='pregame'&&G.pre&&G.pre.ph===1)drawShow(ctx,G.pre);
     const sp=hyp(P.vx,P.vy);
     if(!P.owner&&sp>45){ctx.strokeStyle='rgba(30,40,60,.25)';ctx.lineWidth=0.7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(P.x,P.y);ctx.lineTo(P.x-P.vx*0.06,P.y-P.vy*0.06);ctx.stroke();}
-    const order=G.on.slice().sort((a,b)=>a.y-b.y);
+    const order=G.on.concat(G.ghosts||[]).sort((a,b)=>a.y-b.y);
     const puckFirst=!P.owner;
     if(puckFirst)drawPuck();
     for(const p of order)drawPlayer(ctx,p);
@@ -1961,7 +1999,7 @@ function render(dt){
   ctx.textAlign='center';ctx.textBaseline='middle';
   const fsz=Math.max(8,Math.min(12,S*1.15));
   ctx.font=`700 ${fsz}px "Chakra Petch", system-ui, sans-serif`;
-  if(G.state!=='pend'&&!showOnly)for(const p of G.on){
+  if(G.state!=='pend'&&!showOnly)for(const p of G.on.concat(G.ghosts||[])){
     if(p.down>0)continue;const J=G.teams[p.t].J;
     const[nx,ny]=toS(p.x,p.y);ctx.fillStyle=J.num;ctx.fillText(p.id.no,nx,ny+0.5);
   }
@@ -2778,7 +2816,7 @@ function frame(now){
   }
   if(attract&&G&&(G.state==='pend'||G.state==='final'))startAttract();
   if(bannerT>0){bannerT-=dt;if(bannerT<=0)$('banner').hidden=true;}
-  {const want=!attract&&G&&G.mom&&G.mom[0]>0&&['play','faceoff','stop','goal'].includes(G.state)&&sound&&!paused;
+  {const want=!attract&&G&&G.mom&&G.mom[0]>0&&['play','faceoff','stop','goal','setup'].includes(G.state)&&sound&&!paused;
    if(want&&!Crowd.on)Crowd.start();else if(!want&&Crowd.on)Crowd.stop();}
   if(infoT>0&&!paused){infoT-=dt;if(infoT<=0)$('ibar').hidden=true;}
   if(penT>0&&!paused){penT-=dt;if(penT<=0)$('pbar').hidden=true;}
