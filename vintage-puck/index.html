@@ -1851,7 +1851,7 @@ function drawNets(c){
 function drawLamps(c){
   // goal lamps behind the nets; the scoring end spins red for ~6 s
   for(const gy of[GLT,GLB]){
-    const y=gy===GLT?GLT-NETD-2.6:GLB+NETD+2.6,on=G.lampT!=null&&G.lastGoalY===gy&&G.time-G.lampT<6.5;
+    const y=gy===GLT?-3.4:H+3.4,on=G.lampT!=null&&G.lastGoalY===gy&&G.time-G.lampT<6.5;
     if(on){const a=G.time*7;
       for(const k of[0,Math.PI]){const g=c.createRadialGradient(NX,y,0.5,NX,y,15);g.addColorStop(0,'rgba(255,40,30,.55)');g.addColorStop(1,'rgba(255,40,30,0)');
         c.fillStyle=g;c.beginPath();c.moveTo(NX,y);c.arc(NX,y,15,a+k-0.32,a+k+0.32);c.closePath();c.fill();}
