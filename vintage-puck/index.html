@@ -322,7 +322,11 @@ const wearPix=new Uint8ClampedArray(GW*GH*4);
 let G=null;
 function emit(type,d){if(G&&G.hook)G.hook(type,d);}
 
-function jersey(R,home){return home?{col:'#f2f2f2',trim:R.pri,num:R.pri,helm:R.pri,label:R.pri}:{col:R.pri,trim:R.sec,num:R.numc,helm:R.pri,label:R.sec};}
+function lightCol(c){const n=parseInt(c.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;return(0.299*r+0.587*g+0.114*b)>200;}
+// helmet: a coloured jersey wears its own colour; a white jersey takes the team's non-white colour
+function helmFor(col,R){if(!lightCol(col))return col;if(!lightCol(R.pri))return R.pri;if(!lightCol(R.sec))return R.sec;return'#2b2b2b';}
+function jersey(R,home){const col=home?'#f2f2f2':R.pri;
+  return home?{col,trim:R.pri,num:R.pri,helm:helmFor(col,R),label:R.pri}:{col,trim:R.sec,num:R.numc,helm:helmFor(col,R),label:R.sec};}
 
 function newGame(opts){
   G={opts,period:1,periodLen:opts.minutes*60,clock:opts.minutes*60,time:0,state:opts.pregame?'pregame':'faceoff',stateT:0,
@@ -1036,7 +1040,7 @@ const avail=n=>!G.ejected[n]&&!G.sitting[n];
 function dropGear(p,k){
   const a=rnd(6.28),r=rnd(0.8,2.6);let x=p.x+Math.cos(a)*r,y=p.y+Math.sin(a)*r;
   if(boardDist(x,y)<1.2){x=p.x;y=p.y;}
-  G.props.push({k,x,y,a:rnd(6.28),col:k==='glove'?(p.role==='G'?'#f4f4f4':G.teams[p.t].J.trim):k==='helmet'?(p.role==='G'?'#d8d8d8':G.teams[p.t].J.helm):null});
+  G.props.push({k,x,y,a:rnd(6.28),col:k==='glove'?(p.role==='G'?'#f4f4f4':G.teams[p.t].J.trim):k==='helmet'?G.teams[p.t].J.helm:null});
 }
 function gearSched(p,t0,full){
   // each piece comes off on its own clock (or not at all)
@@ -1904,7 +1908,7 @@ function drawPlayer(c,p){
     const arms=wr?[[1.7,-1.2],[1.7,1.2]]:[[1.0+(p.punchT>0&&(Math.floor(ft*10)%2)?pt*1.4:0),-0.7],[1.0+(p.punchT>0?pt*1.5:0),0.7]];
     arms.forEach(([ax,ay],i)=>{c.beginPath();c.moveTo(0.2,ay>0?1.1:-1.1);c.lineTo(ax,ay);c.stroke();
       const bareHand=(p.gl||0)>=(i?2:1);c.fillStyle=bareHand?'#e8c09a':(isG?'#f4f4f4':J.trim);c.beginPath();c.arc(ax,ay,bareHand?0.38:0.5,0,7);c.fill();});
-    c.fillStyle=p.noHelm?hairCol(p.id.n):isG?'#d8d8d8':J.helm;c.beginPath();c.arc(0.1,0,isG?0.82:0.72,0,7);c.fill();
+    c.fillStyle=p.noHelm?hairCol(p.id.n):J.helm;c.beginPath();c.arc(0.1,0,isG?0.82:0.72,0,7);c.fill();
     c.restore();return;
   }
   if(p.stumble>0&&!isG){
@@ -1925,7 +1929,8 @@ function drawPlayer(c,p){
     c.beginPath();c.ellipse(-0.2,0,1.5,2.3,0,0,7);c.fill();c.stroke();
     c.fillStyle='#d8d8d8';c.beginPath();c.arc(0.4,-2.2,0.8,0,7);c.fill();
     c.fillStyle='#8a6a3a';c.beginPath();c.arc(0.4,2.2,0.7,0,7);c.fill();
-    c.fillStyle='#e8e8e8';c.beginPath();c.arc(0.1,0,0.85,0,7);c.fill();
+    c.fillStyle=J.helm;c.beginPath();c.arc(0.1,0,0.85,0,7);c.fill();
+    c.strokeStyle='rgba(235,240,245,.85)';c.lineWidth=0.13;c.beginPath();c.arc(0.1,0,0.62,-0.9,0.9);c.moveTo(0.62,-0.38);c.lineTo(0.62,0.38);c.stroke();
   }else{
     c.fillStyle=J.col;c.strokeStyle=J.trim;c.lineWidth=0.25;
     c.beginPath();c.ellipse(-0.15,0,1.05,1.75,0,0,7);c.fill();c.stroke();
@@ -2060,7 +2065,7 @@ function renderCore(dt,zf){
   ctx.font=`700 ${fsz}px "Chakra Petch", system-ui, sans-serif`;
   if(G.state!=='pend'&&!showOnly)for(const p of G.on.concat(G.ghosts||[])){
     if(p.down>0)continue;const J=G.teams[p.t].J;
-    const[nx,ny]=toS(p.x-p.fx*1.05,p.y-p.fy*1.05);ctx.fillStyle=J.num;ctx.fillText(p.id.no,nx,ny+0.5);
+    const[nx,ny]=toS(p.x-p.fx*1.3,p.y-p.fy*1.3);ctx.fillStyle=J.num;ctx.font=`700 ${fsz*0.82}px "Chakra Petch", system-ui, sans-serif`;ctx.fillText(p.id.no,nx,ny+0.5);
   }
   ctx.font=`700 ${Math.max(7,fsz*0.8)}px "Chakra Petch", system-ui, sans-serif`;
   for(const p of G.players)if(p.box&&p.bx){ctx.fillStyle=G.teams[p.t].J.num;const[bx,by]=toS(p.bx+0.3,p.by);ctx.fillText(p.id.no,bx,by);}
