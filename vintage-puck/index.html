@@ -2774,10 +2774,9 @@ function showTactic(ev){
   const D=ev&&ev.tac;if(!D||!D.snap)return;const box=$('tacBox'),cv=$('tac'),S=D.snap;
   const horiz=ROT,maxW=Math.min(innerWidth-48,horiz?460:300),Ww=horiz?maxW:Math.min(maxW,230),Hh=horiz?Math.round(Ww*W/H):Math.round(Ww*H/W);
   const dp=Math.min(2,devicePixelRatio||1);cv.width=Ww*dp;cv.height=Hh*dp;cv.style.width=Ww+'px';cv.style.height=Hh+'px';
-  const c=cv.getContext('2d'),k=(horiz?Ww/H:Ww/W)*dp;
-  c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);
-  if(horiz)c.setTransform(0,-k,k,0,0,Hh*dp);else c.setTransform(k,0,0,k,0,0);   // same orientation as the game
-  const lw=1/k*dp;
+  const k=(horiz?Ww/H:Ww/W)*dp,xf=c=>{if(horiz)c.setTransform(0,-k,k,0,0,Hh*dp);else c.setTransform(k,0,0,k,0,0);};   // same orientation as the game
+  // static layer: rink + frozen players
+  const base=document.createElement('canvas');base.width=cv.width;base.height=cv.height;const c=base.getContext('2d');xf(c);
   c.fillStyle='#cfe6fb';c.beginPath();roundedRink(c);c.fill();c.save();c.beginPath();roundedRink(c);c.clip();
   c.fillStyle='#e05a63';c.fillRect(0,99.5,W,1);c.fillStyle='#5b8fe0';c.fillRect(0,74.5,W,1);c.fillRect(0,124.5,W,1);
   c.fillStyle='#e05a63';c.fillRect(0,GLT-0.1,W,0.25);c.fillRect(0,GLB-0.15,W,0.25);
@@ -2786,24 +2785,35 @@ function showTactic(ev){
   c.fillStyle='#a9cdf3';for(const gy of[GLT,GLB]){c.beginPath();c.arc(NX,gy,6,gy===GLT?0:Math.PI,gy===GLT?Math.PI:2*Math.PI);c.fill();}
   c.restore();c.strokeStyle='#5d7fa8';c.lineWidth=0.8;c.beginPath();roundedRink(c);c.stroke();
   c.fillStyle='#ffffff';c.strokeStyle='#e05a63';c.lineWidth=0.4;c.fillRect(NX-PHW,GLT-NETD,PHW*2,NETD);c.strokeRect(NX-PHW,GLT-NETD,PHW*2,NETD);c.fillRect(NX-PHW,GLB,PHW*2,NETD);c.strokeRect(NX-PHW,GLB,PHW*2,NETD);
-  const arrow=(x0,y0,x1,y1,dash)=>{c.save();c.strokeStyle='#1f5fd1';c.lineWidth=0.9;c.lineCap='round';if(dash)c.setLineDash([1.8,1.4]);c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();c.setLineDash([]);
-    const a=Math.atan2(y1-y0,x1-x0);c.fillStyle='#1f5fd1';c.beginPath();c.moveTo(x1,y1);c.lineTo(x1-Math.cos(a-0.45)*3,y1-Math.sin(a-0.45)*3);c.lineTo(x1-Math.cos(a+0.45)*3,y1-Math.sin(a+0.45)*3);c.closePath();c.fill();c.restore();};
-  if(D.passes.length)for(const ps of D.passes)arrow(ps.x0,ps.y0,ps.x1,ps.y1,false);
-  else if(S.carry&&S.carry.length>1){const pts=S.carry;c.save();c.strokeStyle='#1f5fd1';c.lineWidth=0.9;c.setLineDash([1.8,1.4]);c.lineCap='round';c.lineJoin='round';
-    c.beginPath();c.moveTo(pts[0][0],pts[0][1]);for(const q of pts.slice(1))c.lineTo(q[0],q[1]);c.stroke();c.restore();
-    const n=pts.length;if(n>1)arrow(pts[Math.max(0,n-3)][0],pts[Math.max(0,n-3)][1],pts[n-1][0],pts[n-1][1],true);}
-  // shot line to the net
-  c.save();c.strokeStyle='rgba(224,90,99,.9)';c.lineWidth=0.6;c.setLineDash([0.8,0.8]);c.beginPath();c.moveTo(S.px,S.py);c.lineTo(NX,D.goalY);c.stroke();c.restore();
   const upright=(x,y,fn)=>{c.save();c.translate(x,y);if(horiz)c.rotate(Math.PI/2);fn();c.restore();};
   for(const q of S.pl){const T=G.teams[q.t],J=T.J,sh=q.id===S.shooter;
     c.fillStyle=J.col;c.strokeStyle=lightCol(J.col)?J.helm:'#0b1426';c.lineWidth=0.45;c.beginPath();c.arc(q.x,q.y,q.g?2.6:2.1,0,7);c.fill();c.stroke();
     if(sh){c.strokeStyle='#ffb21e';c.lineWidth=0.7;c.beginPath();c.arc(q.x,q.y,3.4,0,7);c.stroke();}
     upright(q.x,q.y,()=>{c.fillStyle=J.num;c.font='700 2.2px Chakra Petch, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(q.g?'G':q.no,0,0.15);});}
-  c.fillStyle='#0b0b0d';c.beginPath();c.arc(S.px,S.py,0.9,0,7);c.fill();
+  // the puck's route in the order it happened: passes, the scorer's carry, then the shot
+  const paths=[];
+  for(const ps of D.passes)paths.push({kind:'pass',pts:[[ps.x0,ps.y0],[ps.x1,ps.y1]]});
+  if(S.carry&&S.carry.length>1)paths.push({kind:'carry',pts:S.carry});
+  paths.push({kind:'shot',pts:[[S.px,S.py],[NX,D.goalY]]});
+  for(const P of paths){P.len=0;P.seg=[];for(let i=1;i<P.pts.length;i++){const l=hyp(P.pts[i][0]-P.pts[i-1][0],P.pts[i][1]-P.pts[i-1][1]);P.seg.push(l);P.len+=l;}}
+  const total=paths.reduce((a,P)=>a+P.len,0)||1,dur=Math.min(3.6,Math.max(2,total/45));
+  const tc=cv.getContext('2d');let t0=performance.now();
+  const head=(x0,y0,x1,y1,col)=>{const a=Math.atan2(y1-y0,x1-x0);tc.fillStyle=col;tc.beginPath();tc.moveTo(x1,y1);tc.lineTo(x1-Math.cos(a-0.45)*3,y1-Math.sin(a-0.45)*3);tc.lineTo(x1-Math.cos(a+0.45)*3,y1-Math.sin(a+0.45)*3);tc.closePath();tc.fill();};
+  const frameT=now=>{if(box.hidden)return;tc.setTransform(1,0,0,1,0,0);tc.clearRect(0,0,cv.width,cv.height);tc.drawImage(base,0,0);xf(tc);
+    let budget=Math.max(0,(now-t0)/1000-0.5)/dur*total;
+    for(const P of paths){if(budget<=0)break;const col=P.kind==='shot'?'#e0303c':'#1f5fd1';
+      tc.save();tc.strokeStyle=col;tc.lineWidth=P.kind==='shot'?0.8:0.9;tc.lineCap='round';tc.lineJoin='round';if(P.kind==='carry')tc.setLineDash([1.8,1.4]);
+      tc.beginPath();tc.moveTo(P.pts[0][0],P.pts[0][1]);let left=Math.min(budget,P.len),px=P.pts[0][0],py=P.pts[0][1],lx=px,ly=py;
+      for(let i=1;i<P.pts.length&&left>0;i++){const l=P.seg[i-1],u=Math.min(1,left/l);lx=px;ly=py;px=P.pts[i-1][0]+(P.pts[i][0]-P.pts[i-1][0])*u;py=P.pts[i-1][1]+(P.pts[i][1]-P.pts[i-1][1])*u;tc.lineTo(px,py);left-=l;}
+      tc.stroke();tc.restore();
+      if(hyp(px-lx,py-ly)>0.01)head(lx,ly,px,py,col);
+      tc.fillStyle='#0b0b0d';tc.beginPath();tc.arc(px,py,0.9,0,7);tc.fill();          // the puck travelling along the route
+      budget-=P.len;}
+    if(tacT>0)requestAnimationFrame(frameT);};
   const sc=ev.scorer,T=G.teams[ev.team];
   $('tacT').textContent=`${ev.str?ev.str+' ':''}GOAL · ${T.key} #${sc.no} ${sc.n.split(' ').slice(-1)[0].toUpperCase()}`;
-  $('tacL').innerHTML=D.passes.length?`<span><i></i>${D.passes.length===1?'the pass':'the passes'}</span><span>● shooter ringed</span>`:`<span><i class="d"></i>skating route with the puck</span><span>● shooter ringed</span>`;
-  box.classList.remove('fade');box.hidden=false;tacT=8;
+  $('tacL').innerHTML=(D.passes.length?`<span><i></i>${D.passes.length===1?'pass':'passes'}</span>`:'')+(S.carry&&S.carry.length>1?`<span><i class="d"></i>carry</span>`:'')+`<span><i style="border-top-color:#e0303c"></i>shot</span>`;
+  box.classList.remove('fade');box.hidden=false;tacT=8+dur;requestAnimationFrame(frameT);
   // Tyler talks the board through
   try{const n=D.passes.length;let line;
     const type=n>=2?'p2':n===1?(S.oneT?'one':'p1'):S.ba?'ba':'solo';
@@ -3312,7 +3322,7 @@ $('tPause').onclick=()=>{if(attract)return;paused=!paused;if(paused)Vox.stop();t
 $('tSound').onclick=()=>{sound=!sound;if(!sound){Vox.stop();Arena.stopMusic(0.1);Theme.stop(0.1);}else if(!$('menu').hidden||!$('season').hidden){ac();Arena.theme();}$('tSound').style.opacity=sound?1:0.45;ac();if(!sound)Music.stop();else if(G&&!attract&&(G.state==='pregame'||G.state==='pend'||G.state==='final'))Music.play();};
 $('tSpeed').onclick=()=>{speed=speed===1?2:speed===2?4:1;tc('tSpeed',speed+'×');};
 
-if(/[?&]debug/.test(location.search))window.__vp={get G(){return G},Vox,voice,Arena,startBrawl,intoBench,boardHit,freeze,startFight,setSpeed:v=>{speed=v;},sz};
+if(/[?&]debug/.test(location.search))window.__vp={get G(){return G},Vox,voice,Arena,showTactic,startBrawl,intoBench,boardHit,freeze,startFight,setSpeed:v=>{speed=v;},sz};
 const setIN=(sx,sy)=>{if(ROT){IN.x=-sy;IN.y=sx;}else{IN.x=sx;IN.y=sy;}};
 const keys={};
 function keyAxes(){if(joyActive)return;
