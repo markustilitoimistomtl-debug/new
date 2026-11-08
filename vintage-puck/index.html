@@ -332,7 +332,7 @@ function helmFor(col,R){if(!lightCol(col))return col;if(!lightCol(R.pri))return 
 let KITS={};
 try{KITS=Object.assign({},(typeof window!=='undefined'&&window.VPUCK_KITS)||{});const ls=JSON.parse(localStorage.getItem('vpuck-kits')||'{}');for(const k in ls)KITS[k]=ls[k];}catch(e){}
 const awayCol=R=>!lightCol(R.pri)?R.pri:!lightCol(R.sec)?R.sec:'#2b2b2b';   // an away jersey is never white
-function jersey(R,home){const col=home?'#f2f2f2':awayCol(R);
+function jersey(R,home){const col=home?'#ffffff':awayCol(R);
   const J=home?{col,trim:R.pri,num:R.pri,helm:helmFor(col,R),label:R.pri}:{col,trim:col,num:R.numc&&R.numc.toLowerCase()!==col.toLowerCase()?R.numc:(lightCol(col)?'#2b2b2b':'#ffffff'),helm:col,label:R.sec};   // away: helmet and shoulders in the jersey colour, only the number differs
   const k=KITS[R.key]&&KITS[R.key][home?'home':'away'];
   if(k){const ok=f=>/^#[0-9a-f]{6}$/i.test(k[f]||'');
@@ -1908,10 +1908,10 @@ const Spr={src:null,teams:{},
     const stripe=helm;
     const s=this.src.data,W=this.src.width,H=this.src.height,out=new ImageData(W,H),o=out.data;
     for(let i=0;i<s.length;i+=4){const a=s[i+3];if(!a)continue;const cl=Math.round(s[i]/60),L=s[i+1];let r,g,b;
-      if(cl<=1){const base=cl?helm:col,t=Math.min(1,Math.max(0,(L-4)/8)),f=0.78+0.22*Math.min(1,L/45);
-        r=(8.7+base[0]*0.33)*(1-t)+base[0]*f*t;g=(8.7+base[1]*0.33)*(1-t)+base[1]*f*t;b=(10.7+base[2]*0.33)*(1-t)+base[2]*f*t;}
+      if(cl<=1){const base=cl?helm:col,t=Math.min(1,Math.max(0,(L-4)/8)),f=(base[0]+base[1]+base[2]>690?0.95+0.05*Math.min(1,L/45):0.78+0.22*Math.min(1,L/45));
+        r=(8.7+base[0]*0.33)*(1-t)+base[0]*f*t;g=(8.7+base[1]*0.33)*(1-t)+base[1]*f*t;b=(10.7+base[2]*0.33)*(1-t)+base[2]*f*t;if(base[0]+base[1]+base[2]<160){const lift=Math.max(0,L-12)*0.9*t;r+=lift;g+=lift;b+=lift*1.08;}}
       else if(cl===2){const f=0.75+0.25*Math.min(1,Math.max(0,(L-60)/120));r=stripe[0]*f;g=stripe[1]*f;b=stripe[2]*f;}
-      else{const f=0.8+0.2*Math.min(1,Math.max(0,(L-150)/100));r=trim[0]*f;g=trim[1]*f;b=trim[2]*f;}
+      else{const f=(trim[0]+trim[1]+trim[2]>690?0.94:0.8)+(trim[0]+trim[1]+trim[2]>690?0.06:0.2)*Math.min(1,Math.max(0,(L-150)/100));r=trim[0]*f;g=trim[1]*f;b=trim[2]*f;}
       o[i]=r;o[i+1]=g;o[i+2]=b;o[i+3]=a;}
     const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').putImageData(out,0,0);
     return this.teams[key]=c;},
@@ -1958,9 +1958,9 @@ const GSpr={src:null,teams:{},
     const J=T.J,R=T.R,col=hx(J.col),helm=hx(J.helm),stripe=helm;
     const s=this.src.data,W=this.src.width,H=this.src.height,out=new ImageData(W,H),o=out.data;
     for(let i=0;i<s.length;i+=4){const a=s[i+3];if(!a)continue;const cl=Math.round(s[i]/50),L=s[i+1];let r,g,b,aa=a;
-      if(cl<=1){const base=cl?helm:col,t=Math.min(1,Math.max(0,(L-4)/8)),f=0.78+0.22*Math.min(1,L/45);r=(8.7+base[0]*0.33)*(1-t)+base[0]*f*t;g=(8.7+base[1]*0.33)*(1-t)+base[1]*f*t;b=(10.7+base[2]*0.33)*(1-t)+base[2]*f*t;}
+      if(cl<=1){const base=cl?helm:col,t=Math.min(1,Math.max(0,(L-4)/8)),f=(base[0]+base[1]+base[2]>690?0.95+0.05*Math.min(1,L/45):0.78+0.22*Math.min(1,L/45));r=(8.7+base[0]*0.33)*(1-t)+base[0]*f*t;g=(8.7+base[1]*0.33)*(1-t)+base[1]*f*t;b=(10.7+base[2]*0.33)*(1-t)+base[2]*f*t;if(base[0]+base[1]+base[2]<160){const lift=Math.max(0,L-12)*0.9*t;r+=lift;g+=lift;b+=lift*1.08;}}
       else if(cl===2){const f=0.75+0.25*Math.min(1,Math.max(0,(L-60)/120));r=stripe[0]*f;g=stripe[1]*f;b=stripe[2]*f;}
-      else if(cl===3){const f=0.82+0.18*Math.min(1,Math.max(0,(L-150)/100));r=g=b=244*f;}
+      else if(cl===3){const f=0.93+0.07*Math.min(1,Math.max(0,(L-150)/100));r=g=b=255*f;}
       else{r=30;g=45;b=70;aa=a*0.45;}
       o[i]=r;o[i+1]=g;o[i+2]=b;o[i+3]=aa;}
     const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').putImageData(out,0,0);return this.teams[key]=c;},
