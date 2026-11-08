@@ -661,14 +661,15 @@ function checkOffside(py0){
     const crossed=top?(py0>=edge&&y<edge):(py0<=edge&&y>edge);
     if(!crossed)continue;
     const at=attTop(0)===top?0:1;
-    const pt=P.owner?P.owner.t:(P.pass?P.pass.from.t:-1);if(pt!==at)continue;
+    const lt=P.touches.length?P.touches[P.touches.length-1].t:-1;
+    const pt=P.owner?P.owner.t:P.pass?P.pass.from.t:P.shot?P.shot.t:lt;if(pt!==at)continue;
     const off=G.on.find(q=>q.t===at&&q.role!=='G'&&q!==P.owner&&(top?q.y<74.5-4:q.y>125.5+4));
-    if(off){pop('OFFSIDE',off.x,off.y);stopPlay([P.x<NX?NX-22:NX+22,top?80:120],1.4);emit('offside');return;}
+    if(off){pop('OFFSIDE',off.x,off.y);stopPlay([P.x<NX?NX-22:NX+22,top?80:120],1.4);emit('offside',{t:at,p:off});return;}
   }
 }
 function icing(t){
   const P=G.puck;pop('ICING',P.x,P.y);
-  const gy=ownGY(t);stopPlay(ENDDOTS[(gy===GLT?0:2)+(P.x<NX?0:1)],1.4);emit('icing');
+  const gy=ownGY(t);stopPlay(ENDDOTS[(gy===GLT?0:2)+(P.x<NX?0:1)],1.4);emit('icing',{t});
 }
 function breakaway(o){
   if(G.puck.owner!==o)return false;const a=along(o.t,o.y);if(a>70||a<8)return false;
@@ -1216,6 +1217,8 @@ function offenseTarget(p,cx,cy){
   if(isPP(t)&&ca<66){const u=UMB[p.role];return[clamp(NX+(u[0]-NX)*m+Math.sin(G.time*0.6+p.phase)*1.5,5,W-5),yAlong(t,u[1]+Math.cos(G.time*0.5+p.phase)*1.5)];}
   if(p.role==='LD'||p.role==='RD')a=clamp(Math.max(a,ca+14),a,170);
   else a=clamp(a,ca-38,ca+6);
+  {const sloppy=((p.phase*997+Math.floor(G.time/5))%9)<0.7;   // now and then a player is late to tag up
+   if(ca>63.5&&a<66&&!sloppy)a=66;}
   if(ca>62)a=Math.max(a,70);
   let x=NX+(s[0]-NX)*m;x+=(cx-x)*0.22;
   x+=Math.sin(G.time*0.7+p.phase)*3;a+=Math.cos(G.time*0.5+p.phase)*2.5;
@@ -2394,6 +2397,8 @@ function hook(type,d){
     case'bighit':if(AD.hit1)Arena.fx('hit1',0.8);break;
     case'post':SND.post();break;
     case'whistle':SND.whistle();break;
+    case'offside':if(d)Tick.push('OFFSIDE',`${G.teams[d.t].R.city} ${G.teams[d.t].R.nick} · #${d.p.id.no} ${d.p.id.n} over the line early`,1);break;
+    case'icing':if(d)Tick.push('ICING',`${G.teams[d.t].R.city} ${G.teams[d.t].R.nick} · faceoff in their own end`,1);break;
     case'setup':if(!Arena.mus&&!Arena.goalSong){const early=(G.breakN||0)<2;   // the first two stoppages of a game always get a recorded song
       if(early||G.ghosts.length){G.breakN=(G.breakN||0)+1;Arena.playBreak(early?Arena.pickBreak(null,true):Arena.pickBreak(),{gain:0.7});}}break;
     case'save':SND.save();break;
