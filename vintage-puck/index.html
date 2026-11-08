@@ -1517,7 +1517,12 @@ function skatePulse(p,dvx,dvy,maxS,dt){
   const v=hyp(p.vx,p.vy),dv=hyp(dvx,dvy);
   const al=v>1&&dv>1?(p.vx*dvx+p.vy*dvy)/(v*dv):1;
   if(S.m==='glide'||v>maxS*0.6)S.d+=v*dt;               // only straight, fast skating counts toward the glide
-  if(dv<v*0.6||p.down>0||p.stumble>0||v<maxS*0.45){S.m="acc";S.d=0;}   // stopping or being stopped restarts the build-up; turning does not
+  // a turn = heading change of 35+ degrees; a sharp turn (90+) or two turns within 1.2 s also restart the build-up
+  let restart=false;
+  if(v>3){const h=Math.atan2(p.vy,p.vx);if(S.h0==null)S.h0=h;let dh=Math.abs(h-S.h0);if(dh>Math.PI)dh=2*Math.PI-dh;
+    if(dh>0.61){S.h0=h;if(G.time-(S.lastTurn||-9)<1.2)restart=true;S.lastTurn=G.time;}}
+  if(al<0)restart=true;
+  if(restart||dv<v*0.6||p.down>0||p.stumble>0||v<maxS*0.45){S.m="acc";S.d=0;}   // stopping or being stopped too
   else if(S.m==='acc'&&S.d>H/2&&v>maxS*0.7){S.m='glide';S.d=0;}
   else if(S.m==='glide'&&(S.d>H/2||v<maxS*0.6)){S.m='cruise';S.d=0;}
   if(S.m==='glide')return{mul:0.35,coast:true};
