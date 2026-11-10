@@ -256,7 +256,7 @@ const GW=170,GH=400;
 const TEAMS={};
 function T(k,city,nick,base,cols,g,F,D){
   const mk=(a,isD)=>{const o={n:a[0],no:a[1],f:a[2]||''};Object.assign(o,rate(o.n,base,o.f,isD));return o;};
-  TEAMS[k]={key:k,city,nick,base,pri:cols[0],sec:cols[1],third:cols[2]||'#ffffff',
+  TEAMS[k]={key:k,city,nick,base,pri:cols[0],sec:cols[1],third:cols[2]||'#ffffff',road:cols[3]||null,
     G:{n:g[0],no:g[1],gk:g[2],s:60,h:40,c:40,p:50,f:''},
     F:F.map(l=>l.map(a=>mk(a,false))),D:D.map(l=>l.map(a=>mk(a,true)))};
 }
@@ -274,31 +274,31 @@ function rate(name,base,flag,isD){
    Rosters are generated (seeded) with a 1990s NHL mix of origins. */
 const LEAGUE=[
  ['QUE','Quebec City','Caribou',80,['#0033a0','#c8102e','#ffffff']],
- ['HAM','Hamilton','Smelters',78,['#111111','#ffffff','#ffffff']],
- ['SAS','Saskatoon','Pelicans',75,['#00a3ad','#ffffff','#ffffff']],
+ ['HAM','Hamilton','Smelters',78,['#111111','#ffffff','#ffffff','#a2aaad']],
+ ['SAS','Saskatoon','Pelicans',75,['#00a3ad','#ffffff','#ffffff','#0c2340']],
  ['HFX','Halifax','Lobstermen',77,['#c8102e','#041e42','#ffffff']],
- ['POR','Portland','Lumberjacks',79,['#00573f','#ffffff','#ffffff']],
+ ['POR','Portland','Lumberjacks',79,['#00573f','#ffffff','#ffffff','#111111']],
  ['HOU','Houston','Wildcatters',81,['#002d72','#ff4f00','#ffffff']],
  ['KCB','Kansas City','Bison',78,['#c8102e','#002d72','#ffffff']],
  ['MIL','Milwaukee','Muskies',76,['#00573f','#ffb81c','#ffffff']],
  ['CLE','Cleveland','Walleyes',77,['#00788c','#111111','#ffffff']],
- ['CIN','Cincinnati','Riverboats',75,['#c8102e','#ffffff','#ffffff']],
+ ['CIN','Cincinnati','Riverboats',75,['#c8102e','#ffffff','#ffffff','#111111']],
  ['AUS','Austin','Armadillos',80,['#cc5500','#0c2340','#ffffff']],
  ['OKC','Oklahoma City','Prairie Dogs',74,['#41b6e6','#002d72','#ffffff']],
  ['ABQ','Albuquerque','Javelinas',73,['#00b2a9','#ff6b35','#ffffff']],
  ['OMA','Omaha','Cattlemen',76,['#a6192e','#111111','#ffffff']],
  ['BOI','Boise','Elk',74,['#5f259f','#ffb81c','#ffffff']],
  ['ANC','Anchorage','Grizzlies',79,['#00205b','#6cace4','#ffffff']],
- ['VIC','Victoria','Orcas',82,['#111111','#ffffff','#ffffff']],
+ ['VIC','Victoria','Orcas',82,['#111111','#ffffff','#ffffff','#00c1d5']],
  ['REG','Regina','Harvesters',77,['#ffb81c','#00573f','#ffffff']],
- ['THB','Thunder Bay','Timberwolves',76,['#0033a0','#ffffff','#ffffff']],
+ ['THB','Thunder Bay','Timberwolves',76,['#0033a0','#ffffff','#ffffff','#a2aaad']],
  ['SUD','Sudbury','Nickelmen',78,['#ffd100','#111111','#ffffff']],
- ['MON','Moncton','Herons',74,['#d50032','#ffffff','#ffffff']],
+ ['MON','Moncton','Herons',74,['#d50032','#ffffff','#ffffff','#041e42']],
  ['BHM','Birmingham','Furnacemen',75,['#c8102e','#111111','#ffffff']],
- ['LOU','Louisville','Thoroughbreds',80,['#5f259f','#ffffff','#ffffff']],
+ ['LOU','Louisville','Thoroughbreds',80,['#5f259f','#ffffff','#ffffff','#a2aaad']],
  ['MEM','Memphis','Catfish',73,['#0072ce','#ffc72c','#ffffff']],
  ['BAL','Baltimore','Crabbers',79,['#002d72','#c8102e','#ffffff']],
- ['SPO','Spokane','Ospreys',77,['#004c97','#ffffff','#ffffff']]];
+ ['SPO','Spokane','Ospreys',77,['#004c97','#ffffff','#ffffff','#111111']]];
 const NP={
  CA:{w:46,f:['Mike','Dave','Steve','Chris','Brian','Kevin','Mark','Jeff','Scott','Darren','Shane','Trevor','Todd','Kirk','Wade','Dale','Rob','Curtis','Brent','Kyle','Dean','Craig','Jason','Ryan','Travis','Glen','Rick','Doug','Troy','Corey','Brad','Sheldon','Jamie','Darcy','Lyle','Murray','Cam','Garth'],
    l:['Halvorsen','McAllister','Brackett','Dunleavy','Kowalchuk','Hrynchuk','Pollock','Fairbairn','Strickland','Wetherby','Gorsline','MacQuarrie','Penner','Dykstra','Tolhurst','Ferguson','Langille','Rutledge','Spratt','Boychuk','Mattheson','Kilbride','Ostapchuk','Pettigrew','Wintermute','Cardiff','Haverstock','Lundrigan','McKeown','Shewchuk','Thornbury','Varga','Wilkinshaw','Yurkiw','Beaton','Delorme','Gillis','Holtby']},
@@ -339,7 +339,7 @@ const NATS=[
  ['CAN','Canada',84,['#d50032','#111111','#ffffff'],['CA','QC']],
  ['SWE','Sweden',82,['#005baa','#fecb00','#ffffff'],['SE']],
  ['FIN','Finland',82,['#003580','#ffffff','#ffffff'],['FI']],
- ['SVK','Slovakia',79,['#0b4ea2','#ee1c25','#ffffff'],['SK']],
+ ['SVK','Slovakia',79,['#0055a4','#ef4135','#ffffff'],['SK']],
  ['CZE','Czech Republic',81,['#11457e','#d7141a','#ffffff'],['CZ']],
  ['USA','USA',80,['#002868','#bf0a30','#ffffff'],['US']],
  ['ITA','Italy',73,['#0066b3','#009246','#ffffff'],['IT']],
@@ -415,17 +415,31 @@ try{KITS=Object.assign({},(typeof window!=='undefined'&&window.VPUCK_KITS)||{});
 const awayCol=R=>!lightCol(R.pri)?R.pri:!lightCol(R.sec)?R.sec:'#2b2b2b';   // an away jersey is never white
 // A kit is four colours: helmet, jersey & pants, stripe 1 (shoulder yoke, wide sleeve band, glove cuff)
 // and stripe 2 (thin stripes, gloves). Home is white with the team colours in the stripes; away is the team colour.
+// National team uniforms, after the reference sheet: helmet, jersey & pants, stripe 1, stripe 2, numbers
+const NKITS={
+ AUT:{home:['#c8102e','#ffffff','#c8102e','#c8102e','#c8102e'],away:['#c8102e','#c8102e','#ffffff','#c8102e','#ffffff']},
+ CAN:{home:['#c8102e','#ffffff','#c8102e','#111111','#c8102e'],away:['#c8102e','#c8102e','#ffffff','#111111','#ffffff']},
+ CZE:{home:['#11457e','#ffffff','#11457e','#d7141a','#11457e'],away:['#11457e','#d7141a','#ffffff','#11457e','#ffffff']},
+ FIN:{home:['#003580','#ffffff','#003580','#003580','#003580'],away:['#003580','#003580','#ffffff','#003580','#ffffff']},
+ FRA:{home:['#0055a4','#ffffff','#0055a4','#ef4135','#0055a4'],away:['#0055a4','#0055a4','#ffffff','#ef4135','#ffffff']},
+ GER:{home:['#111111','#ffffff','#dd0000','#111111','#111111'],away:['#111111','#111111','#ffce00','#dd0000','#ffce00']},
+ ITA:{home:['#0047bb','#ffffff','#0047bb','#0047bb','#0047bb'],away:['#0047bb','#0047bb','#ffffff','#0047bb','#ffffff']},
+ NOR:{home:['#c8102e','#ffffff','#c8102e','#00205b','#c8102e'],away:['#c8102e','#c8102e','#ffffff','#00205b','#ffffff']},
+ SVK:{home:['#0055a4','#ffffff','#0055a4','#ef4135','#0055a4'],away:['#0055a4','#0055a4','#ffffff','#ef4135','#ffffff']},   // same colours as France
+ SWE:{home:['#005baa','#ffffff','#005baa','#fecb00','#005baa'],away:['#005baa','#fecb00','#005baa','#005baa','#005baa']},
+ SUI:{home:['#e4002b','#ffffff','#e4002b','#e4002b','#e4002b'],away:['#e4002b','#e4002b','#ffffff','#e4002b','#ffffff']},
+ USA:{home:['#002868','#ffffff','#002868','#bf0a30','#002868'],away:['#002868','#002868','#ffffff','#bf0a30','#ffffff']}};
 const same=(a,b)=>a.toLowerCase()===b.toLowerCase();
 function jersey(R,home){const main=R.pri,acc=R.sec,third=R.third||'#ffffff';
   const helm=!lightCol(main)?main:!lightCol(acc)?acc:'#2b2b2b';
-  let J;
-  if(home)J={col:'#ffffff',helm,trim:main,seam:lightCol(acc)?main:acc,num:main,label:main};
-  else{const col=awayCol(R),s1=same(third,col)?acc:third,s2=same(acc,col)?third:same(acc,s1)?col:acc;   // two-colour teams: gloves and thin stripes in the jersey colour
-    J={col,helm,trim:s1,seam:s2,num:lightCol(s1)?s1:(lightCol(col)?'#2b2b2b':'#ffffff'),label:acc};}
+  let J;const NK=NKITS[R.key];
+  if(NK){const q=NK[home?'home':'away'];J={helm:q[0],col:q[1],trim:q[2],seam:q[3],num:q[4],label:q[2]};}
+  else if(home)J={col:'#ffffff',helm,trim:main,seam:lightCol(acc)?main:acc,num:main,label:main};
+  else{const col=awayCol(R),st=!lightCol(acc)&&!same(acc,col)?acc:(R.road||'#111111');   // no white anywhere on a VPHL road jersey
+    J={col,helm,trim:st,seam:st,num:st,label:st};}
   const k=KITS[R.key]&&KITS[R.key].v===2&&KITS[R.key][home?'home':'away'];   // kits made for the old two-band uniforms are ignored
-  if(k){const ok=f=>/^#[0-9a-f]{6}$/i.test(k[f]||'');
-    if(ok('col')&&!(!home&&lightCol(k.col)))J.col=k.col.toLowerCase();
-    for(const f of['trim','num','helm','seam'])if(ok(f))J[f]=k[f].toLowerCase();J.label=J.trim;}
+  if(k){const ok=f=>/^#[0-9a-f]{6}$/i.test(k[f]||'')&&(home||NK||!lightCol(k[f]));   // nothing white on a VPHL road jersey
+    for(const f of['col','trim','num','helm','seam'])if(ok(f))J[f]=k[f].toLowerCase();J.label=J.trim;}
   return J;}
 
 function newGame(opts){
