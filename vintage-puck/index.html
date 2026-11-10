@@ -339,7 +339,7 @@ const NATS=[
  ['CAN','Canada',84,['#d50032','#111111'],['CA','QC']],
  ['SWE','Sweden',82,['#005baa','#fecb00','#fecb00'],['SE']],
  ['FIN','Finland',82,['#003580','#41b6e6'],['FI']],
- ['RUS','Russia',82,['#c8102e','#0039a6'],['RU']],
+ ['SVK','Slovakia',79,['#0b4ea2','#ee1c25'],['SK']],
  ['CZE','Czech Republic',81,['#11457e','#d7141a'],['CZ']],
  ['USA','USA',80,['#002868','#bf0a30'],['US']],
  ['ITA','Italy',73,['#0066b3','#009246'],['IT']],
@@ -360,6 +360,7 @@ const NPX={
  FR:{f:['Philippe','Christophe','Stéphane','Pierre-Yves','Arnaud','Laurent','Franck','Patrick','Serge','Olivier','Thierry','Yannick','Fabrice'],l:['Morel','Briand','Lacroix','Garnier','Rousseau','Dupuis','Fabre','Allard','Bonnefoy','Chalmet','Derouet','Lemoine','Mercier','Perrin','Tessier','Vidal','Rivière']},
  NO:{f:['Espen','Ørjan','Tommy','Trond','Petter','Morten','Geir','Lars','Erik','Svein','Arne','Kjetil','Rune','Bjørn'],l:['Kristiansen','Solberg','Haugen','Bakke','Fjeldstad','Nygård','Sørli','Andersen','Lien','Tangen','Dahle','Skogstad','Aasen','Ruud','Berntsen','Engebretsen']},
  AT:{f:['Gerhard','Herbert','Manfred','Wolfgang','Christian','Werner','Günther','Reinhard','Helmut','Peter','Franz','Josef'],l:['Pucher','Lechner','Haidinger','Unterweger','Strohmaier','Mairhofer','Kofler','Rauchenwald','Hörtnagl','Wieser','Gruber','Feichtinger','Moosbrugger','Zwettler','Eberharter','Steinwender']},
+ SK:{f:['Peter','Miroslav','Ľubomír','Jozef','Róbert','Marián','Ľuboš','Vladimír','Branislav','Rastislav','Stanislav','Dušan','Igor','Ján','Pavol','Martin'],l:['Kováč','Horváth','Varga','Tóth','Baláž','Molnár','Lukáč','Kubík','Hudec','Benko','Štefanko','Mráz','Kollár','Ondrejka','Vrabec','Zemko','Kmeť','Bartko','Hrnčiar','Slanina']},
  CH:{f:['Reto','Urs','Beat','Patrick','Marcel','Andreas','Christian','Roman','Gil','Sandro','Mario','Felix','Daniel','Martin'],l:['Brunner','Zehnder','Wäfler','Bärtschi','Lüthi','Meier','Schnyder','Ritsch','Fankhauser','Steiner','Gerber','Kunz','Rüegg','Imhof','Fuchs','Lötscher','Vonlanthen','Signorell']}};
 (function buildNations(){
   const used=new Set(Object.keys(ORG));
@@ -3210,12 +3211,12 @@ function openSeason(){$('tacBox').hidden=true;tacT=0;$('tTO').hidden=true;seLoad
 // The top four of each group go to the quarterfinals; knockout games end in overtime and, if needed, a shootout.
 let WC=null,wcTab='overview';
 function wcSave(){try{localStorage.setItem('vpuck-wc1',JSON.stringify(WC));}catch(e){}}
-function wcLoad(){if(WC)return;try{const s=JSON.parse(localStorage.getItem('vpuck-wc1')||'null');if(s&&s.v===1&&TEAMS[s.team])WC=s;}catch(e){}}
+function wcLoad(){if(WC)return;try{const s=JSON.parse(localStorage.getItem('vpuck-wc1')||'null');if(s&&s.v===1&&TEAMS[s.team]&&Object.keys(s.st).every(k=>TEAMS[k]))WC=s;}catch(e){}}
 function rrDays(ks){const n=ks.length,days=[];let arr=ks.slice();
   for(let r=0;r<n-1;r++){const d=[];for(let i=0;i<n/2;i++){let h=arr[i],a=arr[n-1-i];if((r+i)%2)[h,a]=[a,h];d.push([h,a]);}days.push(d);arr=[arr[0],arr[n-1],...arr.slice(1,n-1)];}
   return days;}
 function newWC(team,minutes){
-  const A=['CAN','RUS','CZE','GER','FRA','AUT'],B=['SWE','FIN','USA','ITA','SUI','NOR'];
+  const A=['CAN','SVK','CZE','GER','FRA','AUT'],B=['SWE','FIN','USA','ITA','SUI','NOR'];
   const st={},ps={},gs={};for(const k of NKEYS){st[k]={gp:0,w:0,l:0,t:0,pts:0,gf:0,ga:0};const R=TEAMS[k];
     for(const p of R.F.flat())ps[p.n]={t:k,no:p.no,pos:'F',gp:0,g:0,a:0,pim:0,sh:0};for(const p of R.D.flat())ps[p.n]={t:k,no:p.no,pos:'D',gp:0,g:0,a:0,pim:0,sh:0};
     gs[R.G.n]={t:k,no:R.G.no,gp:0,w:0,l:0,ti:0,sa:0,ga:0,so:0};}
