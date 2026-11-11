@@ -1616,7 +1616,8 @@ function goalieAI(g){
   if(g.pulling)return[SR+0.6,100+(g.t===0?-12:12),1];
   if(G.gPlay&&G.gPlay.g===g){const P=G.puck;if(G.gPlay.stopped)return[g.x,g.y,0.2];return[P.x+P.vx*0.15,P.y+P.vy*0.15,1];}
   {const P=G.puck,gy=ownGY(g.t),fy=gy===GLT?1:-1,behind=(P.y-gy)*fy<-0.6;
-   if(G.state==='play'&&!P.owner&&!P.pass&&!P.ice&&behind&&hyp(P.vx,P.vy)<48&&Math.random()<0.5&&hyp(P.x-g.x,P.y-g.y)<20&&Math.abs(P.x-NX)<W/2-4&&noForecheck(g,13)&&!G.gPlay&&!G.ps)goaliePlay(g,false);}
+   if(P.ice&&P.ice.crossed&&P.ice.gDec===undefined)P.ice.gDec=Math.random()<0.2;   // now and then he comes out for an iced puck, which waves the icing off
+   if(G.state==='play'&&!P.owner&&!P.pass&&(!P.ice||P.ice.gDec)&&behind&&hyp(P.vx,P.vy)<48&&Math.random()<0.5&&hyp(P.x-g.x,P.y-g.y)<20&&Math.abs(P.x-NX)<W/2-4&&noForecheck(g,13)&&!G.gPlay&&!G.ps)goaliePlay(g,false);}
   const P=G.puck,gy=ownGY(g.t),fy=gy===GLT?1:-1;
   let tx,ty;
   if(P.shot&&P.shot.t!==g.t&&!P.owner&&(P.vy*fy)<0){
