@@ -525,7 +525,9 @@ function foTarget(p,fx,fy){
 function beginSetup(fx,fy){
   const P=G.puck;P.x=fx;P.y=fy;P.vx=P.vy=0;P.owner=null;P.shot=null;P.pass=null;P.through=null;P.ice=null;P.air=null;G.jam=null;G.fight=null;
   for(const t of[0,1]){const want=lateTrail(t)&&along(t,fy)<=125;if(want&&!G.pulled[t])finishPull(t,true);else if(!want)returnGoalie(t);}
-  G.ghosts=[];G.lastIcing=null;
+  G.ghosts=[];G.lastIcing=null;G.gPlay=null;
+  for(const Tm of G.teams)if(Tm.fly){for(const q of Tm.fly.todo)q.chg=false;Tm.fly=null;}
+  for(const q of G.players)q.chg=false;
   for(let t=0;t<2;t++){const T=G.teams[t];let ch=false;
     if(T.lineT>40){T.line=(T.line+1)%T.R.F.length;T.lineT=0;ch=true;}
     if(T.pairT>50){T.pair=(T.pair+1)%T.R.D.length;T.pairT=0;ch=true;}
@@ -548,7 +550,7 @@ function updateGhosts(dt){
 }
 function faceoff(fx,fy,skated){
   const P=G.puck;P.x=fx;P.y=fy;P.vx=P.vy=0;P.owner=null;P.shot=null;P.pass=null;P.through=null;P.touches=[];
-  G.props=[];G.fight=null;G.netOff=[null,null];P.ice=null;P.air=null;G.jam=null;G.ghosts=[];G.setup=null;
+  G.props=[];G.fight=null;G.gPlay=null;G.netOff=[null,null];P.ice=null;P.air=null;G.jam=null;G.ghosts=[];G.setup=null;
   for(let t=0;t<2;t++){const T=G.teams[t];
     if(!skated){if(T.lineT>40){T.line=(T.line+1)%T.R.F.length;T.lineT=0;}
     if(T.pairT>50){T.pair=(T.pair+1)%T.R.D.length;T.pairT=0;}}
@@ -694,12 +696,14 @@ function choosePass(p,pdx,pdy){
 }
 function doPass(p,m,duo){
   const P=G.puck;const d=hyp(m.x-p.x,m.y-p.y);
-  const sp=duo?clamp(55+d*0.9,72,95):clamp(40+d*0.75+p.id.p*0.1,45,92);
+  // calm play gets softer, saucer-ish passes; now and then a hard one that is tough to handle
+  const press=G.on.some(o=>o.t!==p.t&&o.role!=='G'&&o.down<=0&&hyp(o.x-p.x,o.y-p.y)<8),pr=Math.random();
+  const sp=duo?clamp(55+d*0.9,72,95):p.role==='G'?clamp(32+d*0.6,36,62):(!press&&d<45&&pr<0.55)?clamp(26+d*0.6,30,54):pr>0.86?clamp(72+d*0.35,74,98):clamp(38+d*0.7+p.id.p*0.08,42,80);
   const tt=d/sp;const ax=m.x+m.vx*tt*0.9,ay=m.y+m.vy*tt*0.9;
   const err=duo?0:(1.1-p.id.p/100)*randn()*2.2;
   let dx=ax-p.x,dy=ay-p.y;const L=hyp(dx,dy)||1;dx/=L;dy/=L;
   [P.x,P.y]=stickPos(p);
-  P.vx=dx*sp-dy*err*4/L;P.vy=dy*sp+dx*err*4/L;P.owner=null;P.pass={from:p,to:m,duo:!!duo,x0:P.x,y0:P.y};P.shot=null;
+  P.vx=dx*sp-dy*err*4/L;P.vy=dy*sp+dx*err*4/L;P.owner=null;P.pass={from:p,to:m,duo:!!duo,x0:P.x,y0:P.y,hard:sp>73&&!duo};P.shot=null;
   p.noPick=0.35;setIce(p);
   if(G.human===p.t)G.ctrl=m;
   emit('stick');
@@ -740,7 +744,8 @@ function setIce(p){const P=G.puck;P.ice=(along(p.t,P.y)>100&&skNoX(p.t)>=skNoX(1
 function doDump(p,kind){
   const P=G.puck,t=p.t,gy=attGY(t);
   [P.x,P.y]=stickPos(p);
-  const ax=NX+randn()*1.6,ay=gy+(attTop(t)?-1:1);
+  if(kind==='reb'&&Math.random()<0.45)kind='rim';   // around the boards behind the net
+  const side=Math.sign(p.x-NX)||1,ax=kind==='rim'?NX+side*(W/2-6):NX+randn()*1.6,ay=kind==='rim'?gy+(attTop(t)?-6.5:6.5):gy+(attTop(t)?-1:1);
   const dx=ax-P.x,dy=ay-P.y,L=hyp(dx,dy)||1,sp=rnd(58,72);
   P.vx=dx/L*sp;P.vy=dy/L*sp;P.owner=null;P.pass=null;
   P.shot={by:p,onNet:false,t,dump:kind};
@@ -1472,6 +1477,19 @@ function carrierAI(p,dt){
   const pp=isPP(t)&&a<66,inZone=a<62;
   if(pp&&a>20)hzS*=0.85;else if(inZone)hzS*=1.15;
   if(Math.random()<hzS*dt){const ch=(p.role[1]==='D'||a>36)?rnd(0.5,1):rnd(0,0.4);doShot(p,ch,0);return null;}
+  // the line is changing: kill time behind his own net until the fresh forwards are out
+  {const F=G.teams[t].fly;if(F&&F.holder===p&&a>108&&!pressured)return[NX+Math.sin(G.time*0.9+p.phase)*8,yAlong(t,183.5),0.55];}
+  // stretch pass: a forward is flying through the neutral zone - hit him in full stride
+  if(a>112&&!dl&&!pp&&Math.random()<(pressured?0.6:1.1)*dt){let best=null,bs=0;
+    for(const m of G.on){if(m.t!==t||m===p||m.role==='G'||m.down>0)continue;const am=along(t,m.y),fwd=attTop(t)?-m.vy:m.vy;
+      if(am<62||am>104||fwd<9||!laneOpen(p.x,p.y,m.x+m.vx*0.4,m.y+m.vy*0.4,t))continue;const sc=openness(m)+fwd*0.4;if(sc>bs){bs=sc;best=m;}}
+    if(best&&bs>8){doPass(p,best,false);if(G.puck.pass)G.puck.pass.stretch=true;emit('stretch',{p,m:best});return null;}}
+  // drop pass: leave the puck for the man trailing behind when the neutral zone is clogged, or right after the blue line
+  if(!dl&&!pp&&((a>66&&a<112)||(a>46&&a<60))){const fwdP=attTop(t)?-p.vy:p.vy;
+    const crowd=G.on.filter(q=>q.t!==t&&q.role!=='G'&&q.down<=0&&hyp(q.x-p.x,q.y-p.y)<16&&along(t,q.y)<a+2).length;
+    const hz=a>66?(crowd>=2?1.1:0):0.3;
+    if(hz&&fwdP>6&&Math.random()<hz*dt){const tr=G.on.find(m=>m.t===t&&m!==p&&m.role!=='G'&&m.down<=0&&along(t,m.y)-a>5&&along(t,m.y)-a<22&&Math.abs(m.x-p.x)<12&&(attTop(t)?-m.vy:m.vy)>6);
+      if(tr){const P=G.puck;P.owner=null;P.vx=p.vx*0.06;P.vy=p.vy*0.06;P.pass={from:p,to:tr,drop:true,x0:P.x,y0:P.y};P.shot=null;p.noPick=0.9;addTouch(p);emit('stick');emit('dropPass',{p,m:tr});return null;}}}
   const hzP=((pressured?1.5:0.22)+(a>120?0.9:0)+(p.role[1]==='D'&&a<70?0.5:0))*(a<89&&!pp?0.12:1)+(pp?1.4:0);
   if(Math.random()<hzP*dt){const m=choosePass(p,0,0);if(m){doPass(p,m);return null;}}
   return[p.x+dx*10,p.y+dy*10,1];
@@ -1482,6 +1500,7 @@ function playerAI(p,dt){
   if(delayedOff(p)){const gy=ownGY(t);return[clamp(p.x+(NX-p.x)*0.3,5,W-5),gy+(gy===GLT?1:-1)*30,0.45];}
   if(G.jam&&G.jam.js.includes(p))return[G.jam.x+Math.sin(G.time*3+p.phase)*1.2,G.jam.y+Math.cos(G.time*2.6+p.phase)*1.2,0.85];
   if(P.owner===p)return carrierAI(p,dt);
+  if(p.chg)return[SR+0.6,BENCHY[t]+(t===0?-2:2),1];
   if(P.pass&&P.pass.to===p&&!P.owner){
     const v2=P.vx*P.vx+P.vy*P.vy||1;const tc=Math.max(0,((p.x-P.x)*P.vx+(p.y-P.y)*P.vy)/v2);
     return[P.x+P.vx*tc,P.y+P.vy*tc,1];
@@ -1491,15 +1510,23 @@ function playerAI(p,dt){
   if(P.owner&&P.owner.t===t&&P.owner.bd&&P.owner.bd.mate===p){const c=P.owner,side=Math.sign(c.x-NX)||1,ca=along(t,c.y);
     if(c.bd.rush&&ca>25)return[clamp(NX-side*11,5,W-5),yAlong(t,Math.max(7,ca-1)),1];   // stay level on the far side, cut to the post late
     return[NX-side*5.4,yAlong(t,2.6),1];}
+  if(P.owner&&P.owner.t===t&&stretchMan(t)===p){const ca=along(t,P.owner.y);return[clamp(NX+(OFF[p.role]?OFF[p.role][0]-NX:0)*mir(t)*0.8,6,W-6),yAlong(t,Math.max(68,ca-60)),1];}
   if(P.owner&&P.owner.t===t&&frontMan(t)===p)return[NX+Math.sin(G.time*1.1+p.phase)*1.6,yAlong(t,4.6+Math.cos(G.time*0.9+p.phase)*0.8),0.9];
   if(P.owner&&P.owner.t===t){const[x,y]=offenseTarget(p,P.owner.x,P.owner.y);return[x,y,0.85];}
   if(G.chaser[t]===p){
     if(P.owner){const o=P.owner;const gy=ownGY(t);
       const d=hyp(o.x-p.x,o.y-p.y);
       if(d>9)p.hitPlan=Math.random()<(p.id.c/100)*0.45;
+      G.trapK=G.trapK||[null,null];G.trapOn=G.trapOn||[false,false];
+      if(G.trapK[t]!==G.possT){G.trapK[t]=G.possT;G.trapOn[t]=Math.random()<0.5;}
+      if(G.trapOn[t]&&along(o.t,o.y)>112&&d>6&&!G.pulled[o.t])return[clamp(NX+(o.x-NX)*0.5,8,W-8),yAlong(o.t,98),0.8];   // back off and wait in the neutral zone
       // close checking: only some defenders go right onto the carrier, and only for a short stretch
       if(p.latchO!==o){p.latchO=o;p.latchT=0;p.latchD=0;p.latchMax=rnd(0.9,2.0);p.latchOn=Math.random()<0.3+(p.id.c-80)/100;}
-      if(d<5.5){p.latchT+=1/60;p.latchD+=hyp(o.vx,o.vy)/60;}
+      if(d<5.5){p.latchT+=1/60;p.latchD+=hyp(o.vx,o.vy)/60;
+        if(p.latchOn&&d<4.4&&G.state==='play'&&!protectedP(o)&&Math.random()<0.22/60){   // he ties up the man and the puck slides away
+          const P2=G.puck,ey=ownGY(t)===GLT?-1:1;P2.owner=null;P2.vx=o.vx*0.3+randn()*5;P2.vy=ey*rnd(14,22)+o.vy*0.2;P2.pass=null;
+          o.noPick=0.9;p.noPick=0.9;o.slow=0.5;p.latchOn=false;p.latchCd=G.time+1.2;addTouch(p);G.lastTeam=t;emit('stick');emit('tieUp',{p,o});
+          const[x,y]=defenseTarget(p);return[x,y,0.9];}}
       if(p.latchOn&&(p.latchT>p.latchMax||p.latchD>24)){
         p.latchOn=false;p.latchCd=G.time+rnd(1.3,2.3);
         if(Math.random()<HOLDK){pop(Math.random()<0.5?'HOOK!':'HOLD!',o.x,o.y);o.slow=0.6;callPenalty(p,'HOLD','minor',false);}
@@ -1534,6 +1561,21 @@ function duoSpot(p,c){
     p.duoSpot=best;}
   return[p.duoSpot[0],p.duoSpot[1],1];
 }
+// stretch man: when the puck is deep in his own end, one forward heads up the ice for a long pass
+function stretchMan(t){const c=G.puck.owner;if(!c||c.t!==t||along(t,c.y)<118||isPP(t))return null;
+  G.strK=G.strK||[null,null];G.strP=G.strP||[null,null];
+  if(G.strK[t]!==G.possT){G.strK[t]=G.possT;G.strP[t]=Math.random()<0.55?(G.on.filter(q=>q.t===t&&q!==c&&q.role!=='G'&&q.role[1]!=='D'&&q.down<=0&&!q.chg).sort((u,v)=>along(t,u.y)-along(t,v.y))[0]||null):null;}
+  const f=G.strP[t];return f&&G.on.includes(f)&&f!==c?f:null;}
+// change on the fly during a long shift: forwards head to the bench one by one and fresh ones jump on
+function flyChange(dt){for(const t of[0,1]){const T=G.teams[t];T.flyAt=T.flyAt||rnd(38,58);
+  if(!T.fly){if(T.lineT<T.flyAt||G.pulled[t]||G.delayed||isPP(0)||isPP(1)||G.ps)continue;const P=G.puck,c=P.owner;
+    if(!(c&&c.t===t&&along(t,c.y)>105))continue;
+    T.fly={T:0,next:(T.line+1)%T.R.F.length,holder:c,todo:G.on.filter(q=>q.t===t&&(q.role==='LW'||q.role==='C'||q.role==='RW')&&q!==c)};
+    for(const q of T.fly.todo)q.chg=true;emit('flyChange',{t});continue;}
+  const F=T.fly;F.T+=dt;
+  for(const q of F.todo){if(!q.chg)continue;if(q.box||!G.on.includes(q)){q.chg=false;continue;}
+    if(hyp(q.x-(SR+0.6),q.y-BENCHY[t])<3.2){q.id=pickId(T.R.F,F.next,{LW:0,C:1,RW:2}[q.role]);q.chg=false;q.x=SR+1.2;q.vx=7;q.vy=0;q.down=0;q.slow=0;q.hold=0;q.noHelm=false;q.noStick=false;}}
+  if(F.todo.every(q=>!q.chg)||F.T>10){for(const q of F.todo)q.chg=false;T.line=F.next;T.lineT=0;T.flyAt=rnd(38,58);T.fly=null;}}}
 // net-front presence: on some possessions a forward parks himself in front when the puck is up top
 function frontMan(t){const c=G.puck.owner;if(!c||c.t!==t)return null;const ca=along(t,c.y);if(ca>66||ca<20)return null;
   G.frontK=G.frontK||[null,null];G.frontOn=G.frontOn||[false,false];
@@ -1549,8 +1591,25 @@ function duoScreen(t){
   G.duoScr=f?{c,p:f}:null;return f||null;
 }
 let SAVEK=0.065;
+// the goalie plays the puck: stops a dump-in behind the net or a slow puck in front, then moves it or leaves it
+function noForecheck(g,r){const P=G.puck;return!G.on.some(o=>o.t!==g.t&&o.role!=='G'&&o.down<=0&&hyp(o.x-P.x,o.y-P.y)<r);}
+function goaliePlay(g,stopped){G.gPlay={g,T:0,stopped:!!stopped,plan:Math.random()<0.65?'pass':'leave'};if(stopped){const P=G.puck;P.vx=P.vy=0;P.shot=null;P.pass=null;addTouch(g,true);G.lastTeam=g.t;emit('gStop',{g});}}
+function updateGPlay(dt){const Q=G.gPlay;if(!Q)return;const g=Q.g,P=G.puck,t=g.t,gy=ownGY(t),fy=gy===GLT?1:-1;Q.T+=dt;
+  if(G.state!=='play'||P.owner||g.bench||Q.T>4||(!Q.stopped&&(hyp(P.x-g.x,P.y-g.y)>24||!noForecheck(g,9)))){G.gPlay=null;return;}
+  if(!Q.stopped)return;
+  if(!noForecheck(g,5)){G.gPlay=null;return;}
+  if(Q.plan==='leave'){if(Q.T>0.35){G.gPlay=null;emit('gLeave',{g});}return;}
+  if(Q.T>0.6){let best=null,bs=-1e9;
+    for(const m of G.on){if(m.t!==t||m.role==='G'||m.down>0||m.toBench)continue;const d=hyp(m.x-P.x,m.y-P.y);if(d<8||d>60)continue;
+      if(!laneOpen(P.x,P.y,m.x,m.y,t))continue;const sc=openness(m)*1.5-d*0.15+(along(t,P.y)-along(t,m.y))*0.1;if(sc>bs){bs=sc;best=m;}}
+    G.gPlay=null;
+    if(best){const sx=g.x,sy=g.y;g.fx=(best.x-g.x)/(hyp(best.x-g.x,best.y-g.y)||1);g.fy=(best.y-g.y)/(hyp(best.x-g.x,best.y-g.y)||1);doPass(g,best,false);P.x=sx+g.fx*2;P.y=sy+g.fy*2;emit('gPass',{g,m:best});}
+    else emit('gLeave',{g});}}
 function goalieAI(g){
   if(g.pulling)return[SR+0.6,100+(g.t===0?-12:12),1];
+  if(G.gPlay&&G.gPlay.g===g){const P=G.puck;if(G.gPlay.stopped)return[g.x,g.y,0.2];return[P.x+P.vx*0.15,P.y+P.vy*0.15,1];}
+  {const P=G.puck,gy=ownGY(g.t),fy=gy===GLT?1:-1,behind=(P.y-gy)*fy<-0.6;
+   if(G.state==='play'&&!P.owner&&!P.pass&&!P.ice&&behind&&hyp(P.vx,P.vy)<48&&Math.random()<0.5&&hyp(P.x-g.x,P.y-g.y)<20&&Math.abs(P.x-NX)<W/2-4&&noForecheck(g,13)&&!G.gPlay&&!G.ps)goaliePlay(g,false);}
   const P=G.puck,gy=ownGY(g.t),fy=gy===GLT?1:-1;
   let tx,ty;
   if(P.shot&&P.shot.t!==g.t&&!P.owner&&(P.vy*fy)<0){
@@ -1706,6 +1765,8 @@ function step(dt){
   G.histT-=dt;if(G.histT<=0){G.histT=0.1;const P2=G.puck;
     G.hist.push({t:G.time,px:P2.x,py:P2.y,own:P2.owner?P2.owner.id:null,pass:!!P2.pass,pl:G.on.map(q=>[q.t,q.x,q.y,q.role==='G'?1:0,q.id])});
     if(G.hist.length>150)G.hist.shift();}
+  if(G.state==='play')updateGPlay(dt);
+  if(G.state==='play')flyChange(dt);
   if(G.state==='play')maybeJam(dt);
   if(G.state==='play')maybeFight(dt);
   if(G.state==='play')maybeBrawl(dt);
@@ -1973,11 +2034,12 @@ function updatePuck(dt){
     for(const g of G.on){if(g.role!=='G')continue;
       const dx=P.x-g.x,dy=P.y-g.y,d=hyp(dx,dy);
       if(P.through===g){if(d>GR+PR+1)P.through=null;continue;}
+      if(d<GR+PR&&G.gPlay&&G.gPlay.g===g&&!G.gPlay.stopped&&!(P.shot&&P.shot.t!==g.t&&!P.shot.dump)){G.gPlay.stopped=true;P.x=g.x+dx/(d||1)*(GR+PR);P.y=g.y+dy/(d||1)*(GR+PR);goaliePlay(g,true);G.gPlay.stopped=true;continue;}
       if(d<GR+PR){
         const sp=hyp(P.vx,P.vy);
         const fy=ownGY(g.t)===GLT?1:-1;
         const front=(P.y-ownGY(g.t))*fy;
-        if(sp<22){if(front>-1&&!(P.shot&&P.shot.dump==='reb')){freeze(g);return;}
+        if(sp<22){if(front>-1&&!(P.shot&&P.shot.dump==='reb')){if(G.state==='play'&&!G.ps&&!G.delayed&&noForecheck(g,15)&&!P.ice&&Math.random()<0.35){P.x=g.x+dx/(d||1)*(GR+PR);P.y=g.y+dy/(d||1)*(GR+PR);goaliePlay(g,true);continue;}freeze(g);return;}
           const nx=dx/(d||1),ny=dy/(d||1);P.x=g.x+nx*(GR+PR);P.y=g.y+ny*(GR+PR);const vn=P.vx*nx+P.vy*ny;if(vn<0){P.vx-=1.4*vn*nx;P.vy-=1.4*vn*ny;}continue;}
         let q=g.id.gk/100+SAVEK-Math.max(0,Math.min(sp,108)-65)/320-hyp(g.vx,g.vy)/170;
         q+=G.rm<1?0.035*(1/G.rm-1):-0.03*(G.rm-1);
@@ -1994,7 +2056,9 @@ function updatePuck(dt){
         if(Math.random()<q){
           if(wasShot)stat(g.id).sv++;
           P.shot=null;P.pass=null;addTouch(g,true);G.lastTeam=g.t;
-          if(dmp==='hold'||(!dmp&&Math.random()<(sh0&&sh0.point?0.06:sp<50?0.4:0.14))){emit('save',{g,sp,shot:sh0,freeze:true});freeze(g);return;}
+          if(dmp==='hold'||(!dmp&&Math.random()<(sh0&&sh0.point?0.06:sp<50?0.4:0.14))){emit('save',{g,sp,shot:sh0,freeze:true});
+            if(dmp!=='hold'&&!G.ps&&!G.delayed&&noForecheck(g,16)&&Math.random()<0.4){P.x=g.x+dx/(d||1)*(GR+PR);P.y=g.y+dy/(d||1)*(GR+PR);goaliePlay(g,true);return;}
+            freeze(g);return;}
           const nx=dx/(d||1),ny=dy/(d||1);
           P.x=g.x+nx*(GR+PR);P.y=g.y+ny*(GR+PR);
           const vn=P.vx*nx+P.vy*ny;
@@ -2019,6 +2083,8 @@ function updatePuck(dt){
     const rel=hyp(P.vx-p.vx,P.vy-p.vy);
     const lim=(P.pass&&P.pass.to===p)?100:(P.pass&&P.pass.duo)?40:(P.shot?45:72);
     if(rel<lim){
+      if(P.pass&&P.pass.hard&&P.pass.to===p&&!P.pass.bd&&G.state==='play'&&Math.random()<0.32-(p.id.s-80)/250){   // a hard pass bounces off the stick
+        P.vx=P.vx*0.25+randn()*7;P.vy=P.vy*0.25+randn()*7;P.pass=null;p.noPick=0.4;addTouch(p);emit('stick');emit('bobble',{p});return;}
       const duoRx=P.pass&&(P.pass.duo||P.pass.cyc||P.pass.bd)&&P.pass.to===p,ic=P.pass&&P.pass.from.t!==p.t,bdRx=!!(P.pass&&P.pass.bd&&P.pass.to===p);
       if(duoRx)p.oneT=G.time+1.0;
       if(P.pass&&P.pass.from.t===p.t&&P.pass.x0!=null&&P.pass.from!==p){G.passLog.push({team:p.t,from:P.pass.from.id,to:p.id,x0:P.pass.x0,y0:P.pass.y0,x1:p.x,y1:p.y,t:G.time});if(G.passLog.length>10)G.passLog.shift();}
