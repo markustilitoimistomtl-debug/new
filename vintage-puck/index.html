@@ -661,10 +661,12 @@ function updateZam(dt){
 }
 
 /* ---------- puck + passing ---------- */
+const gInCrease=g=>hyp(g.x-NX,g.y-ownGY(g.t))<6.5;
 function addTouch(p,soft){
   if(!soft&&G.delayed&&p.t===G.delayed.off.t&&G.state==='play')assessDelayed(true);
   const I=G.puck.ice;G.puck.ice=null;
-  if(I&&I.crossed&&G.state==='play'){if(p.t!==I.t&&p.role!=='G'){icing(I.t);return;}pop('WAVED OFF',p.x,p.y);emit('waved');}
+  // icing stands if a defender touches it, or if the goalie plays it from his crease; a goalie who comes out for it waves it off
+  if(I&&I.crossed&&G.state==='play'){if(p.t!==I.t&&(p.role!=='G'||gInCrease(p))){icing(I.t);return;}pop('WAVED OFF',p.x,p.y);emit('waved');}
   const Tt=G.puck.touches;
   if(Tt.length&&Tt[Tt.length-1].t!==p.t)Tt.length=0;
   if(!Tt.length||Tt[Tt.length-1].id!==p.id)Tt.push({id:p.id,t:p.t});
@@ -1969,6 +1971,8 @@ function afterWhistle(){
   emit('penalty',{t:a.t,id:a.id,kind:k,sev:'minor',gm:false,dur:G.periodLen/10,both:b});
 }
 function freeze(g){
+  if(G.state!=='play'&&G.state!=='penshot')return;   // the whistle has already gone (e.g. icing)
+  {const I=G.puck.ice;if(I&&I.crossed&&g&&g.role==='G'&&g.t!==I.t&&G.state==='play'){G.puck.ice=null;if(gInCrease(g)){icing(I.t);return;}pop('WAVED OFF',g.x,g.y);emit('waved');}}
   if(G.state==='penshot'){psResult('save');return;}
   if(G.delayed&&G.state==='play'){assessDelayed(true);return;}
   if(g&&g.role==='G'&&G.state==='play'&&!G.ps&&Math.random()<(DEBUG_BRAWL?0.5:SCRUMK)){
