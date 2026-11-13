@@ -1402,6 +1402,9 @@ function carrierAI(p,dt){
   const t=p.t,a=along(t,p.y);const dl=!!G.delayed&&G.delayed.off.t!==t;
   if(G.pulled[1-t]&&a>5&&a<170&&laneOpen(p.x,p.y,NX,attGY(t),t)&&Math.random()<2*dt){doShot(p,0.7,0);return null;}
   if((p.oneT||0)>G.time&&a>3&&a<60){doShot(p,rnd(0.6,1),0);return null;}
+  // chip-out man: up the boards, over the red line, and in deep right away
+  if(p.chip){if(a<98.5){p.chip=false;const r=Math.random();doDump(p,r<0.4?'rim':r<0.75?'corner':'reb');emit('chipOut',{p});return null;}
+    if(a>132)p.chip=false;else return[clamp(p.x+(NX-p.x)*0.12,6,W-6),yAlong(t,88),1];}
   if(!p.cycDec){p.cycDec=true;p.cyc=!duoPartner(p)&&Math.random()<CYCK;}
   {const dp=duoPartner(p)||(p.cyc?cycMate(p):null);
    if(dp&&a<45){
@@ -1493,8 +1496,6 @@ function carrierAI(p,dt){
   // chip-out pass to the winger on the boards
   {const w=wingMan(t);if(w&&a>114&&!dl&&p.hold>0.4){const s=wingSpot(t,w);
     if(hyp(w.x-s[0],w.y-s[1])<6&&laneOpen(p.x,p.y,w.x,w.y,t)&&Math.random()<2.4*dt){doPass(p,w,false);if(G.puck.pass)G.puck.pass.chip=true;emit('chipPass',{p,m:w});return null;}}}
-  if(p.chip){if(a<98.5){p.chip=false;const r=Math.random();doDump(p,r<0.4?'rim':r<0.75?'corner':'reb');emit('chipOut',{p});return null;}
-    if(a>130||pressured&&a>104)p.chip=false;else return[clamp(p.x+(NX-p.x)*0.15,6,W-6),yAlong(t,90),1];}
   // stretch pass: a forward is flying through the neutral zone - hit him in full stride
   if(a>112&&!dl&&!pp&&p.hold>0.5&&Math.random()<(pressured?0.6:1.1)*dt){let best=null,bs=0;
     for(const m of G.on){if(m.t!==t||m===p||m.role==='G'||m.down>0)continue;const am=along(t,m.y),fwd=attTop(t)?-m.vy:m.vy;
@@ -1753,7 +1754,7 @@ function step(dt){
   if(G.state==='fight'){updatePlayers(dt,'fight');updateFight(dt);P.vx*=0.98;P.vy*=0.98;P.x+=P.vx*dt;P.y+=P.vy*dt;boardCollide(P,PR,0.4);G.inPrev={shoot:IN.shoot,pass:IN.pass};return;}
   if(G.state==='goal'||G.state==='stop'){
     for(let i=0;i<2;i++){const o=G.netOff[i];if(!o)continue;o.T=(o.T||0)+dt;G.stateT=Math.max(G.stateT,0.3);   // wait for the linesman
-      if(o.T>2.6){const k=Math.min(1,dt*1.6);o.dx-=o.dx*k;o.dy-=o.dy*k;o.a-=o.a*k;if(Math.abs(o.dx)+Math.abs(o.dy)+Math.abs(o.a)<0.06)G.netOff[i]=null;}}
+      if(o.T>3.2){const k=Math.min(1,dt*3.2);o.dx-=o.dx*k;o.dy-=o.dy*k;o.a-=o.a*k;if(Math.abs(o.dx)+Math.abs(o.dy)+Math.abs(o.a)<0.06)G.netOff[i]=null;}}
     G.stateT-=dt;updatePlayers(dt,'glide');
     if(G.state==='stop'&&!P.owner){P.vx*=0.9;P.vy*=0.9;}
     if(G.stateT<=0){
