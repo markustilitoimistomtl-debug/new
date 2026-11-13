@@ -543,10 +543,12 @@ function beginSetup(fx,fy){
   G.setup={fx,fy,T:0};G.state='setup';G.stuckT=0;emit('setup',G.setup);
 }
 function updateGhosts(dt){
-  for(const q of G.ghosts){const tx=SR+0.4,ty=BENCHY[q.t],dx=tx-q.x,dy=ty-q.y,d=hyp(dx,dy)||1;
+  for(const q of G.ghosts){for(const st of G.props)if(st.k==='stick'&&st.owner&&st.owner.t===q.t&&hyp(st.x-q.x,st.y-q.y)<2.6)st.gone=true;
+    const tx=SR+0.4,ty=BENCHY[q.t],dx=tx-q.x,dy=ty-q.y,d=hyp(dx,dy)||1;
     const sp=Math.min(17,d*3);q.vx+=(dx/d*sp-q.vx)*Math.min(1,dt*3);q.vy+=(dy/d*sp-q.vy)*Math.min(1,dt*3);
     q.x+=q.vx*dt;q.y+=q.vy*dt;const v=hyp(q.vx,q.vy);if(v>1){q.fx=q.vx/v;q.fy=q.vy/v;}if(d<1.6)q.gone=true;}
   G.ghosts=G.ghosts.filter(q=>!q.gone);
+  if(G.props.some(q=>q.gone))G.props=G.props.filter(q=>!q.gone);
 }
 function faceoff(fx,fy,skated){
   const P=G.puck;P.x=fx;P.y=fy;P.vx=P.vy=0;P.owner=null;P.shot=null;P.pass=null;P.through=null;P.touches=[];
@@ -700,12 +702,15 @@ function doPass(p,m,duo){
   const P=G.puck;const d=hyp(m.x-p.x,m.y-p.y);
   // calm play gets softer, saucer-ish passes; now and then a hard one that is tough to handle
   const press=G.on.some(o=>o.t!==p.t&&o.role!=='G'&&o.down<=0&&hyp(o.x-p.x,o.y-p.y)<8),pr=Math.random();
-  const sp=duo?clamp(55+d*0.9,72,95):p.role==='G'?clamp(32+d*0.6,36,62):(!press&&d<45&&pr<0.55)?clamp(26+d*0.6,30,54):pr>0.86?clamp(72+d*0.35,74,98):clamp(38+d*0.7+p.id.p*0.08,42,80);
+  // four speeds: soft, medium, firm, hard - long passes need some pace, pressure makes them harder
+  const lvl=duo?3:p.role==='G'?(d>40?1:0):press?(pr<0.35?1:pr<0.8?2:3):(pr<0.4?0:pr<0.75?1:pr<0.93?2:3);
+  const base=[[30,44],[46,60],[62,76],[78,96]][Math.max(lvl,d>55?1:0)];
+  const sp=duo?clamp(55+d*0.9,72,95):clamp(rnd(base[0],base[1])+Math.max(0,d-30)*0.25,28,98);
   const tt=d/sp;const ax=m.x+m.vx*tt*0.9,ay=m.y+m.vy*tt*0.9;
   const err=duo?0:(1.1-p.id.p/100)*randn()*2.2;
   let dx=ax-p.x,dy=ay-p.y;const L=hyp(dx,dy)||1;dx/=L;dy/=L;
   [P.x,P.y]=stickPos(p);
-  P.vx=dx*sp-dy*err*4/L;P.vy=dy*sp+dx*err*4/L;P.owner=null;P.pass={from:p,to:m,duo:!!duo,x0:P.x,y0:P.y,hard:sp>73&&!duo};P.shot=null;
+  P.vx=dx*sp-dy*err*4/L;P.vy=dy*sp+dx*err*4/L;P.owner=null;P.pass={from:p,to:m,duo:!!duo,x0:P.x,y0:P.y,hard:sp>73&&!duo,lvl:sp<45?0:sp<61?1:sp<77?2:3};P.shot=null;
   p.noPick=0.35;setIce(p);
   if(G.human===p.t)G.ctrl=m;
   emit('stick');
@@ -747,7 +752,8 @@ function doDump(p,kind){
   const P=G.puck,t=p.t,gy=attGY(t);
   [P.x,P.y]=stickPos(p);
   if(kind==='reb'&&Math.random()<0.45)kind='rim';   // around the boards behind the net
-  const side=Math.sign(p.x-NX)||1,ax=kind==='rim'?NX+side*(W/2-6):NX+randn()*1.6,ay=kind==='rim'?gy+(attTop(t)?-6.5:6.5):gy+(attTop(t)?-1:1);
+  const side=Math.sign(p.x-NX)||1;let ax=kind==='rim'?NX+side*(W/2-6):NX+randn()*1.6,ay=kind==='rim'?gy+(attTop(t)?-6.5:6.5):gy+(attTop(t)?-1:1);
+  if(kind==='corner'){ax=NX-side*(W/2-9);ay=gy+(attTop(t)?3:-3);kind='reb';}   // into the far corner
   const dx=ax-P.x,dy=ay-P.y,L=hyp(dx,dy)||1,sp=rnd(58,72);
   P.vx=dx/L*sp;P.vy=dy/L*sp;P.owner=null;P.pass=null;
   P.shot={by:p,onNet:false,t,dump:kind};
@@ -791,7 +797,7 @@ function checkOffside(py0){
 }
 function icing(t){
   const P=G.puck;pop('ICING',P.x,P.y);
-  const gy=ownGY(t);stopPlay(ENDDOTS[(gy===GLT?0:2)+(P.x<NX?0:1)],1.4);G.lastIcing=t;emit('icing',{t});
+  const gy=ownGY(t);stopPlay(ENDDOTS[(gy===GLT?0:2)+(P.x<NX?0:1)],1.4);G.lastIcing=t;G.iceRun=G.iceRun||[0,0];G.iceRun[t]++;G.iceRun[1-t]=0;emit('icing',{t});
 }
 function breakaway(o){
   if(G.puck.owner!==o)return false;const a=along(o.t,o.y);if(a>70||a<8)return false;
@@ -875,8 +881,10 @@ function maybeJam(dt){
   if(sp>14||!isCorner(P.x,P.y))return;
   const near=G.on.filter(p=>p.role!=='G'&&p.down<=0&&hyp(p.x-P.x,p.y-P.y)<6);
   if(near.length<2||new Set(near.map(p=>p.t)).size<2)return;
+  G.jamN=G.jamN||{};if((G.jamN[G.period]||0)>=2)return;
   if(Math.random()>4*dt)return;
-  const k=Math.random()<0.45?2:Math.random()<0.55?3:4;
+  G.jamN[G.period]=(G.jamN[G.period]||0)+1;
+  const k=Math.random()<0.75?2:Math.random()<0.75?3:4;
   const rest=G.on.filter(p=>p.role!=='G'&&!near.includes(p)).sort((a,b)=>hyp(a.x-P.x,a.y-P.y)-hyp(b.x-P.x,b.y-P.y));
   const js=near.slice(0,k).concat(rest.slice(0,Math.max(0,k-near.length)));
   const hider=P.owner&&near.includes(P.owner)?P.owner:near[0];
@@ -1478,9 +1486,15 @@ function carrierAI(p,dt){
   if(!dl&&a>=68&&a<89&&!isPP(t)&&Math.random()<(pressured?1.6:0.55)*dt){doClear(p);return null;}
   const pp=isPP(t)&&a<66,inZone=a<62;
   if(pp&&a>20)hzS*=0.85;else if(inZone)hzS*=1.15;
+  if(a>22&&a<68&&screened(t))hzS*=1.9;   // a man in front: get it to the net
   if(Math.random()<hzS*dt){const ch=(p.role[1]==='D'||a>36)?rnd(0.5,1):rnd(0,0.4);doShot(p,ch,0);return null;}
   // the line is changing: kill time behind his own net until the fresh forwards are out
   {const F=G.teams[t].fly;if(F&&F.holder===p&&a>108&&!pressured)return[NX+Math.sin(G.time*0.9+p.phase)*8,yAlong(t,183.5),0.55];}
+  // chip-out pass to the winger on the boards
+  {const w=wingMan(t);if(w&&a>114&&!dl&&p.hold>0.4){const s=wingSpot(t,w);
+    if(hyp(w.x-s[0],w.y-s[1])<6&&laneOpen(p.x,p.y,w.x,w.y,t)&&Math.random()<2.4*dt){doPass(p,w,false);if(G.puck.pass)G.puck.pass.chip=true;emit('chipPass',{p,m:w});return null;}}}
+  if(p.chip){if(a<98.5){p.chip=false;const r=Math.random();doDump(p,r<0.4?'rim':r<0.75?'corner':'reb');emit('chipOut',{p});return null;}
+    if(a>130||pressured&&a>104)p.chip=false;else return[clamp(p.x+(NX-p.x)*0.15,6,W-6),yAlong(t,90),1];}
   // stretch pass: a forward is flying through the neutral zone - hit him in full stride
   if(a>112&&!dl&&!pp&&p.hold>0.5&&Math.random()<(pressured?0.6:1.1)*dt){let best=null,bs=0;
     for(const m of G.on){if(m.t!==t||m===p||m.role==='G'||m.down>0)continue;const am=along(t,m.y),fwd=attTop(t)?-m.vy:m.vy;
@@ -1503,7 +1517,9 @@ function playerAI(p,dt){
   if(delayedOff(p)){const gy=ownGY(t);return[clamp(p.x+(NX-p.x)*0.3,5,W-5),gy+(gy===GLT?1:-1)*30,0.45];}
   if(G.jam&&G.jam.js.includes(p))return[G.jam.x+Math.sin(G.time*3+p.phase)*1.2,G.jam.y+Math.cos(G.time*2.6+p.phase)*1.2,0.85];
   if(P.owner===p)return carrierAI(p,dt);
-  if(p.chg)return[SR+0.6,BENCHY[t]+(t===0?-2:2),1];
+  if(p.chg||p.toBench){const st=G.props.find(q=>q.k==='stick'&&q.owner&&q.owner.t===t&&!q.gone&&hyp(q.x-p.x,q.y-p.y)<16&&q.x<p.x+4);   // pick up a stick on the way off
+    if(st){if(hyp(st.x-p.x,st.y-p.y)<1.8){st.gone=true;if(st.owner===p)p.noStick=false;G.props=G.props.filter(q=>!q.gone);}else return[st.x,st.y,0.8];}
+    if(p.chg)return[SR+0.6,BENCHY[t]+(t===0?-2:2),1];}
   if(P.pass&&P.pass.to===p&&!P.owner){
     const v2=P.vx*P.vx+P.vy*P.vy||1;const tc=Math.max(0,((p.x-P.x)*P.vx+(p.y-P.y)*P.vy)/v2);
     return[P.x+P.vx*tc,P.y+P.vy*tc,1];
@@ -1513,6 +1529,7 @@ function playerAI(p,dt){
   if(P.owner&&P.owner.t===t&&P.owner.bd&&P.owner.bd.mate===p){const c=P.owner,side=Math.sign(c.x-NX)||1,ca=along(t,c.y);
     if(c.bd.rush&&ca>25)return[clamp(NX-side*11,5,W-5),yAlong(t,Math.max(7,ca-1)),1];   // stay level on the far side, cut to the post late
     return[NX-side*5.4,yAlong(t,2.6),1];}
+  if(P.owner&&P.owner.t===t&&wingMan(t)===p){const s=wingSpot(t,p);return[s[0],s[1]+Math.sin(G.time*1.3+p.phase)*1.2,1];}
   if(P.owner&&P.owner.t===t&&stretchMan(t)===p){const ca=along(t,P.owner.y);return[clamp(NX+(OFF[p.role]?OFF[p.role][0]-NX:0)*mir(t)*0.8,6,W-6),yAlong(t,Math.max(68,ca-60)),1];}
   if(P.owner&&P.owner.t===t&&frontMan(t)===p)return[NX+Math.sin(G.time*1.1+p.phase)*1.6,yAlong(t,4.6+Math.cos(G.time*0.9+p.phase)*0.8),0.9];
   if(P.owner&&P.owner.t===t){const[x,y]=offenseTarget(p,P.owner.x,P.owner.y);return[x,y,0.85];}
@@ -1568,6 +1585,16 @@ function duoSpot(p,c){
     p.duoSpot=best;}
   return[p.duoSpot[0],p.duoSpot[1],1];
 }
+// chip-out: a winger waits on the boards between his blue line and the red line, takes the pass, carries it over the
+// red line and gets it deep right away (rim, far corner or at the net) - no icing, and the play goes to the other end.
+// A trailing team does this more, and so does a team that has just iced it.
+function wingMan(t){const c=G.puck.owner;if(!c||c.t!==t||along(t,c.y)<114||isPP(t))return null;
+  G.wingK=G.wingK||[null,null];G.wingP=G.wingP||[null,null];
+  if(G.wingK[t]!==G.possT){G.wingK[t]=G.possT;const behind=G.teams[t].score<G.teams[1-t].score,iced=(G.iceRun||[0,0])[t]>0;
+    const pr=behind?0.6:iced?0.65:0.22;
+    G.wingP[t]=Math.random()<pr?(G.on.filter(q=>q.t===t&&q!==c&&(q.role==='LW'||q.role==='RW')&&q.down<=0&&!q.chg).sort((u,v)=>Math.abs(u.x-c.x)-Math.abs(v.x-c.x))[0]||null):null;}
+  const f=G.wingP[t];return f&&G.on.includes(f)&&f!==c?f:null;}
+const wingSpot=(t,p)=>[p.role==='LW'?(attTop(t)?5.5:W-5.5):(attTop(t)?W-5.5:5.5),yAlong(t,111)];
 // stretch man: when the puck is deep in his own end, one forward heads up the ice for a long pass
 function stretchMan(t){const c=G.puck.owner;if(!c||c.t!==t||along(t,c.y)<118||isPP(t))return null;
   G.strK=G.strK||[null,null];G.strP=G.strP||[null,null];
@@ -1725,6 +1752,8 @@ function step(dt){
   if(G.state==='brawl'){updatePlayers(dt,'brawl');updateBrawl(dt);P.vx*=0.97;P.vy*=0.97;P.x+=P.vx*dt;P.y+=P.vy*dt;boardCollide(P,PR,0.4);G.inPrev={shoot:IN.shoot,pass:IN.pass};return;}
   if(G.state==='fight'){updatePlayers(dt,'fight');updateFight(dt);P.vx*=0.98;P.vy*=0.98;P.x+=P.vx*dt;P.y+=P.vy*dt;boardCollide(P,PR,0.4);G.inPrev={shoot:IN.shoot,pass:IN.pass};return;}
   if(G.state==='goal'||G.state==='stop'){
+    for(let i=0;i<2;i++){const o=G.netOff[i];if(!o)continue;o.T=(o.T||0)+dt;G.stateT=Math.max(G.stateT,0.3);   // wait for the linesman
+      if(o.T>2.6){const k=Math.min(1,dt*1.6);o.dx-=o.dx*k;o.dy-=o.dy*k;o.a-=o.a*k;if(Math.abs(o.dx)+Math.abs(o.dy)+Math.abs(o.a)<0.06)G.netOff[i]=null;}}
     G.stateT-=dt;updatePlayers(dt,'glide');
     if(G.state==='stop'&&!P.owner){P.vx*=0.9;P.vy*=0.9;}
     if(G.stateT<=0){
@@ -1775,6 +1804,7 @@ function step(dt){
     if(G.hist.length>150)G.hist.shift();}
   if(G.state==='play')updateGPlay(dt);
   if(G.state==='play')flyChange(dt);
+  if(G.iceRun&&P.owner&&along(P.owner.t,P.owner.y)<60)G.iceRun[P.owner.t]=0;   // got it out and into their end
   if(G.state==='play')maybeJam(dt);
   if(G.state==='play')maybeFight(dt);
   if(G.state==='play')maybeBrawl(dt);
@@ -1797,6 +1827,11 @@ function skatePulse(p,dvx,dvy,maxS,dt){
   if(v>3){const h=Math.atan2(p.vy,p.vx);if(S.h0==null)S.h0=h;let dh=Math.abs(h-S.h0);if(dh>Math.PI)dh=2*Math.PI-dh;
     if(dh>0.61){S.h0=h;if(G.time-(S.lastTurn||-9)<1.2)restart=true;S.lastTurn=G.time;}}
   if(al<0)restart=true;
+  // easing off: wanting to slow down (gliding into a faceoff spot) or closing on the boards - glide, no new strides
+  if(v>5&&!restart&&p.down<=0){let ease=al>0.3&&dv<v*0.88;
+    if(!ease&&boardDist(p.x,p.y)<13){const n=boardNormal(p.x,p.y);ease=(p.vx*n[0]+p.vy*n[1])>v*0.45;}
+    if(ease){if(S.m!=='glide'){S.m='glide';S.d=0;}S.ease=true;return{mul:0.75,coast:true};}}
+  if(S.ease){S.ease=false;if(S.m==='glide'){S.m='cruise';S.d=0;}}
   if(restart||dv<v*0.6||p.down>0||p.stumble>0||v<maxS*0.45){S.m="acc";S.d=0;}   // stopping or being stopped too
   else if(S.m==='acc'&&S.d>H/2&&v>maxS*0.7){S.m='glide';S.d=0;}
   else if(S.m==='glide'&&(S.d>H/2||v<maxS*0.6)){S.m='cruise';S.d=0;}
@@ -2102,13 +2137,14 @@ function updatePuck(dt){
     const rel=hyp(P.vx-p.vx,P.vy-p.vy);
     const lim=(P.pass&&P.pass.to===p)?100:(P.pass&&P.pass.duo)?40:(P.shot?45:72);
     if(rel<lim){
-      if(P.pass&&P.pass.hard&&P.pass.to===p&&!P.pass.bd&&G.state==='play'&&Math.random()<0.32-(p.id.s-80)/250){   // a hard pass bounces off the stick
+      if(P.pass&&P.pass.lvl>=2&&P.pass.to===p&&!P.pass.bd&&!P.pass.duo&&G.state==='play'&&Math.random()<(P.pass.lvl===3?0.3:0.1)-(p.id.s-80)/250){   // a hard pass bounces off the stick
         P.vx=P.vx*0.25+randn()*7;P.vy=P.vy*0.25+randn()*7;P.pass=null;p.noPick=0.4;addTouch(p);emit('stick');emit('bobble',{p});return;}
       const duoRx=P.pass&&(P.pass.duo||P.pass.cyc||P.pass.bd)&&P.pass.to===p,ic=P.pass&&P.pass.from.t!==p.t,bdRx=!!(P.pass&&P.pass.bd&&P.pass.to===p);
       if(duoRx)p.oneT=G.time+1.0;
       if(P.pass&&P.pass.from.t===p.t&&P.pass.x0!=null&&P.pass.from!==p){G.passLog.push({team:p.t,from:P.pass.from.id,to:p.id,x0:P.pass.x0,y0:P.pass.y0,x1:p.x,y1:p.y,t:G.time});if(G.passLog.length>10)G.passLog.shift();}
       if(G.possTeam!==p.t){G.possTeam=p.t;G.possT=G.time;}
-      P.owner=p;P.vx=P.vy=0;P.pass=null;P.shot=null;p.protect=0.35;p.hold=0;p.minHold=rnd(0.7,1.4);p.cycDec=false;p.cycMate=null;p.bdDec=false;p.bd=null;p.ppDec=false;p.fhDec=false;p.wrDec=false;p.wr=null;
+      const lv=P.pass&&P.pass.lvl!=null?P.pass.lvl:1;p.chip=!!(P.pass&&P.pass.chip&&P.pass.to===p);p.minHold=[[0.55,0.95],[0.75,1.25],[1.0,1.6],[1.3,2.1]][lv].reduce((a,b)=>rnd(a,b));   // a hard pass takes longer to settle
+      P.owner=p;P.vx=P.vy=0;P.pass=null;P.shot=null;p.protect=0.35;p.hold=0;p.cycDec=false;p.cycMate=null;p.bdDec=false;p.bd=null;p.ppDec=false;p.fhDec=false;p.wrDec=false;p.wr=null;
       addTouch(p);G.lastTeam=p.t;emit('stick');
       if(ic&&G.state==='play')emit('intercept',{p});
       if(G.human===p.t)G.ctrl=p;
@@ -2349,6 +2385,8 @@ const Off={img:null,limg:null,list:null,
     if((G.state==='setup'||G.state==='faceoff')&&G.puck){const fx=P.x,fy=P.y;const L=hyp(l1.x-fx,l1.y-fy)<hyp(l2.x-fx,l2.y-fy)?l1:l2;T.set(L,[fx+(fx<NX?-2.6:2.6),fy+(fy<100?-1.6:1.6)]);L.face=[fx,fy];}
     if(G.state==='fight'&&G.fight){T.set(l1,[G.fight.lines[0].x,G.fight.lines[0].y]);T.set(l2,[G.fight.lines[1].x,G.fight.lines[1].y]);}
     if(G.state==='brawl'&&G.brawl){const B=G.brawl.lines;T.set(l1,[B[0].x,B[0].y]);T.set(l2,[B[1].x,B[1].y]);T.set(r,[B[2].x,B[2].y]);}
+    for(let i=0;i<2;i++){const o=G.netOff&&G.netOff[i];if(!o)continue;const gy=i===0?GLT:GLB,by=gy+(i===0?-1:1)*(NETD+1.6+Math.abs(o.dy));   // a linesman goes to put the net back
+      const L=hyp(l1.x-NX,l1.y-gy)<hyp(l2.x-NX,l2.y-gy)?l1:l2;T.set(L,[NX+o.dx,by]);L.face=[NX+o.dx,gy];}
     return T;},
   tick(dt){if(!G||!RSP)return;if(!this.list)this.reset();const T=this.targets();
     for(const o of this.list){const[tx,ty]=T.get(o),dx=tx-o.x,dy=ty-o.y,d=hyp(dx,dy),sp=Math.min(d*2.2,(G.state==='fight'||G.state==='brawl')?14:22);
