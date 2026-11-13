@@ -196,6 +196,11 @@ input[type=range]{width:100%;accent-color:var(--led)}
           </div></div>
         <div><div class="lab" id="rinkWL">RINK SIZE (SHARE OF WIDTH)</div>
           <div class="rangeRow"><input type="range" id="rinkW" min="40" max="100" step="1" value="90" aria-label="Rink size, percent of the window width or height"><output id="rinkWV">90%</output></div></div>
+        <div><div class="lab">ICE</div>
+          <div class="seg" id="segDark">
+            <button data-v="0" aria-pressed="true">Light</button>
+            <button data-v="1" aria-pressed="false">Dark</button>
+          </div></div>
         <div><div class="lab">SKATE MARKS ON THE ICE</div>
           <div class="seg" id="segMarks">
             <button data-v="0" aria-pressed="true">Off</button>
@@ -613,7 +618,8 @@ function netCollide(o,r,b,inset=0){
 }
 
 /* ---------- ice wear ---------- */
-function setWearPix(i,c){const k=i*4;wearPix[k]=118;wearPix[k+1]=126;wearPix[k+2]=138;wearPix[k+3]=c>=2?Math.min(78,24+(c-2)*5):0;G.wearDirty=true;}
+let WEARCOL=[118,126,138];   // skate-mark colour; lighter on dark ice
+function setWearPix(i,c){const k=i*4;wearPix[k]=WEARCOL[0];wearPix[k+1]=WEARCOL[1];wearPix[k+2]=WEARCOL[2];wearPix[k+3]=c>=2?Math.min(78,24+(c-2)*5):0;G.wearDirty=true;}
 function markWear(p){
   const cx=Math.floor(p.x*2),cy=Math.floor(p.y*2),cc=cy*GW+cx;
   if(cc===p.wcc)return;p.wcc=cc;
@@ -698,6 +704,11 @@ function choosePass(p,pdx,pdy){
   }
   return best;
 }
+// the first pass after winning the puck nearly always gets through, the second usually; from the third on it is a
+// normal pass. Not when the other team has a momentum boost.
+function passSafe(p){G.passK=G.passK||[null,null];G.passN=G.passN||[0,0];const t=p.t;
+  if(G.passK[t]!==G.possT){G.passK[t]=G.possT;G.passN[t]=0;}const n=G.passN[t]++;
+  const sf=G.mom[1-t]>0?0:n===0?0.92:n===1?0.65:0;return Math.random()<sf;}
 function doPass(p,m,duo){
   const P=G.puck;const d=hyp(m.x-p.x,m.y-p.y);
   // calm play gets softer, saucer-ish passes; now and then a hard one that is tough to handle
@@ -707,10 +718,10 @@ function doPass(p,m,duo){
   const base=[[30,44],[46,60],[62,76],[78,96]][Math.max(lvl,d>55?1:0)];
   const sp=duo?clamp(55+d*0.9,72,95):clamp(rnd(base[0],base[1])+Math.max(0,d-30)*0.25,28,98);
   const tt=d/sp;const ax=m.x+m.vx*tt*0.9,ay=m.y+m.vy*tt*0.9;
-  const err=duo?0:(1.1-p.id.p/100)*randn()*2.2;
+  const safe=passSafe(p),err=duo||safe?0:(1.1-p.id.p/100)*randn()*2.2;
   let dx=ax-p.x,dy=ay-p.y;const L=hyp(dx,dy)||1;dx/=L;dy/=L;
   [P.x,P.y]=stickPos(p);
-  P.vx=dx*sp-dy*err*4/L;P.vy=dy*sp+dx*err*4/L;P.owner=null;P.pass={from:p,to:m,duo:!!duo,x0:P.x,y0:P.y,hard:sp>73&&!duo,lvl:sp<45?0:sp<61?1:sp<77?2:3};P.shot=null;
+  P.vx=dx*sp-dy*err*4/L;P.vy=dy*sp+dx*err*4/L;P.owner=null;P.pass={from:p,to:m,duo:!!duo,x0:P.x,y0:P.y,hard:sp>73&&!duo,lvl:sp<45?0:sp<61?1:sp<77?2:3,safe,t0:G.time};P.shot=null;
   p.noPick=0.35;setIce(p);
   if(G.human===p.t)G.ctrl=m;
   emit('stick');
@@ -942,6 +953,7 @@ function gearTarget(p){
 }
 function gearPick(p,dt){
   if(p.down>0)return;
+  if(G.fight&&(p===G.fight.a||p===G.fight.b)){p.gearT=0;return;}   // fighters gather their own gear after the fight
   p.gearT=(p.gearT||0)+dt;
   for(const q of G.props){if(q.owner!==p||hyp(q.x-p.x,q.y-p.y)>1.8)continue;q.gone=true;if(q.k==='helmet')p.noHelm=false;else p.noStick=false;p.slow=0.35;}
   if(p.gearT>5){for(const q of G.props)if(q.owner===p)q.gone=true;p.noHelm=p.noStick=false;}
@@ -1124,9 +1136,29 @@ function startFight(tr,pair){
   emit('whistle');emit('fight',G.fight);
   return true;
 }
+// after the fight: both fighters gather their stick, gloves and helmet, then skate to the penalty box
+const boxDoor=t=>[W-3.6,100+(t===0?-7:7)];
+function fightPickup(F,dt){F.pickT+=dt;const A=F.a,B=F.b;
+  for(const q of[A,B]){if(q.down>0){q.bendT=0;continue;}
+    if((q.bendT||0)>0){q.bendT-=dt;q.vx*=0.8;q.vy*=0.8;continue;}   // bending down for it
+    const it=G.props.find(it=>it.owner===q&&!it.gone&&hyp(it.x-q.x,it.y-q.y)<1.4);
+    if(it){it.gone=true;q.bendT=0.55;if(it.k==='stick')q.noStick=false;else if(it.k==='helmet')q.noHelm=false;else q.gl=Math.max(0,(q.gl||0)-1);}}
+  if(G.props.some(it=>it.gone))G.props=G.props.filter(it=>!it.gone);
+  const k2=Math.min(1,dt*1.5);F.lines[0].x+=(A.x-2.2-F.lines[0].x)*k2;F.lines[0].y+=(A.y-2.4-F.lines[0].y)*k2;F.lines[1].x+=(B.x+2.2-F.lines[1].x)*k2;F.lines[1].y+=(B.y+2.4-F.lines[1].y)*k2;
+  const atBox=q=>{const d=boxDoor(q.t);return hyp(q.x-d[0],q.y-d[1])<3.4;};
+  if((atBox(A)&&atBox(B))||F.pickT>12){
+    callPenalty(A,'FIGHTING','major',false,true);callPenalty(B,'FIGHTING','major',false,true);
+    for(const q of[A,B]){q.noStick=false;q.noHelm=false;q.gl=0;}G.props=G.props.filter(it=>it.owner!==A&&it.owner!==B);
+    let best=ENDDOTS[0],bd=1e9;for(const d of ENDDOTS){const q=hyp(d[0]-F.x,d[1]-F.y);if(q<bd){bd=q;best=d;}}
+    G.stopDot=best;G.state='stop';G.stateT=2;G.fight=null;emit('fightPens',{a:A,b:B,dur:G.periodLen/4});}}
+function fighterAI(p){const F=G.fight;
+  const it=G.props.filter(q=>q.owner===p&&!q.gone).sort((a,b)=>hyp(a.x-p.x,a.y-p.y)-hyp(b.x-p.x,b.y-p.y))[0];
+  if(it&&F.pickT<9)return[it.x,it.y,(p.bendT||0)>0?0.05:0.4];
+  const d=boxDoor(p.t);return[d[0],d[1],0.6];}
 function updateFight(dt){
   const F=G.fight;F.t+=dt;
   const A=F.a,B=F.b;
+  if(F.pick){fightPickup(F,dt);return;}
   let dist=3.6;
   if(F.t<1.2){dist=3.6;F.spin+=dt*0.2;}
   else if(F.t<2.4){dist=3.2;F.spin+=dt*1.0;}
@@ -1162,12 +1194,7 @@ function updateFight(dt){
     F.lines[0].x+=(A.x-1.8-F.lines[0].x)*k2;F.lines[0].y+=(A.y-2.2-F.lines[0].y)*k2;
     F.lines[1].x+=(B.x+1.8-F.lines[1].x)*k2;F.lines[1].y+=(B.y+2.2-F.lines[1].y)*k2;
   }
-  if(F.t>=F.end+2.4){
-    callPenalty(A,'FIGHTING','major',false,true);callPenalty(B,'FIGHTING','major',false,true);
-    let best=ENDDOTS[0],bd=1e9;for(const d of ENDDOTS){const q=hyp(d[0]-F.x,d[1]-F.y);if(q<bd){bd=q;best=d;}}
-    G.stopDot=best;G.state='stop';G.stateT=3;G.fight=null;
-    emit('fightPens',{a:A,b:B,dur:G.periodLen/4});
-  }
+  if(F.t>=F.end+2.4){F.pick=true;F.pickT=0;}
 }
 function punch(p){
   const F=G.fight;p.punchT=0.2;p.punchCd=0.22;
@@ -1182,9 +1209,10 @@ let BRAWLK=0.02,SCRUMK=0.07,FIGHT2BRAWL=0.05;
 const DEBUG_BRAWL=typeof location!=='undefined'&&/[?&]brawl/.test(location.search);
 const avail=n=>!G.ejected[n]&&!G.sitting[n];
 function dropGear(p,k){
-  const a=rnd(6.28),r=rnd(0.8,2.6);let x=p.x+Math.cos(a)*r,y=p.y+Math.sin(a)*r;
+  const a=rnd(6.28),r=G.fight&&(p===G.fight.a||p===G.fight.b)?rnd(2.5,6.5):rnd(0.8,2.6);   // fight gear flies further
+  let x=p.x+Math.cos(a)*r,y=p.y+Math.sin(a)*r;
   if(boardDist(x,y)<1.2){x=p.x;y=p.y;}
-  G.props.push({k,x,y,a:rnd(6.28),col:k==='glove'?(p.role==='G'?'#f4f4f4':G.teams[p.t].J.trim):k==='helmet'?G.teams[p.t].J.helm:null});
+  G.props.push({k,x,y,owner:p,a:rnd(6.28),col:k==='glove'?(p.role==='G'?'#f4f4f4':G.teams[p.t].J.trim):k==='helmet'?G.teams[p.t].J.helm:null});
 }
 function gearSched(p,t0,full){
   // each piece comes off on its own clock (or not at all)
@@ -1506,7 +1534,7 @@ function carrierAI(p,dt){
     const crowd=G.on.filter(q=>q.t!==t&&q.role!=='G'&&q.down<=0&&hyp(q.x-p.x,q.y-p.y)<16&&along(t,q.y)<a+2).length;
     const hz=a>66?(crowd>=2?1.1:0):0.3;
     if(hz&&fwdP>6&&p.hold>0.6&&Math.random()<hz*dt){const tr=G.on.find(m=>m.t===t&&m!==p&&m.role!=='G'&&m.down<=0&&along(t,m.y)-a>5&&along(t,m.y)-a<22&&Math.abs(m.x-p.x)<12&&(attTop(t)?-m.vy:m.vy)>6);
-      if(tr){const P=G.puck;P.owner=null;P.vx=p.vx*0.06;P.vy=p.vy*0.06;P.pass={from:p,to:tr,drop:true,x0:P.x,y0:P.y};P.shot=null;p.noPick=0.9;addTouch(p);emit('stick');emit('dropPass',{p,m:tr});return null;}}}
+      if(tr){const P=G.puck;P.owner=null;P.vx=p.vx*0.06;P.vy=p.vy*0.06;P.pass={from:p,to:tr,drop:true,x0:P.x,y0:P.y,safe:passSafe(p),t0:G.time};P.shot=null;p.noPick=0.9;addTouch(p);emit('stick');emit('dropPass',{p,m:tr});return null;}}}
   const hzP=((pressured?1.5:0.22)+(a>120?0.9:0)+(p.role[1]==='D'&&a<70?0.5:0))*(a<89&&!pp?0.12:1)+(pp?1.4:0);
   const canPass=p.hold>(pressured?Math.min(0.35,p.minHold||0):(p.minHold||0));   // nobody moves it on the instant he gets it
   if(canPass&&Math.random()<hzP*0.65*dt){const m=choosePass(p,0,0);if(m){doPass(p,m);return null;}}
@@ -1638,7 +1666,7 @@ function updateGPlay(dt){const Q=G.gPlay;if(!Q)return;const g=Q.g,P=G.puck,t=g.t
     for(const m of G.on){if(m.t!==t||m.role==='G'||m.down>0||m.toBench)continue;const d=hyp(m.x-P.x,m.y-P.y);if(d<8||d>60)continue;
       if(!laneOpen(P.x,P.y,m.x,m.y,t))continue;const sc=openness(m)*1.5-d*0.15+(along(t,P.y)-along(t,m.y))*0.1;if(sc>bs){bs=sc;best=m;}}
     G.gPlay=null;
-    if(best){const sx=g.x,sy=g.y;g.fx=(best.x-g.x)/(hyp(best.x-g.x,best.y-g.y)||1);g.fy=(best.y-g.y)/(hyp(best.x-g.x,best.y-g.y)||1);doPass(g,best,false);P.x=sx+g.fx*2;P.y=sy+g.fy*2;emit('gPass',{g,m:best});}
+    if(best){const sx=g.x,sy=g.y;g.fx=(best.x-g.x)/(hyp(best.x-g.x,best.y-g.y)||1);g.fy=(best.y-g.y)/(hyp(best.x-g.x,best.y-g.y)||1);doPass(g,best,false);P.x=sx+g.fx*(GR+PR+0.4);P.y=sy+g.fy*(GR+PR+0.4);emit('gPass',{g,m:best});}
     else emit('gLeave',{g});}}
 function goalieAI(g){
   if(g.pulling)return[SR+0.6,100+(g.t===0?-12:12),1];
@@ -1660,6 +1688,7 @@ function goalieAI(g){
 }
 function fightRingAI(p){
   const F=G.fight;if(!F)return[p.x,p.y,0.3];
+  if(F.pick&&(p===F.a||p===F.b))return fighterAI(p);
   if(p.role==='G'){const gy=ownGY(p.t);return[NX,gy+(gy===GLT?2:-2),0.5];}
   const others=G.on.filter(q=>q.role!=='G'&&q!==F.a&&q!==F.b);
   const i=others.indexOf(p),n=Math.max(1,others.length);
@@ -1847,7 +1876,7 @@ function updatePlayers(dt,mode){
     if(p.dash>0)p.dash-=dt;if(p.slow>0)p.slow-=dt;
     const isG=p.role==='G';
     if(p.crash){updateCrash(p,dt);continue;}
-    if(mode==='fight'&&G.fight&&(p===G.fight.a||p===G.fight.b)){if(p.down>0)p.down-=dt;continue;}
+    if(mode==='fight'&&G.fight&&!G.fight.pick&&(p===G.fight.a||p===G.fight.b)){if(p.down>0)p.down-=dt;continue;}
     if(mode==='brawl'&&(p.bp||p.third)){if(p.down>0)p.down-=dt;continue;}
     let maxS=isG?27:21+p.id.s*0.11,acc=isG?120:38+p.id.s*0.12;
     if(P.owner===p)maxS*=0.93;
@@ -2071,6 +2100,10 @@ function updatePuck(dt){
          d.latchOn=false;d.latchCd=G.time+1.0;return;}}}
     return;
   }
+  // a safe pass finds the man: the puck bends gently toward his stick
+  if(P.pass&&P.pass.safe&&P.pass.to&&G.on.includes(P.pass.to)&&P.pass.to.down<=0){const[tx,ty]=stickPos(P.pass.to),v=hyp(P.vx,P.vy);
+    if(v>8){const h0=Math.atan2(P.vy,P.vx),h1=Math.atan2(ty-P.y,tx-P.x);let dh=h1-h0;while(dh>Math.PI)dh-=2*Math.PI;while(dh<-Math.PI)dh+=2*Math.PI;
+      if(Math.abs(dh)<1.4){const st=clamp(dh,-2.2*dt,2.2*dt),h=h0+st;P.vx=Math.cos(h)*v;P.vy=Math.sin(h)*v;}}}
   const n=2,h=dt/n;
   for(let k=0;k<n;k++){
     const px=P.x,py=P.y;
@@ -2089,6 +2122,7 @@ function updatePuck(dt){
     for(const g of G.on){if(g.role!=='G')continue;
       const dx=P.x-g.x,dy=P.y-g.y,d=hyp(dx,dy);
       if(P.through===g){if(d>GR+PR+1)P.through=null;continue;}
+      if(P.pass&&P.pass.from===g)continue;   // his own pass doesn't hit him
       if(d<GR+PR&&G.gPlay&&G.gPlay.g===g&&!G.gPlay.stopped&&!(P.shot&&P.shot.t!==g.t&&!P.shot.dump)){G.gPlay.stopped=true;P.x=g.x+dx/(d||1)*(GR+PR);P.y=g.y+dy/(d||1)*(GR+PR);goaliePlay(g,true);G.gPlay.stopped=true;continue;}
       if(d<GR+PR){
         const sp=hyp(P.vx,P.vy);
@@ -2128,17 +2162,18 @@ function updatePuck(dt){
   const near=G.on.slice().sort((a,b)=>hyp(a.x-P.x,a.y-P.y)-hyp(b.x-P.x,b.y-P.y));
   for(const p of near){
     if(p.role==='G'||p.down>0||p.noPick>0||p.noStick||p.toBench||delayedOff(p))continue;
+    if(P.pass&&P.pass.safe&&P.pass.from.t!==p.t&&G.time-P.pass.t0<1.8)continue;
     const d=hyp(p.x-P.x,p.y-P.y);
     if(d<=3.8&&P.shot&&!P.shot.dump&&!P.shot.fh&&P.shot.t===p.t&&P.shot.by!==p&&G.state==='play'&&!G.ps&&hyp(P.vx,P.vy)>32){
       const T=P.shot.tried||(P.shot.tried=[]);
       if(!T.includes(p)){T.push(p);const a=along(p.t,p.y);
         if(a>-1&&a<17&&Math.abs(p.x-NX)<10&&Math.random()<0.85){tipShot(p);if(G.state!=='play')return;}}
       continue;}
-    if(d>2.9)break;
+    if(d>2.9){if(d>3.9)break;if(!(P.pass&&P.pass.safe&&P.pass.to===p))continue;}   // the intended man reaches a little further for a safe pass
     const rel=hyp(P.vx-p.vx,P.vy-p.vy);
     const lim=(P.pass&&P.pass.to===p)?100:(P.pass&&P.pass.duo)?40:(P.shot?45:72);
     if(rel<lim){
-      if(P.pass&&P.pass.lvl>=2&&P.pass.to===p&&!P.pass.bd&&!P.pass.duo&&G.state==='play'&&Math.random()<(P.pass.lvl===3?0.3:0.1)-(p.id.s-80)/250){   // a hard pass bounces off the stick
+      if(P.pass&&P.pass.lvl>=2&&P.pass.to===p&&!P.pass.bd&&!P.pass.duo&&!P.pass.safe&&G.state==='play'&&Math.random()<(P.pass.lvl===3?0.3:0.1)-(p.id.s-80)/250){   // a hard pass bounces off the stick
         P.vx=P.vx*0.25+randn()*7;P.vy=P.vy*0.25+randn()*7;P.pass=null;p.noPick=0.4;addTouch(p);emit('stick');emit('bobble',{p});return;}
       const duoRx=P.pass&&(P.pass.duo||P.pass.cyc||P.pass.bd)&&P.pass.to===p,ic=P.pass&&P.pass.from.t!==p.t,bdRx=!!(P.pass&&P.pass.bd&&P.pass.to===p);
       if(duoRx)p.oneT=G.time+1.0;
@@ -2151,7 +2186,7 @@ function updatePuck(dt){
       if(G.human===p.t)G.ctrl=p;
       else if(duoRx&&G.state==='play'){const a=along(p.t,p.y);if(bdRx&&a>-2&&a<14)doShot(p,rnd(0.5,0.8),Math.sign(p.x-NX)||1,{bd:true});else if(a>2&&a<40)doShot(p,rnd(0.65,1),0);}
       return;
-    }else if(p.blockCd<=0){
+    }else if(p.blockCd<=0&&!(P.pass&&P.pass.from.t===p.t)){   // a teammate lets his own team's pass go by
       p.blockCd=0.4;
       if(Math.random()<(P.pass&&P.pass.duo?0.15:0.5)){
         const nx=(P.x-p.x)/(d||1),ny=(P.y-p.y)/(d||1);
@@ -2208,6 +2243,7 @@ function sz(){
   buildRink();
 }
 function roundedRink(c){c.moveTo(RC,0);c.arcTo(W,0,W,H,RC);c.arcTo(W,H,0,H,RC);c.arcTo(0,H,0,0,RC);c.arcTo(0,0,W,0,RC);c.closePath();}
+function restyleWear(){WEARCOL=+opts.dark?[188,195,204]:[118,126,138];if(G&&G.wear)for(let i=0;i<G.wear.length;i++)if(G.wear[i])setWearPix(i,G.wear[i]);}
 function buildRink(){
   rinkPath=new Path2D();roundedRink(rinkPath);
   const M=7;rink=document.createElement('canvas');
@@ -2226,28 +2262,29 @@ function buildRink(){
   c.fillStyle='rgba(200,220,240,.5)';c.font='400 1.6px Silkscreen, monospace';c.textAlign='center';
   c.save();c.translate(W+3.7,100);c.rotate(Math.PI/2);c.fillText('PENALTY',0,0.6);c.restore();
   const path=()=>{c.beginPath();roundedRink(c);};
-  path();c.fillStyle='#eef3f6';c.fill();
+  const DK=!!+opts.dark,RED=DK?'#e3424f':RED,BLU=DK?'#4f86ec':BLU;   // dark mode: charcoal ice, brighter lines, white puck
+  path();c.fillStyle=DK?'#2f343b':'#eef3f6';c.fill();
   c.save();path();c.clip();
-  const g=c.createLinearGradient(0,0,W,0);g.addColorStop(0,'rgba(170,195,215,.25)');g.addColorStop(.5,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(170,195,215,.25)');c.fillStyle=g;c.fillRect(0,0,W,H);
-  c.fillStyle='#cf2233';c.fillRect(0,99.5,W,1);
+  const g=c.createLinearGradient(0,0,W,0);g.addColorStop(0,DK?'rgba(10,14,20,.35)':'rgba(170,195,215,.25)');g.addColorStop(.5,'rgba(255,255,255,0)');g.addColorStop(1,DK?'rgba(10,14,20,.35)':'rgba(170,195,215,.25)');c.fillStyle=g;c.fillRect(0,0,W,H);
+  c.fillStyle=RED;c.fillRect(0,99.5,W,1);
   c.fillStyle='rgba(255,255,255,.7)';for(let x=1;x<W;x+=3)c.fillRect(x,99.85,1.2,0.3);
-  c.fillStyle='#2a57c6';c.fillRect(0,74.5,W,1);c.fillRect(0,124.5,W,1);
-  c.fillStyle='#cf2233';c.fillRect(0,GLT-0.1,W,0.2);c.fillRect(0,GLB-0.1,W,0.2);
+  c.fillStyle=BLU;c.fillRect(0,74.5,W,1);c.fillRect(0,124.5,W,1);
+  c.fillStyle=RED;c.fillRect(0,GLT-0.1,W,0.2);c.fillRect(0,GLB-0.1,W,0.2);
   c.lineWidth=0.2;
-  c.strokeStyle='#2a57c6';c.beginPath();c.arc(NX,100,15,0,7);c.stroke();
-  c.fillStyle='#2a57c6';c.beginPath();c.arc(NX,100,0.6,0,7);c.fill();
-  c.strokeStyle='#cf2233';c.fillStyle='#cf2233';
+  c.strokeStyle=BLU;c.beginPath();c.arc(NX,100,15,0,7);c.stroke();
+  c.fillStyle=BLU;c.beginPath();c.arc(NX,100,0.6,0,7);c.fill();
+  c.strokeStyle=RED;c.fillStyle=RED;
   for(const d of ENDDOTS){c.beginPath();c.arc(d[0],d[1],15,0,7);c.stroke();c.beginPath();c.arc(d[0],d[1],1,0,7);c.fill();
     for(const sx of[-1,1])for(const sy of[-1,1])c.fillRect(d[0]+sx*2-0.1,d[1]+sy-(sy<0?3:0),0.2,3);}
   for(const y of[80,120])for(const x of[NX-22,NX+22]){c.beginPath();c.arc(x,y,1,0,7);c.fill();}
   for(const[gy,dir]of[[GLT,1],[GLB,-1]]){
     c.beginPath();c.arc(NX,gy,6,dir>0?0:Math.PI,dir>0?Math.PI:2*Math.PI);c.closePath();
-    c.fillStyle='rgba(110,170,232,.6)';c.fill();c.strokeStyle='#cf2233';c.lineWidth=0.17;c.stroke();
+    c.fillStyle='rgba(110,170,232,.6)';c.fill();c.strokeStyle=RED;c.lineWidth=0.17;c.stroke();
     c.lineWidth=0.17;c.beginPath();
     for(const sx of[-1,1]){const x=NX+sx*4,y=gy+dir*4;c.moveTo(x,y);c.lineTo(x-sx*0.42,y);c.moveTo(x,y);c.lineTo(x,y-dir*0.42);}
     c.stroke();
   }
-  c.fillStyle='rgba(42,87,198,.18)';c.font='700 7px Silkscreen, monospace';c.textAlign='center';c.textBaseline='middle';
+  c.fillStyle=DK?'rgba(130,165,235,.16)':'rgba(42,87,198,.18)';c.font='700 7px Silkscreen, monospace';c.textAlign='center';c.textBaseline='middle';
   if(ROT){c.save();c.translate(NX,100);c.rotate(Math.PI/2);c.fillText('VP',0,0);c.restore();}else c.fillText('VP',NX,100);
   c.restore();
   path();c.lineWidth=1.1;c.strokeStyle='#f2c230';c.stroke();
@@ -2644,10 +2681,11 @@ function renderCore(dt,zf){
   if(flash>0){flash-=dt;ctx.fillStyle=`rgba(255,210,80,${Math.max(0,flash)*0.35})`;ctx.fillRect(0,0,cw,ch);}
   function drawPuck(){
     const z=P.air?Math.sin(Math.min(1,P.air.T/1.0)*Math.PI)*2.4+0.5:0;
-    ctx.fillStyle='rgba(20,30,50,.3)';ctx.beginPath();ctx.ellipse(P.x+0.25+z*0.4,P.y+0.35+z*0.5,0.62,0.5,0,0,7);ctx.fill();
+    const DK=!!+opts.dark;
+    ctx.fillStyle=DK?'rgba(0,0,0,.45)':'rgba(20,30,50,.3)';ctx.beginPath();ctx.ellipse(P.x+0.25+z*0.4,P.y+0.35+z*0.5,0.62,0.5,0,0,7);ctx.fill();
     const pr=0.62*(1+z*0.14),py=P.y-z;
-    ctx.fillStyle='#0b0b0d';ctx.beginPath();ctx.arc(P.x,py,pr,0,7);ctx.fill();
-    ctx.fillStyle='#444';ctx.beginPath();ctx.arc(P.x-0.15,py-0.18,0.2,0,7);ctx.fill();
+    ctx.fillStyle=DK?'#f4f5f7':'#0b0b0d';ctx.beginPath();ctx.arc(P.x,py,pr,0,7);ctx.fill();
+    ctx.fillStyle=DK?'#c3c8cf':'#444';ctx.beginPath();ctx.arc(P.x-0.15,py-0.18,0.2,0,7);ctx.fill();
   }
 }
 
@@ -3845,8 +3883,8 @@ for(const ev of['pointerdown','mousedown','touchend','keydown','click'])document
 })();
 {const r=$('rinkW'),o=$('rinkWV');const show=()=>{o.textContent=r.value+'%';};
   r.value=clamp(+opts.rw||90,40,100);show();r.oninput=()=>{opts.rw=+r.value;show();save();sz();};}
-seg('segMarks','marks');seg('segOrient','orient');seg('segFit','fit');
-for(const[id,k]of[['segOrient','orient'],['segFit','fit']]){for(const b of $(id).querySelectorAll('button'))b.setAttribute('aria-pressed',+b.dataset.v===(+opts[k]||0)?'true':'false');$(id).addEventListener('click',()=>setTimeout(()=>{sz();camX=NX;camY=100;fitLab();}));}
+seg('segMarks','marks');seg('segOrient','orient');seg('segFit','fit');seg('segDark','dark');$('segDark').addEventListener('click',()=>setTimeout(()=>{buildRink();restyleWear();},0));
+for(const[id,k]of[['segOrient','orient'],['segFit','fit'],['segDark','dark']]){for(const b of $(id).querySelectorAll('button'))b.setAttribute('aria-pressed',+b.dataset.v===(+opts[k]||0)?'true':'false');$(id).addEventListener('click',()=>setTimeout(()=>{sz();camX=NX;camY=100;fitLab();}));}
 function fitLab(){const f=+opts.fit||0;$('rinkWL').textContent=f===0?'RINK SIZE (SHARE OF HEIGHT / WIDTH)':f===2?'RINK SIZE (SHARE OF HEIGHT)':'RINK SIZE (SHARE OF WIDTH)';}fitLab();for(const b of $('segMarks').querySelectorAll('button'))b.setAttribute('aria-pressed',+b.dataset.v===(+opts.marks||0)?'true':'false');
 $('tPause').onclick=()=>{if(attract)return;paused=!paused;if(paused)Vox.stop();tc('tPause',paused?'▶':'II');Tick.setHold(paused?'PAUSED':null);};
 $('tSound').onclick=()=>{sound=!sound;if(!sound){Vox.stop();Arena.stopMusic(0.1);Theme.stop(0.1);}else if(!$('menu').hidden||!$('season').hidden){ac();Arena.theme();}$('tSound').style.opacity=sound?1:0.45;ac();if(!sound)Music.stop();else if(G&&!attract&&(G.state==='pregame'||G.state==='pend'||G.state==='final'))Music.play();};
@@ -3899,7 +3937,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&!attract&&
 
 addEventListener('resize',sz);
 if(window.ResizeObserver)new ResizeObserver(sz).observe($('stage'));
-sz();startAttract();
+restyleWear();sz();startAttract();
 if(document.fonts)document.fonts.ready.then(()=>buildRink());
 requestAnimationFrame(frame);
 })();
