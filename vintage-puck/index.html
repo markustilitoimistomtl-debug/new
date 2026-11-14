@@ -51,6 +51,7 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeri
 #stage{position:relative;flex:1;min-height:0;overflow:hidden;background:#141c30;touch-action:none}
 canvas{display:block;width:100%;height:100%}
 .ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(6,10,22,.62);overflow:auto}
+body.darkice .ov{background:rgba(8,9,11,.55)}
 .ov.clear{background:transparent;align-items:flex-start;pointer-events:none}
 .ov.clear .card{pointer-events:auto}
 .card{background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:18px;max-width:460px;width:100%;display:flex;flex-direction:column;gap:12px;box-shadow:0 10px 0 rgba(0,0,0,.35);max-height:100%;overflow:auto;box-sizing:border-box}
@@ -709,13 +710,13 @@ function choosePass(p,pdx,pdy){
 function passSafe(p){G.passK=G.passK||[null,null];G.passN=G.passN||[0,0];const t=p.t;
   if(G.passK[t]!==G.possT){G.passK[t]=G.possT;G.passN[t]=0;}const n=G.passN[t]++;
   const sf=G.mom[1-t]>0?0:n===0?0.92:n===1?0.65:0;return Math.random()<sf;}
-function doPass(p,m,duo){
+function doPass(p,m,duo,minLvl){
   const P=G.puck;const d=hyp(m.x-p.x,m.y-p.y);
   // calm play gets softer, saucer-ish passes; now and then a hard one that is tough to handle
   const press=G.on.some(o=>o.t!==p.t&&o.role!=='G'&&o.down<=0&&hyp(o.x-p.x,o.y-p.y)<8),pr=Math.random();
   // four speeds: soft, medium, firm, hard - long passes need some pace, pressure makes them harder
   const lvl=duo?3:p.role==='G'?(d>40?1:0):press?(pr<0.35?1:pr<0.8?2:3):(pr<0.4?0:pr<0.75?1:pr<0.93?2:3);
-  const base=[[30,44],[46,60],[62,76],[78,96]][Math.max(lvl,d>55?1:0)];
+  const base=[[30,44],[46,60],[62,76],[78,96]][Math.max(lvl,d>55?1:0,minLvl||0)];
   const sp=duo?clamp(55+d*0.9,72,95):clamp(rnd(base[0],base[1])+Math.max(0,d-30)*0.25,28,98);
   const tt=d/sp;const ax=m.x+m.vx*tt*0.9,ay=m.y+m.vy*tt*0.9;
   const safe=passSafe(p),err=duo||safe?0:(1.1-p.id.p/100)*randn()*2.2;
@@ -1442,7 +1443,7 @@ function carrierAI(p,dt){
        p.duoT+=dt;const pa=along(t,dp.y),open=openness(dp);
        const ready=dp.duoSpot&&hyp(dp.x-dp.duoSpot[0],dp.y-dp.duoSpot[1])<3;
        if((p.duoT>p.duoBake&&ready&&pa>3&&pa<30&&open>3.5&&laneOpen(p.x,p.y,dp.x,dp.y,t)&&Math.random()<3*dt)||p.duoT>p.duoBake+2.6){
-         p.duoT=0;const isDuo=duoPartner(p)===dp;doPass(p,dp,isDuo);if(!isDuo&&G.puck.pass)G.puck.pass.cyc=true;emit('duoPass',{p,dp,duo:isDuo});return null;}
+         p.duoT=0;const isDuo=duoPartner(p)===dp;doPass(p,dp,isDuo,2);if(!isDuo&&G.puck.pass)G.puck.pass.cyc=true;emit('duoPass',{p,dp,duo:isDuo});return null;}
        if(Math.abs(p.x-NX)>8)p.duoDir=p.x<NX?1:-1;
        return[NX+p.duoDir*9,yAlong(t,-5.2+Math.sin(G.time*2+p.phase)*0.6),0.55];
      }
@@ -1456,7 +1457,7 @@ function carrierAI(p,dt){
     if(!G.on.includes(m)||m.down>0||m.toBench||a>82||B.T>(B.rush?4.5:6)||G.ps)p.bd=null;
     else{const side=Math.sign(p.x-NX)||1,spot=[NX-side*5.4,yAlong(t,2.6)];
       const ready=hyp(m.x-spot[0],m.y-spot[1])<3.4;
-      if(a<27&&a>3&&ready&&laneOpen(p.x,p.y,m.x,m.y,t)&&Math.random()<5*dt){p.bd=null;doPass(p,m,true);if(G.puck.pass)G.puck.pass.bd=true;emit('bdPass',{p,m,rush:B.rush});return null;}
+      if(a<27&&a>3&&ready&&laneOpen(p.x,p.y,m.x,m.y,t)&&Math.random()<5*dt){p.bd=null;doPass(p,m,true,2);if(G.puck.pass)G.puck.pass.bd=true;emit('bdPass',{p,m,rush:B.rush});return null;}
       if(a<6&&B.T>2.5){p.bd=null;}
       else return[NX+side*clamp(Math.abs(p.x-NX),8,15),yAlong(t,a>22?a-14:clamp(a,9,20)),1];}}
   // power play: the point man settles it down, waits, then looks for an open man for the one-timer - or winds up a slapshot
@@ -1468,7 +1469,7 @@ function carrierAI(p,dt){
       if(p.ppT>p.ppWait){let best=null,bs=3.5;
         for(const m of G.on){if(m.t!==t||m===p||m.role==='G'||m.down>0)continue;const am=along(t,m.y);if(am<4||am>40)continue;
           const op=openness(m);if(op>bs&&laneOpen(p.x,p.y,m.x,m.y,t)){bs=op;best=m;}}
-        if(best){p.ppPlan=null;doPass(p,best,false);if(G.puck.pass)G.puck.pass.cyc=true;emit('ppFeed',{p,m:best});return null;}
+        if(best){p.ppPlan=null;doPass(p,best,false,2);if(G.puck.pass)G.puck.pass.cyc=true;emit('ppFeed',{p,m:best});return null;}
         if(p.ppT>p.ppWait+2.2){p.ppPlan=null;doShot(p,rnd(0.8,1),0,{point:true});return null;}}
       return[clamp(p.x+Math.sin(G.time*1.3+p.phase)*2,8,W-8),yAlong(t,60),0.35];}}
   // wraparound: carry it behind the net and stuff it in at the far post before the goalie gets across
@@ -2243,7 +2244,7 @@ function sz(){
   buildRink();
 }
 function roundedRink(c){c.moveTo(RC,0);c.arcTo(W,0,W,H,RC);c.arcTo(W,H,0,H,RC);c.arcTo(0,H,0,0,RC);c.arcTo(0,0,W,0,RC);c.closePath();}
-function restyleWear(){WEARCOL=+opts.dark?[188,195,204]:[118,126,138];if(G&&G.wear)for(let i=0;i<G.wear.length;i++)if(G.wear[i])setWearPix(i,G.wear[i]);}
+function restyleWear(){document.body.classList.toggle('darkice',!!+opts.dark);WEARCOL=+opts.dark?[188,195,204]:[118,126,138];if(G&&G.wear)for(let i=0;i<G.wear.length;i++)if(G.wear[i])setWearPix(i,G.wear[i]);}
 function buildRink(){
   rinkPath=new Path2D();roundedRink(rinkPath);
   const M=7;rink=document.createElement('canvas');
