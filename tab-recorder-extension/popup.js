@@ -18,6 +18,7 @@ function fill() {
   $('exact').checked = settings.exact;
   $('shotRes').value = settings.shotRes;
   $('shotQuality').value = String(settings.shotQuality);
+  $('jobName').value = settings.jobName || '';
 }
 
 function read() {
@@ -28,11 +29,14 @@ function read() {
     audio: $('audio').checked,
     exact: $('exact').checked,
     shotRes: $('shotRes').value,
-    shotQuality: +$('shotQuality').value
+    shotQuality: +$('shotQuality').value,
+    jobName: $('jobName').value
   };
   chrome.storage.local.set({ settings });
 }
 
+$('jobName').addEventListener('input', read);
+$('jobName').addEventListener('keydown', e => { if (e.key === 'Enter') $('go').click(); });
 for (const id of ['res', 'fps', 'format', 'audio', 'exact', 'shotRes', 'shotQuality']) $(id).addEventListener('change', read);
 
 function status(text, err) {
@@ -56,6 +60,8 @@ function render(state) {
   $('cancel').hidden = !rec;
   clearInterval(tick);
   if (rec) {
+    $('liveName').hidden = !state.jobName;
+    $('liveName').textContent = state.jobName || '';
     const R = RESOLUTIONS[state.res];
     $('liveInfo').textContent = `${R ? R.label : state.res + 'p'} · kaappaus ${state.actual || '?'} · ${(state.mime || '').split(';')[0]}`;
     const upd = () => { $('timer').textContent = fmt(Date.now() - state.startedAt); };

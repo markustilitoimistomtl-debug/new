@@ -40,7 +40,7 @@ async function start(tab, streamId) {
   await ensureOffscreen();
   const res = await chrome.runtime.sendMessage({ target: 'offscreen', type: 'start', streamId, settings, title: tab.title || '', tabId: tab.id });
   if (!res || !res.ok) return res || { ok: false, error: 'Tallennuksen aloitus epäonnistui.' };
-  await setState({ recording: true, startedAt: Date.now(), tabId: tab.id, res: settings.res, actual: res.actual, mime: res.mime });
+  await setState({ recording: true, startedAt: Date.now(), tabId: tab.id, res: settings.res, jobName: (settings.jobName || '').trim(), actual: res.actual, mime: res.mime });
   return res;
 }
 
@@ -87,7 +87,7 @@ async function screenshot(tab, streamId) {
   });
   if (!res || !res.ok) { await closeOffscreenIfIdle(); return res || { ok: false, error: 'Kuvakaappaus epäonnistui.' }; }
   try {
-    await chrome.downloads.download({ url: res.url, filename: res.filename, saveAs: false });
+    await chrome.downloads.download({ url: res.url, filename: res.filename, saveAs: false, conflictAction: 'uniquify' });
   } catch (e) {
     await closeOffscreenIfIdle();
     return { ok: false, error: 'Kuvan tallennus epäonnistui: ' + (e.message || e) };
@@ -109,7 +109,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         // the offscreen document hands over the finished file
         let error;
         try {
-          const id = await chrome.downloads.download({ url: msg.url, filename: msg.filename, saveAs: false });
+          const id = await chrome.downloads.download({ url: msg.url, filename: msg.filename, saveAs: false, conflictAction: 'uniquify' });
           await chrome.storage.session.set({ pendingDownload: id });
         } catch (e) {
           error = 'Tiedoston tallennus epäonnistui: ' + (e.message || e);

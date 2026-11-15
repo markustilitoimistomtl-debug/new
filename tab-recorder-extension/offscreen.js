@@ -27,6 +27,12 @@ function videoConstraints(streamId, res, fps, exact) {
   return video;
 }
 
+// Named work: exactly "name.ext". Otherwise tab title + time + resolution.
+function fileName(job, title, res, ext) {
+  const base = job ? safeName(job) : `${safeName(title)}_${stamp()}_${res}p`;
+  return `Välilehtitallennin/${base}.${ext}`;
+}
+
 async function start({ streamId, settings, title, tabId }) {
   if (recorder) return { ok: false, error: 'Tallennus on jo käynnissä.' };
   const video = videoConstraints(streamId, settings.res, settings.fps, settings.exact);
@@ -55,7 +61,7 @@ async function start({ streamId, settings, title, tabId }) {
   }
 
   const vs = stream.getVideoTracks()[0].getSettings();
-  meta = { res: settings.res, title, ext: (recorder.mimeType || mime).includes('mp4') ? 'mp4' : 'webm' };
+  meta = { res: settings.res, title, job: (settings.jobName || '').trim(), ext: (recorder.mimeType || mime).includes('mp4') ? 'mp4' : 'webm' };
   chunks = [];
   recTabId = tabId;
   recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
@@ -73,7 +79,7 @@ function finish() {
   const blob = new Blob(chunks, { type });
   chunks = [];
   const url = URL.createObjectURL(blob);
-  const filename = `Välilehtitallennin/${safeName(meta.title)}_${stamp()}_${meta.res}p.${meta.ext}`;
+  const filename = fileName(meta.job, meta.title, meta.res, meta.ext);
   cleanup();
   chrome.runtime.sendMessage({ target: 'background', type: 'saved', url, filename, size: blob.size });
 }
@@ -136,7 +142,7 @@ async function screenshot({ streamId, settings, title, tabId }) {
       track = temp.getVideoTracks()[0];
     }
     const shot = await frameToJpeg(track, settings.shotQuality, temp ? 3 : 1);
-    const filename = `Välilehtitallennin/${safeName(title)}_${stamp()}_${res}p.jpg`;
+    const filename = fileName((settings.jobName || '').trim(), title, res, 'jpg');
     return { ok: true, url: shot.url, filename, size: shot.size, actual: `${shot.w}×${shot.h}` };
   } catch (e) {
     return { ok: false, error: 'Kuvakaappaus epäonnistui: ' + (e.message || e.name || e) };

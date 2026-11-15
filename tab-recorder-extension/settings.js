@@ -16,7 +16,8 @@ const DEFAULTS = {
   audio: true,
   format: 'auto',  // auto = MP4 if the browser supports it, otherwise WebM
   shotRes: '1440', // screenshot resolution (JPG)
-  shotQuality: 92  // JPG quality, percent
+  shotQuality: 92, // JPG quality, percent
+  jobName: ''      // name for the work; used in file names instead of the tab title when set
 };
 
 function bitrateFor(s) {

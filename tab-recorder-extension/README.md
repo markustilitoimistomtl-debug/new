@@ -16,15 +16,20 @@ Vaatii Chrome 116:n tai uudemman.
 ## Käyttö
 
 1. Avaa tallennettava sivu ja klikkaa laajennuksen kuvaketta.
-2. Valitse asetukset:
+2. Anna halutessasi **Työn nimi** (esim. `Esittely osa 1`). Tiedoston nimeksi tulee tällöin pelkkä
+   nimi + pääte, esim. `Esittely osa 1.mp4` tai `Esittely osa 1.jpg`. Jos samanniminen tiedosto on jo olemassa,
+   Chrome lisää perään numeron (`Esittely osa 1 (1).mp4`). Tyhjänä nimi muodostetaan välilehden otsikosta,
+   päivästä, kellonajasta ja resoluutiosta. Nimi säilyy seuraavaan kertaan, ja se näkyy
+   tallennuksen aikana ajastimen yläpuolella. Enter aloittaa tallennuksen.
+3. Valitse asetukset:
    - **Resoluutio**: 720p, 1080p, **1440p (oletus)** tai 4K
    - **Kuvataajuus**: 60 tai 30 fps
    - **Tiedostomuoto**: automaattinen (MP4 jos selain tukee, muuten WebM), MP4 tai WebM
    - **Ääni** päälle/pois
    - **Tarkka 16:9-koko**: video on täsmälleen valitun kokoinen; jos sivun muoto poikkeaa 16:9:stä, reunoille tulee mustat palkit. Pois päältä kuvasuhde säilyy ja valittu resoluutio on yläraja.
-3. Paina **Aloita tallennus**. Kuvakkeessa näkyy `REC` tallennuksen ajan.
-4. Lopeta kuvakkeen kautta tai pikanäppäimellä **Alt+Shift+R** (myös aloitus).
-5. **Peruuta**: tallennuksen aikana näkyy painike **Peruuta (ei tallenneta)** (myös **Alt+Shift+X**).
+4. Paina **Aloita tallennus**. Kuvakkeessa näkyy `REC` tallennuksen ajan.
+5. Lopeta kuvakkeen kautta tai pikanäppäimellä **Alt+Shift+R** (myös aloitus).
+6. **Peruuta**: tallennuksen aikana näkyy painike **Peruuta (ei tallenneta)** (myös **Alt+Shift+X**).
    Tallennus loppuu heti eikä mitään tiedostoa synny.
 
 Tiedosto tallentuu Lataukset-kansion alikansioon `Välilehtitallennin`.
