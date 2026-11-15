@@ -211,7 +211,7 @@ P.terrain=compile(`out vec3 vPos;out vec3 vNrm;
 void main(){int n=int(uN);ivec2 c=ivec2(gl_VertexID%n,gl_VertexID/n);float h=hFetch(c);
  ivec2 l=max(c-1,ivec2(0)),r=min(c+1,ivec2(n-1));float sx=float(r.x-l.x),sz=float(r.y-l.y);
  vNrm=normalize(vec3((hFetch(ivec2(l.x,c.y))-hFetch(ivec2(r.x,c.y)))/sx*uExag,uCs,(hFetch(ivec2(c.x,l.y))-hFetch(ivec2(c.x,r.y)))/sz*uExag));vec2 xz=(vec2(c)-(uN-1.)*.5)*uCs;vPos=vec3(xz.x,h*uExag,xz.y);gl_Position=proj(vPos);}`,
-`in vec3 vPos;in vec3 vNrm;out vec4 o;uniform float uFlat,uGrid,uLevel,uShadows,uBorder;
+`in vec3 vPos;in vec3 vNrm;out vec4 o;uniform float uFlat,uGrid,uLevel,uShadows,uBorder,uRwOn;uniform vec4 uRw0,uRw1,uRw2;
 int landAt(ivec2 c){c=clamp(c,ivec2(0),ivec2(int(uN)-1));return int(texelFetch(uLand,c,0).r);}
 void main(){vec3 N=normalize(vNrm);if(uFlat>.5){N=normalize(cross(dFdx(vPos),dFdy(vPos)));if(N.y<0.)N=-N;}
  vec2 p=vPos.xz;vec2 c=cellOf(p)+(vec2(vnoise(p/(.9*uCs)),vnoise(p/(.9*uCs)+31.7))-.5)*.95;int t=landAt(ivec2(floor(c+.5)));
@@ -219,6 +219,11 @@ void main(){vec3 N=normalize(vNrm);if(uFlat>.5){N=normalize(cross(dFdx(vPos),dFd
  bool wet=(t==8||t==9)&&uLevel<.5;
  if(!wet&&t!=11&&t!=19){float sl=1.-N.y;alb=mix(alb,lin(vec3(.48,.47,.44))*(.7+.5*fbm(p/10.)),smoothstep(.42,.62,sl));}
  if(uClose>.5)alb*=.86+.28*vnoise(p/.9);
+ if(uRwOn>.5){vec2 d=uRw0.zw,q=p-uRw0.xy;float al=dot(q,d),ac=dot(q,vec2(-d.y,d.x)),ea=abs(al)-uRw1.x,ec=abs(ac)-uRw1.y;vec3 grav=lin(vec3(.57,.53,.46))*(.84+.26*vnoise(p/1.7))*(.92+.12*vnoise(p/9.));
+  float aa=abs(al-uRw2.x)-18.,ae=abs(ac-uRw2.y)-14.,ap=max(aa,ae);if(ap<4.)alb=mix(alb,grav*.95,smoothstep(4.,0.,ap));
+  if(ea<5.&&ec<6.){alb=mix(alb,grav,smoothstep(6.,0.,max(ea,ec)));if(ea<0.&&ec<0.){alb=lin(vec3(.31,.31,.3))*(.86+.2*vnoise(p/2.3))*(.95+.08*vnoise(p/14.));
+   if(abs(ac)<.35&&fract(al/30.)<.5&&ea<-26.)alb=lin(vec3(.9,.9,.85));if(abs(abs(ac)-uRw1.y+.7)<.22)alb=lin(vec3(.86,.86,.82));
+   if(ea>-16.&&ea<-5.&&fract((ac+uRw1.y)/2.3)<.5&&abs(ac)<uRw1.y-1.6)alb=lin(vec3(.9,.9,.86));}}}
  vec2 sh=shadeAt(p);float sdw=uShadows>.5?sh.r:1.;
  vec3 col;vec3 V=viewVec(vPos);
  if(wet){vec3 w=t==9?lin(vec3(.1,.3,.45)):lin(vec3(.15,.4,.5));col=light(w,vec3(0,1,0),sdw,1.);col+=uSunCol*pow(max(dot(reflect(-uSun,vec3(0,1,0)),V),0.),60.)*.5*sdw;}
@@ -348,7 +353,7 @@ function processWater(){const {n,h0,land,cs}=world,N=n*n,h=Float32Array.from(h0)
  for(let i=0;i<N;i++){if(isW(i)){const L=levels[comp[i]],depth=Math.min(28,.9+fromL.d[i]*cs*.07);h[i]=Math.min(h0[i],L-depth);wl[i]=L}
   else{const dw=fromW.d[i];if(dw<=D){const L=levels[fromW.L[i]],t=sstep(0,D,dw),ramp=L+.5+(h0[i]-(L+.5))*t;h[i]=Math.max(ramp,L+.4+dw*Math.min(cs,20)*.03);if(dw<=3.5)wl[i]=L}}}
  finishHeights()}
-function finishHeights(){const {n,h,wl}=world,N=n*n,top=new Float32Array(N),rg=new Float32Array(N*2);let mn=Infinity,mx=-Infinity;for(let i=0;i<N;i++){const w=wl[i];top[i]=w===w?Math.max(h[i],w):h[i];rg[i*2]=h[i];rg[i*2+1]=w===w?w:-1e6;mn=Math.min(mn,h[i]);mx=Math.max(mx,top[i])}world.top=top;world.minH=mn;world.maxH=mx;
+function finishHeights(){if(window.gameFlatten)window.gameFlatten();const {n,h,wl}=world,N=n*n,top=new Float32Array(N),rg=new Float32Array(N*2);let mn=Infinity,mx=-Infinity;for(let i=0;i<N;i++){const w=wl[i];top[i]=w===w?Math.max(h[i],w):h[i];rg[i*2]=h[i];rg[i*2+1]=w===w?w:-1e6;mn=Math.min(mn,h[i]);mx=Math.max(mx,top[i])}world.top=top;world.minH=mn;world.maxH=mx;
  setTex(tex.height,gl.RG32F,gl.RG,gl.FLOAT,n,n,rg,gl.NEAREST);computeAO();queueShade(0)}
 function computeAO(){const {n,h,cs}=world,N=n*n,r=Math.max(2,Math.round(60/cs));let a=Float32Array.from(h),b=new Float32Array(N);
  for(let it=0;it<2;it++){for(let y=0;y<n;y++){let s=0,c=0;for(let x=-r;x<n;x++){const add=x+r,rem=x-r-1;if(add<n){s+=a[y*n+add];c++}if(rem>=0){s-=a[y*n+rem];c--}if(x>=0)b[y*n+x]=s/c}}
@@ -451,7 +456,7 @@ function buildTrees(){const {n,cs,land,h0}=world,area=(cs/10)**2,rng=mulberry(91
   while(k--){const x=cx+(rng()-.5)*cs,z=cz+(rng()-.5)*cs,v=rng();let con=t===0?.45+alt*.5:t===10?0:t===13?.6+alt*.3:t===16?.2:t===15?.5:.35;const isC=rng()<con;
    let hgt=t===10?15+rng()*16:t===15?2.5+rng()*4:t===16?5+rng()*7:isC?10+rng()*14:8+rng()*10;let col;
    if(isC)col=[.13+.06*v,.27+.1*v,.17+.05*v];else if(t===10)col=[.1+.08*v,.36+.14*v,.12+.06*v];else if(t===16)col=[.38+.12*v,.48+.1*v,.24];else if(t===15)col=[.4+.1*v,.52+.1*v,.27];else col=[.24+.12*v,.4+.14*v,.15+.05*v];
-   (isC?A:B).push(x,z,hgt,rng(),...col,hAt(x,z,world.h))}}
+   if(!window.gameTreeOK||window.gameTreeOK(x,z))(isC?A:B).push(x,z,hgt,rng(),...col,hAt(x,z,world.h))}}
  buildOuterTrees(A,B,rng);conifers.set(new Float32Array(A));broadleaves.set(new Float32Array(B));objInfo()}
 const BLD={1:{d:1/240,house:1,w:[8,12],dd:[7,10],h:[4.5,6.5],roof:[2.5,3.6],bs:46,rw:7},2:{d:1/75,house:0,w:[4,7],dd:[4,6],h:[2.4,3.4],bs:26,rw:3.5},3:{d:1/180,house:.65,w:[8,14],dd:[7,12],h:[5,12],roof:[2.5,4],bs:58,rw:7},4:{d:1/650,house:0,w:[14,30],dd:[14,30],h:[14,110],bs:84,rw:11,win:1},6:{d:1/900,house:0,w:[18,42],dd:[14,30],h:[7,15],bs:96,rw:10},5:{d:1/5000,house:0,w:[30,55],dd:[24,40],h:[10,16],bs:520,rw:0},7:{d:1/6000,house:1,w:[10,18],dd:[8,12],h:[4,6],roof:[3,4.5],bs:72,rw:0}};
 const WALLS={1:[[.86,.82,.74],[.8,.72,.6],[.72,.76,.78],[.9,.88,.84],[.66,.52,.42]],2:[[.55,.47,.4],[.6,.58,.54],[.48,.42,.36],[.62,.5,.42]],3:[[.88,.84,.76],[.78,.66,.54],[.84,.8,.72],[.7,.7,.72]],4:[[.62,.64,.68],[.72,.72,.7],[.5,.54,.6],[.8,.78,.74],[.42,.46,.5]],6:[[.6,.6,.62],[.68,.64,.6],[.52,.55,.6]],5:[[.75,.77,.8]],7:[[.62,.2,.16],[.55,.45,.35]]};
@@ -631,7 +636,7 @@ function render(){gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(.05,
  if(window.drawActorsLate)window.drawActorsLate(L);
  gl.bindVertexArray(null)}
 function drawSite(L,props){const hz=S.horizon&&OUT.ready;
- PAL=new Float32Array(world.palette.flatMap(c=>c.map(v=>Math.pow(v/255,2.2))));let u=common(P.terrain,L);gl.uniform1f(u('uBorder'),S.border?1:0);gl.uniform1f(u('uFlat'),S.flat?1:0);gl.uniform1f(u('uGrid'),S.grid?1:0);gl.uniform1f(u('uLevel'),S.level?1:0);gl.uniform1f(u('uShadows'),S.shadows?1:0);
+ PAL=new Float32Array(world.palette.flatMap(c=>c.map(v=>Math.pow(v/255,2.2))));let u=common(P.terrain,L);gl.uniform1f(u('uBorder'),S.border?1:0);const rw=world.runway;gl.uniform1f(u('uRwOn'),rw?1:0);if(rw){gl.uniform4f(u('uRw0'),rw.cx,rw.cz,rw.dx,rw.dz);gl.uniform4f(u('uRw1'),rw.hl,rw.hw,0,0);gl.uniform4f(u('uRw2'),rw.apAl,rw.apAc,0,0)}gl.uniform1f(u('uFlat'),S.flat?1:0);gl.uniform1f(u('uGrid'),S.grid?1:0);gl.uniform1f(u('uLevel'),S.level?1:0);gl.uniform1f(u('uShadows'),S.shadows?1:0);
  gl.bindVertexArray(terrainVAO);gl.drawElements(gl.TRIANGLES,indexCount,gl.UNSIGNED_INT,0);
  if(props&&hz){u=common(P.outer,L);gl.uniform1f(u('uFlat'),S.flat?1:0);gl.uniform1f(u('uLevel'),S.level?1:0);gl.uniform1f(u('uShadows'),S.shadows?1:0);gl.bindVertexArray(OUT.vao);gl.drawElements(gl.TRIANGLES,OUT.count,gl.UNSIGNED_INT,0)}
  else if(props){u=common(P.skirt,L);gl.uniform1f(u('uBase'),world.minH*S.exag-Math.max(40,(world.maxH-world.minH)*S.exag*.3));gl.bindVertexArray(skirt.vao);gl.drawElements(gl.TRIANGLES,skirt.count,gl.UNSIGNED_INT,0)}
@@ -864,7 +869,25 @@ $('placeHere').onclick=()=>{SITE.pending=[FLY.x+flyDir()[0]/Math.hypot(flyDir()[
 setView('site');
 /* ======================= GAME v0.1: camp, character, flight ======================= */
 window.GAMEBUSY=false;
-if(GAME){(function(){
+if(GAME){
+/* ---- airstrip & parked aircraft ---- */
+function chooseRunway(){const {n,cs,h,land,wl}=world,L=520,HW=9;
+ const cell=(x,z)=>{const cx=Math.round(x/cs+(n-1)/2),cz=Math.round(z/cs+(n-1)/2);if(cx<4||cz<4||cx>n-5||cz>n-5)return -1;return cz*n+cx};
+ const wet=i=>land[i]===8||land[i]===9||(wl[i]===wl[i]&&h[i]<wl[i]+.8);let best=null,bc=Infinity;const lim=Math.min(1500,(n-1)/2*cs-L/2-60);
+ for(let cz=-lim;cz<=lim;cz+=50)for(let cx=-lim;cx<=lim;cx+=50)for(let a=0;a<180;a+=15){const an=a*Math.PI/180,dx=Math.sin(an),dz=Math.cos(an);let ok=true,sx=0,sy=0,sxx=0,sxy=0,N=0,forest=0;const hs=[];
+  for(let s=-L/2-10;s<=L/2+10&&ok;s+=20)for(const o of [-HW-12,0,HW+12]){const i=cell(cx+dx*s-dz*o,cz+dz*s+dx*o);if(i<0||wet(i)){ok=false;break}const y=h[i];hs.push(s,y);sx+=s;sy+=y;sxx+=s*s;sxy+=s*y;N++;if(land[i]===0||land[i]===10)forest++}
+  if(!ok)continue;const sl=(N*sxy-sx*sy)/(N*sxx-sx*sx),b=(sy-sl*sx)/N;if(Math.abs(sl)>.04)continue;let res=0;for(let k=0;k<hs.length;k+=2)res+=(hs[k+1]-(b+sl*hs[k]))**2;
+  const cost=res/N+forest*2+Math.hypot(cx,cz)*.003+Math.abs(sl)*900;if(cost<bc){bc=cost;best={cx,cz,dx,dz,hl:L/2,hw:HW,h0:b,slope:sl}}}
+ if(!best)return null;const r=best,al=-r.hl+r.hl*2*.3;let pick=null;
+ for(const side of [1,-1]){const o=side*(r.hw+26),x=r.cx+r.dx*al-r.dz*o,z=r.cz+r.dz*al+r.dx*o,i=cell(x,z);if(i<0||wet(i))continue;const d=Math.abs(h[i]-(r.h0+r.slope*al));if(!pick||d<pick.d)pick={side,x,z,d}}
+ if(!pick)pick={side:1,x:r.cx+r.dx*al-r.dz*(r.hw+26),z:r.cz+r.dz*al+r.dx*(r.hw+26)};Object.assign(r,{side:pick.side,ax:pick.x,az:pick.z,apAl:al,apAc:pick.side*(r.hw+26)});return r}
+function rwLocal(r,x,z){const qx=x-r.cx,qz=z-r.cz;return[qx*r.dx+qz*r.dz,-qx*r.dz+qz*r.dx]}
+window.gameFlatten=()=>{if(!world.runway)world.runway=chooseRunway();const r=world.runway;if(!r)return;const {n,cs,h}=world;
+ for(let cz=0;cz<n;cz++)for(let cx=0;cx<n;cx++){const x=(cx-(n-1)/2)*cs,z=(cz-(n-1)/2)*cs;if(Math.abs(x-r.cx)>r.hl+120||Math.abs(z-r.cz)>r.hl+120)continue;const [al,ac]=rwLocal(r,x,z);
+  const e1=Math.max(Math.abs(al)-r.hl-12,Math.abs(ac)-r.hw-16),e2=Math.max(Math.abs(al-r.apAl)-24,Math.abs(ac-r.apAc)-20),w=Math.max(1-sstep(0,26,e1),1-sstep(0,22,e2));if(w<=0)continue;
+  const i=cz*n+cx,tg=r.h0+r.slope*clamp(al,-r.hl-30,r.hl+30)+.25;h[i]+=(tg-h[i])*w}};
+window.gameTreeOK=(x,z)=>{const r=world.runway;if(!r)return true;const [al,ac]=rwLocal(r,x,z);return!((Math.abs(al)<r.hl+34&&Math.abs(ac)<r.hw+30)||(Math.abs(al-r.apAl)<32&&Math.abs(ac-r.apAc)<28))};
+(function(){
 document.body.classList.add('game');
 const G={state:'boot',camp:null,dest:null,pick:null,landAfter:false,speed:5000,miniOn:true,follow:true,click:null,mark:null,cine:null};
 const CH={x:0,z:0,tx:null,tz:null,heading:0,phase:0,move:0,swim:0,y:0};
@@ -888,7 +911,30 @@ const actorVAO=gl.createVertexArray();let actorCount=0;
  const b=gl.createBuffer();gl.bindVertexArray(actorVAO);gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(v),gl.STATIC_DRAW);const l=gl.getAttribLocation(AP,'aPos');gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,4,gl.FLOAT,false,16,0);gl.bindVertexArray(null);actorCount=v.length/4}
 function drawChar(L,xray){const u=common(AP,L);gl.uniform4f(u('uA0'),CH.x,CH.z,CH.heading,CH.phase);gl.uniform4f(u('uA1'),CH.y,CH.move,CH.swim,0);gl.uniform3f(u('uCol'),.85,.42,.18);gl.uniform1f(u('uSc'),SC);gl.uniform1f(u('uXray'),xray?1:0);gl.bindVertexArray(actorVAO);gl.drawArrays(gl.TRIANGLES,0,actorCount)}
 function ring(L,x,z,r,h,a,col){const w=waterAt(x,z);RS.mcol=col;const u=common(P.marker,L);gl.uniform3f(u('uC'),x,w!=null?w/S.exag+.03:-1e9,z);gl.uniform1f(u('uRad'),r);gl.uniform1f(u('uHgt'),h);gl.uniform1f(u('uAlpha'),a);gl.bindVertexArray(markerVAO);gl.drawArrays(gl.TRIANGLES,0,markerCount);RS.mcol=[1,.74,.42]}
-window.drawActors=L=>{if(S.view!=='aoe'||G.state!=='ground')return;drawChar(L,false)};
+/* ---- small aircraft (high wing, single engine) ---- */
+const PP=compile(`in vec4 aPos;uniform vec4 uM;uniform float uSc;out vec3 vPos;out vec3 vCol;
+void main(){vec3 p=aPos.xyz;int c=int(aPos.w+.5);if(c==5){float a=uM.w*60.;vec2 q=p.xy-vec2(0.,1.5);p.xy=vec2(0.,1.5)+mat2(cos(a),sin(a),-sin(a),cos(a))*q;}
+ float pt=-uM.z;p=vec3(p.x,p.y*cos(pt)-(p.z-.6)*sin(pt),p.y*sin(pt)+(p.z-.6)*cos(pt)+.6);p*=uSc;float h=uA.x;float cc=cos(h),s=sin(h);p.xz=mat2(cc,s,-s,cc)*p.xz;
+ vPos=vec3(uM.x+p.x,uA.y+p.y,uM.y+p.z);vCol=c==0?vec3(.93,.93,.9):c==1?vec3(.78,.13,.1):c==2?vec3(.13,.17,.24):c==3?vec3(.07,.07,.07):c==5?vec3(.15,.15,.15):vec3(.6,.6,.62);gl_Position=proj(vPos);}`.replace('float h=uA.x;','float h=uA.x;').replace('in vec4 aPos;','in vec4 aPos;uniform vec2 uA;'),
+`in vec3 vPos;in vec3 vCol;out vec4 o;void main(){vec3 N=normalize(cross(dFdx(vPos),dFdy(vPos)));vec3 V=viewVec(vPos);if(dot(N,V)<0.)N=-N;vec3 col=light(lin(vCol),N,1.,1.);vec3 R=reflect(-uSun,N);col+=uSunCol*.25*pow(max(dot(R,V),0.),24.);o=vec4(finish(col,vPos),1);}`);
+const planeVAO=gl.createVertexArray();let planeCount=0;
+{const v=[];const box=(x0,x1,y0,y1,z0,z1,pt)=>{const c=[[x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0],[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]];for(const f of [[0,1,2,3],[5,4,7,6],[4,0,3,7],[1,5,6,2],[3,2,6,7],[4,5,1,0]]){const [a,b,cc,d]=f.map(i=>c[i]);v.push(...a,pt,...b,pt,...cc,pt,...a,pt,...cc,pt,...d,pt)}};
+ box(-.6,.6,.85,2.25,-1.3,3.0,0);box(-.38,.38,1.25,2.05,-4.9,-1.3,0);box(-.52,.52,.95,2.0,3.0,3.95,0);box(-.62,.62,1.25,1.42,-4.6,3.0,1);box(-.63,.63,1.72,2.18,.5,2.6,2);
+ box(-5.6,5.6,2.25,2.42,.35,1.95,0);box(-5.6,-5.1,2.24,2.43,.34,1.96,1);box(5.1,5.6,2.24,2.43,.34,1.96,1);box(-1.75,-1.6,1.0,2.3,.95,1.12,4);box(1.6,1.75,1.0,2.3,.95,1.12,4);
+ box(-1.9,1.9,1.62,1.74,-5.0,-4.05,0);box(-.07,.07,2.0,3.35,-5.0,-3.9,1);
+ box(-1.42,-1.18,0,.58,.3,.86,3);box(1.18,1.42,0,.58,.3,.86,3);box(-.12,.12,0,.46,3.2,3.62,3);box(-1.3,-.5,.4,.52,.5,.7,4);box(.5,1.3,.4,.52,.5,.7,4);box(-.05,.05,.4,.95,3.35,3.47,4);
+ box(-.13,.13,1.38,1.62,3.95,4.3,4);box(-1.05,1.05,1.44,1.56,4.3,4.36,5);
+ const b=gl.createBuffer();gl.bindVertexArray(planeVAO);gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(v),gl.STATIC_DRAW);const l=gl.getAttribLocation(PP,'aPos');gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,4,gl.FLOAT,false,16,0);gl.bindVertexArray(null);planeCount=v.length/4}
+const PSC=1.6;
+const hdg=(dx,dz)=>Math.atan2(-dx,dz);
+function parkedPose(){const r=world.runway;if(!r)return null;return{x:r.ax,z:r.az,h:hdg(r.dx,r.dz),pitch:0,alt:0,prop:0}}
+function runwayPose(s,alt,pitch,prop){const r=world.runway;return{x:r.cx+r.dx*s,z:r.cz+r.dz*s,h:hdg(r.dx,r.dz),pitch,alt,prop}}
+function takeoffPose(t){const r=world.runway,s0=-r.hl+18,Lr=r.hl*2*.62,tr=3.4,a=2*Lr/(tr*tr);if(t<tr)return runwayPose(s0+.5*a*t*t,0,0,t);const v=a*tr,u=t-tr;return runwayPose(s0+Lr+v*u,v*u*Math.tan(.16)+u*u*4,Math.min(.2,u*.25),t)}
+function landingPose(t){const r=world.runway,tt=6.4,v=60,std=-r.hl+45,tm=2.1,dec=v/tm;if(t<tt){const u=tt-t;return runwayPose(std-v*u,u*v*Math.tan(.07),.06,t)}const u=Math.min(t-tt,tm);return runwayPose(std+v*u-.5*dec*u*u,0,.06*(1-u/tm),t*(1-u/tm*.8))}
+function drawPlane(L,p){const u=common(PP,L);const y=hAt(p.x,p.z,world.h)*S.exag+p.alt;gl.uniform4f(u('uM'),p.x,p.z,p.pitch,p.prop);gl.uniform2f(u('uA'),p.h,y);gl.uniform1f(u('uSc'),PSC);gl.bindVertexArray(planeVAO);gl.drawArrays(gl.TRIANGLES,0,planeCount)}
+function planeNow(){if(S.view==='world'||!world.runway)return null;if(G.planeAnim)return G.planeAnim;if(G.state==='ground'||(G.state==='takeoff'&&S.view==='aoe'))return parkedPose();return null}
+
+window.drawActors=L=>{const pl=planeNow();if(pl)drawPlane(L,pl);if(S.view!=='aoe'||G.state!=='ground')return;drawChar(L,false)};
 window.drawActorsLate=L=>{if(S.view!=='aoe'||G.state!=='ground')return;gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);ring(L,CH.x,CH.z,.75*SC,.22,.85,[.55,.8,1]);
  if(G.mark){const T=(performance.now()-G.mark.t0)/1000;if(T<1.4)ring(L,G.mark.x,G.mark.z,(.4+T*.8)*SC,.18,.9*(1-T/1.4),[1,.85,.45]);else G.mark=null}
  gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthFunc(gl.GREATER);gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(-4,-40);drawChar(L,true);gl.disable(gl.POLYGON_OFFSET_FILL);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);gl.disable(gl.BLEND)};
@@ -918,21 +964,21 @@ function busy(on){window.GAMEBUSY=on;document.body.classList.toggle('busy',on);s
 
 /* ---- views ---- */
 function groundView(){setView('aoe');AOE.goal={tx:CH.x,tz:CH.z,yaw:AOE.goal.yaw||0,pitch:.98,dist:62};Object.assign(AOE,AOE.goal);AOE.ty=hAt(CH.x,CH.z)*S.exag;G.follow=true;G.state='ground';syncBar()}
-window.gameStart=async()=>{G.camp=chooseCamp();CH.x=G.camp.x+2;CH.z=G.camp.z+2;CH.y=hAt(CH.x,CH.z,world.h)*S.exag;$('fade').classList.add('on');AOE.goal.yaw=Math.PI/4;groundView();
+window.gameStart=async()=>{const rw=world.runway;G.camp=rw?{x:rw.ax-rw.dz*rw.side*9+rw.dx*3,z:rw.az+rw.dx*rw.side*9+rw.dz*3}:chooseCamp();CH.x=G.camp.x;CH.z=G.camp.z;CH.y=hAt(CH.x,CH.z,world.h)*S.exag;$('fade').classList.add('on');AOE.goal.yaw=Math.PI/4;groundView();
  await new Promise(r=>setTimeout(r,200));await fade(false,1200);message('Leiri · '+SITE.name+'. Klikkaa maastoa kävelläksesi, veteen uidaksesi.')};
 function siteCam(v){Object.assign(cam,v);Object.assign(goal,v);cam.ty=hAt(cam.tx,cam.tz)*S.exag;needsDraw=true}
 function runTween(dur,fn){return new Promise(res=>{G.cine={t0:performance.now(),dur,fn,res}})}
 async function takeoff(){if(G.state!=='ground'||GAMEBUSY)return;busy(true);G.state='takeoff';letterbox(true,'Nousu · '+SITE.name);
  const a0={dist:AOE.dist,pitch:AOE.pitch};await runTween(1400,p=>{AOE.goal.dist=a0.dist+(420-a0.dist)*p;AOE.goal.pitch=a0.pitch+(1.15-a0.pitch)*p;AOE.goal.tx=CH.x;AOE.goal.tz=CH.z});
  await fade(true,380);S.mode='drone';$('modeIso').classList.remove('on');$('modeDrone').classList.add('on');setView('site');const y0=AOE.yaw;siteCam({tx:CH.x,tz:CH.z,dist:420,pitch:1.15,yaw:y0});await fade(false,380);
- const s=mapSize()*2.6;await runTween(7500,p=>{const e=ease(p);siteCam({tx:CH.x*(1-e),tz:CH.z*(1-e),dist:Math.exp(Math.log(420)+(Math.log(s)-Math.log(420))*e),pitch:1.15+(.5-1.15)*e,yaw:y0+.9*e})});
- await fade(true,600);const cp=Math.cos(cam.pitch);FLY.x=SITE.x+cam.tx+cp*Math.sin(cam.yaw)*cam.dist;FLY.z=SITE.z+cam.tz+cp*Math.cos(cam.yaw)*cam.dist;FLY.y=Math.max(0,groundW(FLY.x,FLY.z))+Math.sin(cam.pitch)*cam.dist;FLY.yaw=cam.yaw;FLY.pitch=.42;FLY.alt=1000;FLY.si=0;FLY.travel=null;
+ const s=mapSize()*2.6;await runTween(7500,p=>{const e=ease(p);if(world.runway)G.planeAnim=takeoffPose(p*7.5);siteCam({tx:CH.x*(1-e),tz:CH.z*(1-e),dist:Math.exp(Math.log(420)+(Math.log(s)-Math.log(420))*e),pitch:1.15+(.5-1.15)*e,yaw:y0+.9*e})});
+ await fade(true,600);G.planeAnim=null;const cp=Math.cos(cam.pitch);FLY.x=SITE.x+cam.tx+cp*Math.sin(cam.yaw)*cam.dist;FLY.z=SITE.z+cam.tz+cp*Math.cos(cam.yaw)*cam.dist;FLY.y=Math.max(0,groundW(FLY.x,FLY.z))+Math.sin(cam.pitch)*cam.dist;FLY.yaw=cam.yaw;FLY.pitch=.42;FLY.alt=1000;FLY.si=0;FLY.travel=null;
  WO.x=Math.round(FLY.x/1024)*1024;WO.z=Math.round(FLY.z/1024)*1024;setView('world');G.state='air';letterbox(false);await fade(false,800);busy(false);message(G.dest?'Matkalla kohteeseen':'Ilmassa · avaa Map valitaksesi kohteen')}
 async function landing(){if(G.state!=='air'||GAMEBUSY)return;busy(true);G.state='landing';G.dest=null;G.landAfter=false;letterbox(true,'Laskeutuminen · '+SITE.name);await fade(true,600);
  const agl=Math.max(200,FLY.y-Math.max(0,groundW(FLY.x,FLY.z))),p0=.5,dist=mapSize()*2.6,cp=Math.cos(p0),hm=mapHalf(),t0={tx:clamp(FLY.x-SITE.x-cp*Math.sin(FLY.yaw)*dist,-hm,hm),tz:clamp(FLY.z-SITE.z-cp*Math.cos(FLY.yaw)*dist,-hm,hm),dist,pitch:p0,yaw:FLY.yaw};
  S.mode='drone';$('modeIso').classList.remove('on');$('modeDrone').classList.add('on');setView('site');siteCam(t0);await fade(false,700);
- const c=G.camp;await runTween(8500,p=>{const e=ease(p);siteCam({tx:t0.tx+(c.x-t0.tx)*e,tz:t0.tz+(c.z-t0.tz)*e,dist:Math.exp(Math.log(t0.dist)+(Math.log(160)-Math.log(t0.dist))*e),pitch:p0+(.34-p0)*e,yaw:t0.yaw+.8*e})});
- await fade(true,500);CH.x=c.x+2;CH.z=c.z+2;CH.tx=null;CH.y=hAt(CH.x,CH.z,world.h)*S.exag;AOE.goal.yaw=cam.yaw;groundView();letterbox(false);await fade(false,700);busy(false);message('Laskeuduttu leiriin')}
+ const c=G.camp;await runTween(8500,p=>{const e=ease(p);if(world.runway)G.planeAnim=landingPose(p*8.5);siteCam({tx:t0.tx+(c.x-t0.tx)*e,tz:t0.tz+(c.z-t0.tz)*e,dist:Math.exp(Math.log(t0.dist)+(Math.log(160)-Math.log(t0.dist))*e),pitch:p0+(.34-p0)*e,yaw:t0.yaw+.8*e})});
+ await fade(true,500);G.planeAnim=null;CH.x=c.x;CH.z=c.z;CH.tx=null;CH.y=hAt(CH.x,CH.z,world.h)*S.exag;AOE.goal.yaw=cam.yaw;groundView();letterbox(false);await fade(false,700);busy(false);message('Laskeuduttu leiriin')}
 function goLocal(){if(G.state==='ground'||GAMEBUSY)return;if(G.state!=='air')return;const c=campW(),d=Math.hypot(c.x-FLY.x,c.z-FLY.z);if(d<12000)landing();else{G.dest=c;G.landAfter=true;message('Lennetään leiriin ('+fmtM(d)+') ja laskeudutaan')}}
 function goAerial(){if(G.state==='ground')takeoff()}
 
