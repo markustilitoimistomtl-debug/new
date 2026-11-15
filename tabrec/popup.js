@@ -5,7 +5,7 @@ for (const [sel, def] of [['res', DEFAULTS.res], ['shotRes', DEFAULTS.shotRes]])
   for (const [k, r] of Object.entries(RESOLUTIONS)) {
     const o = document.createElement('option');
     o.value = k;
-    o.textContent = r.label + (k === def ? ' – oletus' : '');
+    o.textContent = r.label + (k === def ? ' – default' : '');
     $(sel).appendChild(o);
   }
 }
@@ -49,13 +49,13 @@ function fmt(ms) {
   return (s >= 3600 ? Math.floor(s / 3600) + ':' : '') + p(Math.floor(s / 60) % 60) + ':' + p(s % 60);
 }
 
-function mb(b) { return (b / 1048576).toFixed(1).replace('.', ',') + ' Mt'; }
+function mb(b) { return (b / 1048576).toFixed(1) + ' MB'; }
 
 function render(state) {
   const rec = !!(state && state.recording);
   $('setup').hidden = rec;
   $('live').hidden = !rec;
-  $('go').textContent = rec ? 'Lopeta ja tallenna' : 'Aloita tallennus';
+  $('go').textContent = rec ? 'Stop and save' : 'Start recording';
   $('go').className = rec ? 'stop' : '';
   $('cancel').hidden = !rec;
   clearInterval(tick);
@@ -63,15 +63,15 @@ function render(state) {
     $('liveName').hidden = !state.jobName;
     $('liveName').textContent = state.jobName || '';
     const R = RESOLUTIONS[state.res];
-    $('liveInfo').textContent = `${R ? R.label : state.res + 'p'} · kaappaus ${state.actual || '?'} · ${(state.mime || '').split(';')[0]}`;
+    $('liveInfo').textContent = `${R ? R.label : state.res + 'p'} · capture ${state.actual || '?'} · ${(state.mime || '').split(';')[0]}`;
     const upd = () => { $('timer').textContent = fmt(Date.now() - state.startedAt); };
     upd(); tick = setInterval(upd, 500);
   } else if (state && state.cancelled) {
-    status('Tallennus peruutettu, mitään ei tallennettu.');
+    status('Recording cancelled, nothing was saved.');
   } else if (state && state.error) {
     status(state.error, true);
   } else if (state && state.lastFile) {
-    status(`Tallennettu: ${state.lastFile.split('/').pop()} (${mb(state.lastSize || 0)})`);
+    status(`Saved: ${state.lastFile.split('/').pop()} (${mb(state.lastSize || 0)})`);
   }
 }
 
@@ -86,7 +86,7 @@ $('go').addEventListener('click', async () => {
     const state = await chrome.runtime.sendMessage({ target: 'background', type: 'state' });
     if (state && state.recording) {
       await chrome.runtime.sendMessage({ target: 'background', type: 'stop' });
-      status('Tallennetaan tiedostoa…');
+      status('Saving file…');
       setTimeout(refresh, 800);
     } else {
       read();
@@ -96,11 +96,11 @@ $('go').addEventListener('click', async () => {
       try {
         streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id });
       } catch (e) {
-        status('Tätä välilehteä ei voi tallentaa: ' + (e.message || e), true);
+        status('This tab can\'t be recorded: ' + (e.message || e), true);
         return;
       }
       const r = await chrome.runtime.sendMessage({ target: 'background', type: 'start', tab, streamId });
-      if (!r || !r.ok) status((r && r.error) || 'Tallennus ei käynnistynyt.', true);
+      if (!r || !r.ok) status((r && r.error) || 'Recording did not start.', true);
       await refresh();
     }
   } finally {
@@ -112,7 +112,7 @@ $('cancel').addEventListener('click', async () => {
   $('cancel').disabled = true;
   try {
     const r = await chrome.runtime.sendMessage({ target: 'background', type: 'cancel' });
-    if (!r || !r.ok) status((r && r.error) || 'Peruutus epäonnistui.', true);
+    if (!r || !r.ok) status((r && r.error) || 'Cancel failed.', true);
     await refresh();
   } finally {
     $('cancel').disabled = false;
@@ -121,7 +121,7 @@ $('cancel').addEventListener('click', async () => {
 
 $('shot').addEventListener('click', async () => {
   $('shot').disabled = true;
-  status('Otetaan kuvakaappausta…');
+  status('Taking screenshot…');
   try {
     read();
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -132,13 +132,13 @@ $('shot').addEventListener('click', async () => {
       try {
         streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id });
       } catch (e) {
-        status('Tästä välilehdestä ei voi ottaa kuvakaappausta: ' + (e.message || e), true);
+        status('This tab can\'t be captured: ' + (e.message || e), true);
         return;
       }
     }
     const r = await chrome.runtime.sendMessage({ target: 'background', type: 'screenshot', tab, streamId });
-    if (!r || !r.ok) status((r && r.error) || 'Kuvakaappaus epäonnistui.', true);
-    else status(`Kuva tallennettu: ${r.filename.split('/').pop()} (${r.actual}, ${mb(r.size)})`);
+    if (!r || !r.ok) status((r && r.error) || 'Screenshot failed.', true);
+    else status(`Image saved: ${r.filename.split('/').pop()} (${r.actual}, ${mb(r.size)})`);
   } finally {
     $('shot').disabled = false;
   }

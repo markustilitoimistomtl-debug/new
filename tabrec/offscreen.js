@@ -6,7 +6,7 @@ function stamp() {
 }
 
 function safeName(t) {
-  return (t || 'valilehti').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60) || 'valilehti';
+  return (t || 'tab').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60) || 'tab';
 }
 
 function videoConstraints(streamId, res, fps, exact) {
@@ -30,18 +30,18 @@ function videoConstraints(streamId, res, fps, exact) {
 // Named work: exactly "name.ext". Otherwise tab title + time + resolution.
 function fileName(job, title, res, ext) {
   const base = job ? safeName(job) : `${safeName(title)}_${stamp()}_${res}p`;
-  return `Välilehtitallennin/${base}.${ext}`;
+  return `TabRec/${base}.${ext}`;
 }
 
 async function start({ streamId, settings, title, tabId }) {
-  if (recorder) return { ok: false, error: 'Tallennus on jo käynnissä.' };
+  if (recorder) return { ok: false, error: 'A recording is already running.' };
   const video = videoConstraints(streamId, settings.res, settings.fps, settings.exact);
   const audio = settings.audio ? { mandatory: { chromeMediaSource: 'tab', chromeMediaSourceId: streamId } } : false;
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video, audio });
   } catch (e) {
-    return { ok: false, error: 'Kaappaus estettiin: ' + (e.message || e.name) };
+    return { ok: false, error: 'Capture was blocked: ' + (e.message || e.name) };
   }
 
   // Tab capture mutes the tab; play its sound back so you still hear it while recording.
@@ -57,7 +57,7 @@ async function start({ streamId, settings, title, tabId }) {
     recorder = new MediaRecorder(stream, opts);
   } catch (e) {
     cleanup();
-    return { ok: false, error: 'Tallenninta ei voitu luoda: ' + (e.message || e.name) };
+    return { ok: false, error: 'Could not create the recorder: ' + (e.message || e.name) };
   }
 
   const vs = stream.getVideoTracks()[0].getSettings();
@@ -66,7 +66,7 @@ async function start({ streamId, settings, title, tabId }) {
   recTabId = tabId;
   recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
   recorder.onstop = finish;
-  recorder.onerror = e => fail('Tallennusvirhe: ' + (e.error && e.error.message || 'tuntematon'));
+  recorder.onerror = e => fail('Recording error: ' + (e.error && e.error.message || 'unknown'));
   // stop cleanly if the tab is closed or capture ends
   stream.getVideoTracks()[0].addEventListener('ended', () => { if (recorder && recorder.state !== 'inactive') recorder.stop(); });
   recorder.start(1000);
@@ -86,8 +86,8 @@ function finish() {
 
 // Cancel: stop without saving anything; the recorded data is thrown away.
 function cancel() {
-  if (!recorder) return { ok: false, error: 'Tallennus ei ole käynnissä.' };
-  if (recorder.state === 'inactive') return { ok: false, error: 'Tallennus on jo päättymässä, sitä ei voi enää peruuttaa.' };
+  if (!recorder) return { ok: false, error: 'No recording is running.' };
+  if (recorder.state === 'inactive') return { ok: false, error: 'The recording is already finishing and can no longer be cancelled.' };
   recorder.onstop = null;
   recorder.ondataavailable = null;
   recorder.onerror = null;
@@ -116,7 +116,7 @@ async function frameToJpeg(track, quality, skipFrames) {
   g.drawImage(v, 0, 0, c.width, c.height);
   v.pause(); v.srcObject = null;
   const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', Math.max(0.5, Math.min(1, quality / 100))));
-  if (!blob) throw new Error('JPG-pakkaus epäonnistui');
+  if (!blob) throw new Error('JPG encoding failed');
   // a data URL survives closing this document, unlike a blob URL
   const url = await new Promise((res, rej) => {
     const fr = new FileReader();
@@ -134,7 +134,7 @@ async function screenshot({ streamId, settings, title, tabId }) {
       track = stream.getVideoTracks()[0].clone();
       res = meta.res;
     } else {
-      if (!streamId) return { ok: false, error: 'Kaappaustunnus puuttuu.' };
+      if (!streamId) return { ok: false, error: 'Capture id is missing.' };
       temp = await navigator.mediaDevices.getUserMedia({
         video: videoConstraints(streamId, settings.shotRes, 30, settings.exact),
         audio: false
@@ -145,7 +145,7 @@ async function screenshot({ streamId, settings, title, tabId }) {
     const filename = fileName((settings.jobName || '').trim(), title, res, 'jpg');
     return { ok: true, url: shot.url, filename, size: shot.size, actual: `${shot.w}×${shot.h}` };
   } catch (e) {
-    return { ok: false, error: 'Kuvakaappaus epäonnistui: ' + (e.message || e.name || e) };
+    return { ok: false, error: 'Screenshot failed: ' + (e.message || e.name || e) };
   } finally {
     if (track) track.stop();
     if (temp) temp.getTracks().forEach(t => t.stop());

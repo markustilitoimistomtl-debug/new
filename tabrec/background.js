@@ -24,22 +24,22 @@ async function ensureOffscreen() {
   await chrome.offscreen.createDocument({
     url: OFFSCREEN,
     reasons: ['USER_MEDIA', 'AUDIO_PLAYBACK', 'BLOBS'],
-    justification: 'Tallentaa välilehden kuvan ja äänen MediaRecorderilla.'
+    justification: 'Records the tab video and audio with MediaRecorder.'
   });
 }
 
 async function start(tab, streamId) {
   const state = await getState();
-  if (state.recording) return { ok: false, error: 'Tallennus on jo käynnissä.' };
-  if (!tab || !tab.id) return { ok: false, error: 'Aktiivista välilehteä ei löytynyt.' };
+  if (state.recording) return { ok: false, error: 'A recording is already running.' };
+  if (!tab || !tab.id) return { ok: false, error: 'No active tab found.' };
   if (/^(chrome|edge|about|chrome-extension):/.test(tab.url || '')) {
-    return { ok: false, error: 'Selaimen omia sivuja ei voi tallentaa.' };
+    return { ok: false, error: 'Browser pages can\'t be recorded.' };
   }
   const settings = await getSettings();
   if (!streamId) streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id });
   await ensureOffscreen();
   const res = await chrome.runtime.sendMessage({ target: 'offscreen', type: 'start', streamId, settings, title: tab.title || '', tabId: tab.id });
-  if (!res || !res.ok) return res || { ok: false, error: 'Tallennuksen aloitus epäonnistui.' };
+  if (!res || !res.ok) return res || { ok: false, error: 'Could not start recording.' };
   await setState({ recording: true, startedAt: Date.now(), tabId: tab.id, res: settings.res, jobName: (settings.jobName || '').trim(), actual: res.actual, mime: res.mime });
   return res;
 }
@@ -61,19 +61,19 @@ async function closeOffscreenIfIdle() {
 
 async function cancel() {
   const state = await getState();
-  if (!state.recording) return { ok: false, error: 'Tallennus ei ole käynnissä.' };
+  if (!state.recording) return { ok: false, error: 'No recording is running.' };
   const res = await chrome.runtime.sendMessage({ target: 'offscreen', type: 'cancel' }).catch(() => null);
   // if the offscreen document is gone, the recording is gone too: just clear the state
-  if (res && !res.ok && /päättymässä/.test(res.error || '')) return res;
+  if (res && !res.ok && /already finishing/.test(res.error || '')) return res;
   await setState({ recording: false, cancelled: true });
   await closeOffscreenIfIdle();
   return { ok: true };
 }
 
 async function screenshot(tab, streamId) {
-  if (!tab || !tab.id) return { ok: false, error: 'Aktiivista välilehteä ei löytynyt.' };
+  if (!tab || !tab.id) return { ok: false, error: 'No active tab found.' };
   if (/^(chrome|edge|about|chrome-extension):/.test(tab.url || '')) {
-    return { ok: false, error: 'Selaimen omista sivuista ei voi ottaa kuvakaappausta.' };
+    return { ok: false, error: 'Browser pages can\'t be captured.' };
   }
   const state = await getState();
   const settings = await getSettings();
@@ -85,12 +85,12 @@ async function screenshot(tab, streamId) {
     target: 'offscreen', type: 'screenshot',
     streamId: sameTab ? null : streamId, settings, title: tab.title || '', tabId: tab.id
   });
-  if (!res || !res.ok) { await closeOffscreenIfIdle(); return res || { ok: false, error: 'Kuvakaappaus epäonnistui.' }; }
+  if (!res || !res.ok) { await closeOffscreenIfIdle(); return res || { ok: false, error: 'Screenshot failed.' }; }
   try {
     await chrome.downloads.download({ url: res.url, filename: res.filename, saveAs: false, conflictAction: 'uniquify' });
   } catch (e) {
     await closeOffscreenIfIdle();
-    return { ok: false, error: 'Kuvan tallennus epäonnistui: ' + (e.message || e) };
+    return { ok: false, error: 'Could not save the image: ' + (e.message || e) };
   }
   await closeOffscreenIfIdle();
   return { ok: true, filename: res.filename, size: res.size, actual: res.actual };
@@ -112,7 +112,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
           const id = await chrome.downloads.download({ url: msg.url, filename: msg.filename, saveAs: false, conflictAction: 'uniquify' });
           await chrome.storage.session.set({ pendingDownload: id });
         } catch (e) {
-          error = 'Tiedoston tallennus epäonnistui: ' + (e.message || e);
+          error = 'Could not save the file: ' + (e.message || e);
         }
         await setState({ recording: false, lastFile: msg.filename, lastSize: msg.size, error });
         return { ok: true };

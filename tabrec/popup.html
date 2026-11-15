@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="fi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Välilehtitallennin</title>
+<title>TabRec</title>
 <style>
   :root { --bg:#fff; --fg:#1d1b22; --dim:#6b6675; --line:#d9d5e0; --acc:#d93025; --field:#f5f3f8; }
   @media (prefers-color-scheme: dark) { :root { --bg:#1c1824; --fg:#ece8f2; --dim:#a39cad; --line:#3a3346; --field:#26212f; } }
@@ -32,33 +32,33 @@
 </head>
 <body>
 <main>
-  <h1><span class="dot"></span>Välilehtitallennin</h1>
+  <h1><span class="dot"></span>TabRec</h1>
 
   <div id="setup">
     <div style="display:flex;flex-direction:column;gap:10px">
-      <label class="f">Työn nimi
-        <input type="text" id="jobName" maxlength="60" placeholder="Tyhjä = välilehden otsikko" autocomplete="off">
+      <label class="f">Project name
+        <input type="text" id="jobName" maxlength="60" placeholder="Empty = tab title" autocomplete="off">
       </label>
-      <label class="f">Resoluutio
+      <label class="f">Resolution
         <select id="res"></select>
       </label>
       <div class="row">
-        <label class="f">Kuvataajuus
+        <label class="f">Frame rate
           <select id="fps"><option value="60">60 fps</option><option value="30">30 fps</option></select>
         </label>
-        <label class="f">Tiedostomuoto
-          <select id="format"><option value="auto">Automaattinen</option><option value="mp4">MP4</option><option value="webm">WebM</option></select>
+        <label class="f">File format
+          <select id="format"><option value="auto">Automatic</option><option value="mp4">MP4</option><option value="webm">WebM</option></select>
         </label>
       </div>
-      <label class="chk"><input type="checkbox" id="audio"> Tallenna välilehden ääni</label>
-      <label class="chk"><input type="checkbox" id="exact"> Tarkka 16:9-koko (mustat reunat tarvittaessa)</label>
+      <label class="chk"><input type="checkbox" id="audio"> Record tab audio</label>
+      <label class="chk"><input type="checkbox" id="exact"> Exact 16:9 size (black bars if needed)</label>
       <fieldset>
-        <legend>Kuvakaappaus (JPG)</legend>
+        <legend>Screenshot (JPG)</legend>
         <div class="row">
-          <label class="f">Resoluutio
+          <label class="f">Resolution
             <select id="shotRes"></select>
           </label>
-          <label class="f">JPG-laatu
+          <label class="f">JPG quality
             <select id="shotQuality"><option value="100">100 %</option><option value="92">92 %</option><option value="85">85 %</option><option value="75">75 %</option></select>
           </label>
         </div>
@@ -73,12 +73,12 @@
   </div>
 
   <div class="btns">
-    <button id="go">Aloita tallennus</button>
-    <button id="cancel" class="cancel" hidden>Peruuta (ei tallenneta)</button>
-    <button id="shot" class="sec">📷 Ota kuvakaappaus (JPG)</button>
+    <button id="go">Start recording</button>
+    <button id="cancel" class="cancel" hidden>Cancel (don't save)</button>
+    <button id="shot" class="sec">📷 Take screenshot (JPG)</button>
   </div>
   <div class="status" id="status"></div>
-  <div class="hint">Pikanäppäimet: Alt+Shift+R aloita/lopeta, Alt+Shift+X peruuta, Alt+Shift+S kuvakaappaus. Tallenteet ja kuvat menevät Lataukset-kansion alikansioon "Välilehtitallennin".</div>
+  <div class="hint">Shortcuts: Alt+Shift+R start/stop, Alt+Shift+X cancel, Alt+Shift+S screenshot. Recordings and images go to the "TabRec" folder in Downloads.</div>
 </main>
 <script src="settings.js"></script>
 <script src="popup.js"></script>

@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Välilehtitallennin",
-  "version": "1.1.0",
-  "description": "Tallentaa selainvälilehden kuvan ja äänen videoksi ja ottaa JPG-kuvakaappauksia valittavalla resoluutiolla (oletus 1440p).",
+  "name": "TabRec",
+  "version": "1.2.0",
+  "description": "Records a browser tab (video and audio) and takes JPG screenshots at a selectable resolution (default 1440p).",
   "minimum_chrome_version": "116",
   "permissions": ["tabCapture", "offscreen", "downloads", "storage", "activeTab"],
   "background": { "service_worker": "background.js" },
   "action": {
-    "default_title": "Välilehtitallennin",
+    "default_title": "TabRec",
     "default_popup": "popup.html",
     "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png" }
   },
@@ -15,15 +15,15 @@
   "commands": {
     "toggle-recording": {
       "suggested_key": { "default": "Alt+Shift+R" },
-      "description": "Aloita / lopeta tallennus"
+      "description": "Start / stop recording"
     },
     "cancel-recording": {
       "suggested_key": { "default": "Alt+Shift+X" },
-      "description": "Peruuta tallennus (tallennetta ei tallenneta)"
+      "description": "Cancel recording (nothing is saved)"
     },
     "screenshot": {
       "suggested_key": { "default": "Alt+Shift+S" },
-      "description": "Ota kuvakaappaus (JPG)"
+      "description": "Take screenshot (JPG)"
     }
   }
 }
