@@ -54,7 +54,7 @@ dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:1
 #res{display:none}.game[data-view=aoe] #res{display:grid}#res{position:fixed;left:calc(max(12px,env(safe-area-inset-left,0px)) + 48px);top:calc(12px + env(safe-area-inset-top,0px));z-index:11;gap:4px;background:#0e1619d9;border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:200px;font-size:11px}.rr{display:grid;grid-template-columns:52px 1fr;align-items:center;gap:6px;color:var(--muted)}.rr i{height:7px;background:#26343a;border-radius:4px;overflow:hidden;display:block}.rr b{display:block;height:100%;background:var(--accent);transition:width .3s}.rr b.low{background:var(--warn)}.rr em{font-style:normal;color:var(--text);font-variant-numeric:tabular-nums}#rZone{color:var(--accent);font-size:10.5px;margin-top:2px}#rZone.out{color:var(--warn)}
 .tool{width:auto;min-width:64px;height:42px;padding:0 10px;border-radius:8px 8px 0 0;border-bottom:0;font:600 12px var(--display);background:#1b272cf0}.tool:disabled{opacity:.4}
 .gbtns .ico{min-width:46px;width:46px;padding:0;display:grid;place-items:center}.ico svg{width:22px;height:22px}.gbtns .ico.on{color:#eaffdf}
-#gminiWrap{position:relative;line-height:0}#bFull{position:absolute;right:5px;top:5px;width:28px;height:28px;padding:0;border-radius:6px;background:#000b;border:1px solid #ffffff55;color:#fff;display:grid;place-items:center}#bFull svg{width:16px;height:16px}#bFull:hover{border-color:var(--accent)}
+#gminiWrap{position:relative;line-height:0}#bFull{position:absolute;right:5px;top:5px;width:28px;height:28px;padding:0;border-radius:6px;background:#000b;border:1px solid #ffffff55;color:#fff;display:grid;place-items:center}#bFull svg{width:16px;height:16px}#bFull:hover{border-color:var(--accent)}#bFull.plane{background:#2f7fe0;border-color:#fff;width:32px;height:32px}#bFull.plane svg{width:20px;height:20px}.gameonly{display:none}.game .gameonly{display:block}#gmap:not(.plan) .gmapbar .ctl,#gmap:not(.plan) #gGo{display:none}
 .gbtns .char{min-width:52px;width:52px;padding:0}.char canvas{width:40px;height:40px;display:block;margin:0 auto}
 #tray{display:none}.game #tray{display:flex;gap:4px;position:fixed;bottom:calc(50px + env(safe-area-inset-bottom,0px));z-index:12;background:#0e1619e6;border:1px solid var(--line);border-radius:10px;padding:6px}.game #tray[hidden]{display:none}#tray .tool{border-radius:8px;border-bottom:1px solid #3d4f56}#tray span{width:42px;height:42px;border:1px dashed #6b7f86;border-radius:8px;display:block}
 #ball{position:fixed;z-index:9;min-width:20px;height:20px;padding:0 5px;border-radius:10px;transform:translate(-50%,-100%);border:2px solid #fff;display:grid;place-items:center;font:700 11px var(--display);color:#fff;pointer-events:none;box-shadow:0 0 10px #000a;text-shadow:0 1px 2px #000}
@@ -113,7 +113,7 @@ dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:1
 <div class="ctl"><label for="treeSize">Tree size <output id="treeSizeV"></output></label><input id="treeSize" type="range" min="0.6" max="3" step="0.1" value="1.2"></div>
 <label class="check"><input type="checkbox" id="buildings"> Buildings in built-up areas</label>
 <p class="hint" id="objinfo">–</p></section>
-<section data-view="site world aoe"><h2>Design</h2><label class="check"><input type="checkbox" id="netDev"> Show the whole world and the transport network on the map</label><p class="hint">On the player's map, uncleared areas are black. Motorways and railways are hidden from the player; they only appear in map-area horizons and the close view.</p></section>
+<section data-view="site world aoe"><h2>Design</h2><label class="check"><input type="checkbox" id="netDev"> Show the whole world and the transport network on the map</label><button id="devDest" class="gameonly">Add a test destination (story)</button><p class="hint">On the player's map, uncleared areas are black. Motorways and railways are hidden from the player; they only appear in map-area horizons and the close view.</p></section>
 <section data-view="site world aoe"><h2>Export</h2><button id="shot">Save screenshot (PNG)</button></section>
 <section data-view="site"><h2>Controls</h2><dl>
 <dt>Left drag</dt><dd>Pan</dd><dt>Right drag</dt><dd>Rotate &amp; tilt</dd><dt>Wheel / pinch</dt><dd>Zoom to cursor</dd><dt>Click</dt><dd>Look at a place up close</dd><dt><kbd>Esc</kbd></dt><dd>Back to overview</dd>
@@ -208,6 +208,14 @@ vec3 viewVec(vec3 p){return uOrtho>.5?-uViewDir:normalize(uEye-(p+uOff));}
 vec3 roads(vec2 p,vec3 alb){for(int i=0;i<48;i++){if(i>=uSegN)break;vec4 s=uSeg[i];vec2 a=s.xy,ab=s.zw-s.xy;float L=max(length(ab),1e-3);vec2 d=ab/L,q=p-a;float al=dot(q,d),ac=dot(q,vec2(-d.y,d.x));vec2 c=a+d*clamp(al,0.,L);float dist=length(p-c);
  if(uSegK[i]<.5){if(dist<14.){alb=mix(alb,lin(vec3(.52,.5,.45))*(.9+.15*vnoise(p/2.)),smoothstep(14.,11.5,dist));if(dist<11.){float x=abs(ac);alb=lin(vec3(.27,.27,.27))*(.9+.12*vnoise(p/3.));if(x<1.2)alb=lin(vec3(.36,.44,.28));else if(abs(x-1.6)<.15||abs(x-10.4)<.15)alb=lin(vec3(.85));else if(abs(x-6.)<.12&&fract(al/12.)<.33)alb=lin(vec3(.85));}}}
  else if(dist<4.5){alb=mix(alb,lin(vec3(.45,.43,.4))*(.8+.3*vnoise(p/.6)),smoothstep(4.5,3.2,dist));if(dist<1.4&&fract(al/.65)<.32)alb=lin(vec3(.3,.22,.16));if(abs(abs(ac)-.72)<.05&&dist<1.)alb=lin(vec3(.62,.62,.64));}}return alb;}
+uniform float uRwOn;uniform vec4 uRw0,uRw1,uRw2;
+vec3 rwPaint(vec2 p,vec3 alb){
+ if(uRwOn>.5){vec2 d=uRw0.zw,q=p-uRw0.xy;float al=dot(q,d),ac=dot(q,vec2(-d.y,d.x)),ea=abs(al)-uRw1.x,ec=abs(ac)-uRw1.y;vec3 grav=lin(vec3(.57,.53,.46))*(.84+.26*vnoise(p/1.7))*(.92+.12*vnoise(p/9.));
+  float aa=abs(al-uRw2.x)-18.,ae=abs(ac-uRw2.y)-14.,ap=max(aa,ae);if(ap<4.)alb=mix(alb,grav*.95,smoothstep(4.,0.,ap));
+  if(ea<5.&&ec<6.){alb=mix(alb,grav,smoothstep(6.,0.,max(ea,ec)));if(ea<0.&&ec<0.){alb=lin(vec3(.31,.31,.3))*(.86+.2*vnoise(p/2.3))*(.95+.08*vnoise(p/14.));
+   if(abs(ac)<.35&&fract(al/30.)<.5&&ea<-26.)alb=lin(vec3(.9,.9,.85));if(abs(abs(ac)-uRw1.y+.7)<.22)alb=lin(vec3(.86,.86,.82));
+   if(ea>-16.&&ea<-5.&&fract((ac+uRw1.y)/2.3)<.5&&abs(ac)<uRw1.y-1.6)alb=lin(vec3(.9,.9,.86));}}}
+ return alb;}
 vec3 tone(vec3 col){col*=1.25;col=(col*(2.51*col+.03))/(col*(2.43*col+.59)+.14);return pow(clamp(col,0.,1.),vec3(1./2.2));}
 vec3 finish(vec3 col,vec3 p){
  float d=uOrtho>.5?length(max(abs(p.xz)-uHalf,0.)):length(uEye-(p+uOff));float f=uFogOn>.5?smoothstep(uFog.x,uFog.y,d):0.;f=max(f,smoothstep(uFar.x,uFar.y,d));col=mix(col,lin(uHorizon)*1.05,f);
@@ -225,7 +233,7 @@ P.terrain=compile(`out vec3 vPos;out vec3 vNrm;
 void main(){int n=int(uN);ivec2 c=ivec2(gl_VertexID%n,gl_VertexID/n);float h=hFetch(c);
  ivec2 l=max(c-1,ivec2(0)),r=min(c+1,ivec2(n-1));float sx=float(r.x-l.x),sz=float(r.y-l.y);
  vNrm=normalize(vec3((hFetch(ivec2(l.x,c.y))-hFetch(ivec2(r.x,c.y)))/sx*uExag,uCs,(hFetch(ivec2(c.x,l.y))-hFetch(ivec2(c.x,r.y)))/sz*uExag));vec2 xz=(vec2(c)-(uN-1.)*.5)*uCs;vPos=vec3(xz.x,h*uExag,xz.y);gl_Position=proj(vPos);}`,
-`in vec3 vPos;in vec3 vNrm;out vec4 o;uniform float uFlat,uGrid,uLevel,uShadows,uBorder,uRwOn;uniform vec4 uRw0,uRw1,uRw2;
+`in vec3 vPos;in vec3 vNrm;out vec4 o;uniform float uFlat,uGrid,uLevel,uShadows,uBorder;
 int landAt(ivec2 c){c=clamp(c,ivec2(0),ivec2(int(uN)-1));return int(texelFetch(uLand,c,0).r);}
 void main(){vec3 N=normalize(vNrm);if(uFlat>.5){N=normalize(cross(dFdx(vPos),dFdy(vPos)));if(N.y<0.)N=-N;}
  vec2 p=vPos.xz;vec2 c=cellOf(p)+(vec2(vnoise(p/(.9*uCs)),vnoise(p/(.9*uCs)+31.7))-.5)*.95;int t=landAt(ivec2(floor(c+.5)));
@@ -233,11 +241,7 @@ void main(){vec3 N=normalize(vNrm);if(uFlat>.5){N=normalize(cross(dFdx(vPos),dFd
  bool wet=(t==8||t==9)&&uLevel<.5;
  if(!wet&&t!=11&&t!=19){float sl=1.-N.y;alb=mix(alb,lin(vec3(.48,.47,.44))*(.7+.5*fbm(p/10.)),smoothstep(.42,.62,sl));}
  if(uClose>.5)alb*=.86+.28*vnoise(p/.9);
- if(uRwOn>.5){vec2 d=uRw0.zw,q=p-uRw0.xy;float al=dot(q,d),ac=dot(q,vec2(-d.y,d.x)),ea=abs(al)-uRw1.x,ec=abs(ac)-uRw1.y;vec3 grav=lin(vec3(.57,.53,.46))*(.84+.26*vnoise(p/1.7))*(.92+.12*vnoise(p/9.));
-  float aa=abs(al-uRw2.x)-18.,ae=abs(ac-uRw2.y)-14.,ap=max(aa,ae);if(ap<4.)alb=mix(alb,grav*.95,smoothstep(4.,0.,ap));
-  if(ea<5.&&ec<6.){alb=mix(alb,grav,smoothstep(6.,0.,max(ea,ec)));if(ea<0.&&ec<0.){alb=lin(vec3(.31,.31,.3))*(.86+.2*vnoise(p/2.3))*(.95+.08*vnoise(p/14.));
-   if(abs(ac)<.35&&fract(al/30.)<.5&&ea<-26.)alb=lin(vec3(.9,.9,.85));if(abs(abs(ac)-uRw1.y+.7)<.22)alb=lin(vec3(.86,.86,.82));
-   if(ea>-16.&&ea<-5.&&fract((ac+uRw1.y)/2.3)<.5&&abs(ac)<uRw1.y-1.6)alb=lin(vec3(.9,.9,.86));}}}
+ alb=rwPaint(p,alb);
  vec2 sh=shadeAt(p);float sdw=uShadows>.5?sh.r:1.;
  vec3 col;vec3 V=viewVec(vPos);
  if(wet){vec3 w=t==9?lin(vec3(.1,.3,.45)):lin(vec3(.15,.4,.5));col=light(w,vec3(0,1,0),sdw,1.);col+=uSunCol*pow(max(dot(reflect(-uSun,vec3(0,1,0)),V),0.),60.)*.5*sdw;}
@@ -586,7 +590,7 @@ function flyTo(to,dur=2.2,mode){const from={tx:cam.tx,tz:cam.tz,dist:cam.dist,pi
  let dy=to.yaw-from.yaw;dy=((dy+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;FOC.flight={t0:performance.now(),dur:dur*1000,from,to:{...to,yaw:from.yaw+dy}};needsDraw=true}
 function stepFlight(now){const f=FOC.flight;if(!f)return;const p=clamp((now-f.t0)/f.dur,0,1),e=ease(p);for(const k of ['tx','tz','pitch','yaw'])goal[k]=cam[k]=f.from[k]+(f.to[k]-f.from[k])*e;
  const lift=1+.35*Math.sin(Math.PI*p)*(f.to.dist<f.from.dist?0:1);goal.dist=cam.dist=Math.exp(Math.log(f.from.dist)+(Math.log(f.to.dist)-Math.log(f.from.dist))*e)*lift;syncPitch();if(p>=1)FOC.flight=null;needsDraw=true}
-function focusAt(p){const {n,cs}=world,cx=clamp(Math.round(p[0]/cs+(n-1)/2),0,n-1),cz=clamp(Math.round(p[2]/cs+(n-1)/2),0,n-1);
+function focusAt(p){if(GAME)return;const {n,cs}=world,cx=clamp(Math.round(p[0]/cs+(n-1)/2),0,n-1),cz=clamp(Math.round(p[2]/cs+(n-1)/2),0,n-1);
  if(!FOC.sel)FOC.saved={mode:S.mode,tx:goal.tx,tz:goal.tz,dist:goal.dist,pitch:goal.pitch,yaw:goal.yaw};
  const x=(cx-(n-1)/2)*cs,z=(cz-(n-1)/2)*cs;FOC.sel={cx,cz,x,z,t0:performance.now()};FOC.orbit=true;$('placeOrbit').classList.add('on');showPlace(cx,cz);
  flyTo({tx:x,tz:z,dist:Math.max(cs*42,380),pitch:.46,yaw:goal.yaw},FOC.saved&&Math.hypot(x-cam.tx,z-cam.tz)<cam.dist*.5?1.4:2.4,'drone');message('Looking at the place · Esc returns to the overview')}
@@ -638,20 +642,20 @@ function common(p,L){gl.useProgram(p);const u=n=>U(p,n);gl.uniform1i(u('uHeight'
  if(RS.fog)gl.uniform2f(u('uFog'),RS.fog[0],RS.fog[1]);else if(ortho)gl.uniform2f(u('uFog'),ms*.04,ms*2.8);else gl.uniform2f(u('uFog'),cam.dist*.9,cam.dist*.9+ms*2.2);
  if(RS.far)gl.uniform2f(u('uFar'),RS.far[0],RS.far[1]);else if(hz)gl.uniform2f(u('uFar'),ortho?OUT.ext*.35:OUT.ext*.55,ortho?OUT.ext*.8:OUT.ext*.92);else gl.uniform2f(u('uFar'),1e9,2e9);
  gl.uniform1i(u('uOH'),3);gl.uniform1i(u('uOShade'),4);gl.uniform1i(u('uOLand'),5);gl.uniform1f(u('uK'),OUT.K);gl.uniform1f(u('uR'),OUT.R);gl.uniform1f(u('uG'),OUT.g);gl.uniform1f(u('uHalf'),(world.n-1)/2*world.cs);gl.uniform1f(u('uHzOn'),hz?1:0);if(p===P.sky)gl.uniformMatrix4fv(u('uInvVP'),false,M.inv(VP));
- gl.uniform3fv(u('uOff'),RS.off);gl.uniform1f(u('uCurv'),RS.curv);gl.uniform1f(u('uNoShade'),RS.noShade);gl.uniform1f(u('uClip'),RS.clip);gl.uniform1f(u('uBaked'),RS.baked);gl.uniform3fv(u('uMCol'),RS.mcol);gl.uniform1f(u('uClose'),RS.close||0);gl.uniform4fv(u('uSeg'),SEGS.a);gl.uniform1fv(u('uSegK'),SEGS.k);gl.uniform1i(u('uSegN'),SEGS.n);
+ gl.uniform3fv(u('uOff'),RS.off);gl.uniform1f(u('uCurv'),RS.curv);gl.uniform1f(u('uNoShade'),RS.noShade);gl.uniform1f(u('uClip'),RS.clip);gl.uniform1f(u('uBaked'),RS.baked);gl.uniform3fv(u('uMCol'),RS.mcol);{const rw=window.rwForDraw?window.rwForDraw():(world&&world.runway);gl.uniform1f(u('uRwOn'),rw?1:0);if(rw){gl.uniform4f(u('uRw0'),rw.cx,rw.cz,rw.dx,rw.dz);gl.uniform4f(u('uRw1'),rw.hl,rw.hw,0,0);gl.uniform4f(u('uRw2'),rw.apAl,rw.apAc,0,0)}}gl.uniform1f(u('uClose'),RS.close||0);gl.uniform4fv(u('uSeg'),SEGS.a);gl.uniform1fv(u('uSegK'),SEGS.k);gl.uniform1i(u('uSegN'),SEGS.n);
  gl.uniform3fv(u('uPal'),PAL);return u}
 function bindSiteTextures(){gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex.height);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,tex.shade);gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,tex.land);gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,OUT.tex.h);gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,OUT.tex.shade);gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,OUT.tex.land);}
 function render(){gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(.05,.07,.08,1);gl.clearStencil(0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT|gl.STENCIL_BUFFER_BIT);if(!world)return;if(S.view==='site')matrices();const L=sunUniforms();bindSiteTextures();
  gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);common(P.sky,L);gl.bindVertexArray(skyVAO);gl.drawArrays(gl.TRIANGLES,0,3);
  gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);
- drawSite(L,!(GAME&&S.view==='aoe'));if(GAME&&S.view==='aoe'&&window.drawWild)window.drawWild(L);let u;
+ const away=GAME&&S.view==='aoe'&&window.gameAway&&gameAway();if(!away)drawSite(L,!(GAME&&S.view==='aoe'));if(GAME&&S.view==='aoe'&&window.drawWild)window.drawWild(L);if(away&&window.drawActors)window.drawActors(L);let u;
  if(S.view==='site'&&FOC.sel){const m=FOC.sel,i=m.cz*world.n+m.cx,w=world.wl[i],T=(performance.now()-m.t0)/1000,R0=Math.max(world.cs*1.2,cam.dist*.025);u=common(P.marker,L);gl.uniform3f(u('uC'),m.x,w===w&&(world.land[i]===8||world.land[i]===9)?w:-1e9,m.z);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);gl.bindVertexArray(markerVAO);
   for(const [r,hh,a] of [[R0*(1+.12*Math.sin(T*3)),R0*.7,.9],[R0*(.6+((T*.7)%1)*1.6),R0*.25,.7*(1-(T*.7)%1)],[R0*.07,R0*7,.55]]){gl.uniform1f(u('uRad'),r);gl.uniform1f(u('uHgt'),hh);gl.uniform1f(u('uAlpha'),a);gl.drawArrays(gl.TRIANGLES,0,markerCount)}gl.depthMask(true);gl.disable(gl.BLEND)}
  if(S.border){u=common(P.fence,L);gl.uniform1f(u('uFenceH'),Math.max(15,cam.dist*.02));gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);gl.bindVertexArray(skirt.fvao);gl.drawElements(gl.TRIANGLES,skirt.count,gl.UNSIGNED_INT,0);gl.depthMask(true);gl.disable(gl.BLEND)}
  if(window.drawActorsLate)window.drawActorsLate(L);
  gl.bindVertexArray(null)}
 function drawSite(L,props){const hz=S.horizon&&OUT.ready;
- PAL=new Float32Array(world.palette.flatMap(c=>c.map(v=>Math.pow(v/255,2.2))));let u=common(P.terrain,L);gl.uniform1f(u('uBorder'),S.border?1:0);const rw=world.runway;gl.uniform1f(u('uRwOn'),rw?1:0);if(rw){gl.uniform4f(u('uRw0'),rw.cx,rw.cz,rw.dx,rw.dz);gl.uniform4f(u('uRw1'),rw.hl,rw.hw,0,0);gl.uniform4f(u('uRw2'),rw.apAl,rw.apAc,0,0)}gl.uniform1f(u('uFlat'),S.flat?1:0);gl.uniform1f(u('uGrid'),S.grid?1:0);gl.uniform1f(u('uLevel'),S.level?1:0);gl.uniform1f(u('uShadows'),S.shadows?1:0);
+ PAL=new Float32Array(world.palette.flatMap(c=>c.map(v=>Math.pow(v/255,2.2))));let u=common(P.terrain,L);gl.uniform1f(u('uBorder'),S.border?1:0);gl.uniform1f(u('uFlat'),S.flat?1:0);gl.uniform1f(u('uGrid'),S.grid?1:0);gl.uniform1f(u('uLevel'),S.level?1:0);gl.uniform1f(u('uShadows'),S.shadows?1:0);
  gl.bindVertexArray(terrainVAO);gl.drawElements(gl.TRIANGLES,indexCount,gl.UNSIGNED_INT,0);
  if(props&&hz){u=common(P.outer,L);gl.uniform1f(u('uFlat'),S.flat?1:0);gl.uniform1f(u('uLevel'),S.level?1:0);gl.uniform1f(u('uShadows'),S.shadows?1:0);gl.bindVertexArray(OUT.vao);gl.drawElements(gl.TRIANGLES,OUT.count,gl.UNSIGNED_INT,0)}
  else if(props){u=common(P.skirt,L);gl.uniform1f(u('uBase'),world.minH*S.exag-Math.max(40,(world.maxH-world.minH)*S.exag*.3));gl.bindVertexArray(skirt.vao);gl.drawElements(gl.TRIANGLES,skirt.count,gl.UNSIGNED_INT,0)}
@@ -938,12 +942,23 @@ window.gameFlatten=()=>{if(!world.runway)world.runway=chooseRunway();const r=wor
  for(let cz=0;cz<n;cz++)for(let cx=0;cx<n;cx++){const x=(cx-(n-1)/2)*cs,z=(cz-(n-1)/2)*cs;if(Math.abs(x-r.cx)>r.hl+120||Math.abs(z-r.cz)>r.hl+120)continue;const [al,ac]=rwLocal(r,x,z);
   const e1=Math.max(Math.abs(al)-r.hl-12,Math.abs(ac)-r.hw-16),e2=Math.max(Math.abs(al-r.apAl)-24,Math.abs(ac-r.apAc)-20),w=Math.max(1-sstep(0,26,e1),1-sstep(0,22,e2));if(w<=0)continue;
   const i=cz*n+cx,tg=r.h0+r.slope*clamp(al,-r.hl-30,r.hl+30)+.25;h[i]+=(tg-h[i])*w}};
+function rwWeight(r,x,z){const [al,ac]=rwLocal(r,x,z),e1=Math.max(Math.abs(al)-r.hl-12,Math.abs(ac)-r.hw-16),e2=Math.max(Math.abs(al-r.apAl)-24,Math.abs(ac-r.apAc)-20);return[Math.max(1-sstep(0,26,e1),1-sstep(0,22,e2)),r.h0+r.slope*clamp(al,-r.hl-30,r.hl+30)+.25]}
+function treeOKr(r,x,z){const [al,ac]=rwLocal(r,x,z);return!((Math.abs(al)<r.hl+34&&Math.abs(ac)<r.hw+30)||(Math.abs(al-r.apAl)<32&&Math.abs(ac-r.apAc)<28))}
+function chooseRunwayW(x0,z0){const L=520,HW=9;let best=null,bc=Infinity;
+ ring:for(let r=0;r<=4000;r+=250){const K=r?Math.round(r/250)*6:1;for(let k=0;k<K;k++){const a0=k/K*Math.PI*2,cx=x0+Math.cos(a0)*r,cz=z0+Math.sin(a0)*r;
+  for(let a=0;a<180;a+=30){const an=a*Math.PI/180,dx=Math.sin(an),dz=Math.cos(an);let ok=true,sx=0,sy=0,sxx=0,sxy=0,N=0;const hs=[];
+   for(let s=-L/2-10;s<=L/2+10&&ok;s+=40)for(const o of [-HW-12,0,HW+30]){const y=worldH(cx+dx*s-dz*o,cz+dz*s+dx*o,11);if(y<2.5){ok=false;break}hs.push(s,y);sx+=s;sy+=y;sxx+=s*s;sxy+=s*y;N++}
+   if(!ok)continue;const sl=(N*sxy-sx*sy)/(N*sxx-sx*sx),b=(sy-sl*sx)/N;if(Math.abs(sl)>.05)continue;let res=0;for(let q=0;q<hs.length;q+=2)res+=(hs[q+1]-(b+sl*hs[q]))**2;const cost=res/N+r*.002+Math.abs(sl)*900;if(cost<bc){bc=cost;best={wx:cx,wz:cz,dx,dz,h0:b,slope:sl}}}}
+  if(best&&bc<6&&r>=500)break ring}
+ if(!best)return null;const al=-L/2+L*.3,o=HW+26;return{wx:best.wx,wz:best.wz,rw:{cx:0,cz:0,dx:best.dx,dz:best.dz,hl:L/2,hw:HW,h0:best.h0,slope:best.slope,side:1,ax:best.dx*al-best.dz*o,az:best.dz*al+best.dx*o,apAl:al,apAc:o}}}
 window.gameTreeOK=(x,z)=>{const r=world.runway;if(!r)return true;const [al,ac]=rwLocal(r,x,z);return!((Math.abs(al)<r.hl+34&&Math.abs(ac)<r.hw+30)||(Math.abs(al-r.apAl)<32&&Math.abs(ac-r.apAc)<28))};
 (function(){
 document.body.classList.add('game');
-const G={state:'boot',camp:null,dest:null,pick:null,landAfter:false,speed:5000,miniOn:true,follow:true,click:null,mark:null,cine:null};
-const PARTY=[{name:'Leilani',shirt:[.85,.42,.18],hair:[.32,.2,.1],skin:[.88,.7,.56],off:[0,0]},{name:'Mateo',shirt:[.2,.45,.8],hair:[.13,.11,.1],skin:[.8,.62,.5],off:[2.6,1.4]},{name:'Nia',shirt:[.3,.62,.3],hair:[.86,.74,.44],skin:[.92,.76,.64],off:[-1.8,2.4]}]
- .map(p=>Object.assign({x:0,z:0,tx:null,tz:null,heading:0,phase:0,move:0,swim:0,y:0,res:{energy:100,water:100,food:100,out:false,warn:0}},p));
+const ARROW_SVG=$('bFull').innerHTML,PLANE_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15.5v-1.8l-8-5V3.6a1.5 1.5 0 0 0-3 0v5.1l-8 5v1.8l8-2.4v5.1l-2 1.5V21l3.5-1 3.5 1v-1.3l-2-1.5v-5.1z" fill="currentColor"/></svg>';
+const ORG={x:0,z:0,shift:0},PLANE={loc:'camp'},AIR=[];
+const G={away:null,state:'boot',camp:null,dest:null,pick:null,landAfter:false,speed:5000,miniOn:true,follow:true,click:null,mark:null,cine:null};
+const PARTY=[{name:'Leilani',shirt:[.85,.42,.18],hair:[.32,.2,.1],skin:[.88,.7,.56],off:[0,0]},{name:'Mateo',pilot:true,shirt:[.2,.45,.8],hair:[.13,.11,.1],skin:[.8,.62,.5],off:[2.6,1.4]},{name:'Nia',shirt:[.3,.62,.3],hair:[.86,.74,.44],skin:[.92,.76,.64],off:[-1.8,2.4]}]
+ .map(p=>Object.assign({loc:'camp',inPlane:false,board:false,pilot:false,x:0,z:0,tx:null,tz:null,heading:0,phase:0,move:0,swim:0,y:0,res:{energy:100,water:100,food:100,out:false,warn:0}},p));
 let CH=PARTY[0];
 const SC=1.6; // character drawn larger than life, AoE-style readability
 
@@ -981,26 +996,36 @@ const planeVAO=gl.createVertexArray();let planeCount=0;
  const b=gl.createBuffer();gl.bindVertexArray(planeVAO);gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(v),gl.STATIC_DRAW);const l=gl.getAttribLocation(PP,'aPos');gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,4,gl.FLOAT,false,16,0);gl.bindVertexArray(null);planeCount=v.length/4}
 const PSC=1.6;
 const hdg=(dx,dz)=>Math.atan2(-dx,dz);
-function parkedPose(){const r=world.runway;if(!r)return null;return{x:r.ax,z:r.az,h:hdg(r.dx,r.dz),pitch:0,alt:0,prop:0}}
-function runwayPose(s,alt,pitch,prop){const r=world.runway;return{x:r.cx+r.dx*s,z:r.cz+r.dz*s,h:hdg(r.dx,r.dz),pitch,alt,prop}}
-function takeoffPose(t){const r=world.runway,s0=-r.hl+18,Lr=r.hl*2*.62,tr=3.4,a=2*Lr/(tr*tr);if(t<tr)return runwayPose(s0+.5*a*t*t,0,0,t);const v=a*tr,u=t-tr;return runwayPose(s0+Lr+v*u,v*u*Math.tan(.16)+u*u*4,Math.min(.2,u*.25),t)}
-function landingPose(t){const r=world.runway,tt=6.4,v=60,std=-r.hl+45,tm=2.1,dec=v/tm;if(t<tt){const u=tt-t;return runwayPose(std-v*u,u*v*Math.tan(.07),.06,t)}const u=Math.min(t-tt,tm);return runwayPose(std+v*u-.5*dec*u*u,0,.06*(1-u/tm),t*(1-u/tm*.8))}
-function drawPlane(L,p){const u=common(PP,L);const y=hAt(p.x,p.z,world.h)*S.exag+p.alt;gl.uniform4f(u('uM'),p.x,p.z,p.pitch,p.prop);gl.uniform2f(u('uA'),p.h,y);gl.uniform1f(u('uSc'),PSC);gl.bindVertexArray(planeVAO);gl.drawArrays(gl.TRIANGLES,0,planeCount)}
-function planeNow(){if(S.view==='world'||!world.runway)return null;if(G.planeAnim)return G.planeAnim;if(G.state==='ground'||(G.state==='takeoff'&&S.view==='aoe'))return parkedPose();return null}
+const curLoc=()=>G.away?G.away.id:'camp',planeHere=()=>PLANE.loc===curLoc(),here=c=>c.loc===curLoc(),vis=()=>PARTY.filter(c=>here(c)&&!c.inPlane);
+const pilotAboard=()=>planeHere()&&PARTY.some(c=>c.inPlane&&c.pilot&&here(c));
+const curRw=()=>G.away?G.away.rw:world.runway;window.rwForDraw=()=>S.view!=='world'&&G.away?G.away.rw:world.runway;window.gameAway=()=>!!G.away;
+const cakeHalf=()=>G.away?-1:mapHalf();
+function setLoc(d){G.away=d;if(d){ORG.x=d.wx;ORG.z=d.wz;ORG.shift=0}else{ORG.x=SITE.x;ORG.z=SITE.z;ORG.shift=SITE.shift}WILD.ready=false;setSegs([])}
+function doorPos(){const r=curRw(),s=r.side||1;return{x:r.ax-r.dz*s*3.4,z:r.az+r.dx*s*3.4}}
+function homePos(){if(!G.away)return G.camp;const r=curRw(),s=r.side||1;return{x:r.ax-r.dz*s*9+r.dx*3,z:r.az+r.dx*s*9+r.dz*3}}
+function board(c){c.inPlane=true;c.tx=null;const d=doorPos();c.x=d.x;c.z=d.z;message(c.pilot?c.name+' takes the pilot’s seat. Click the plane icon on the map to choose a destination.':c.name+' boards the aircraft as a passenger. A pilot is needed to fly.');syncBar();needsDraw=true}
+function disembark(c,i=0){const d=doorPos(),r=curRw(),s=r.side||1,ox=c.off?c.off[0]:0,oz=(c.off?c.off[1]:0)+1.5;c.inPlane=false;c.board=false;c.tx=null;c.x=d.x-r.dz*s*oz+r.dx*ox;c.z=d.z+r.dx*s*oz+r.dz*ox;c.y=groundL(c.x,c.z)*S.exag}
+function arrive(){let pilot=null;for(const c of PARTY)if(c.inPlane){c.loc=curLoc();disembark(c);if(c.pilot&&!pilot)pilot=c}if(pilot)CH=pilot;drawPortrait();syncBar()}
+function parkedPose(){const r=curRw();if(!r)return null;return{x:r.ax,z:r.az,h:hdg(r.dx,r.dz),pitch:0,alt:0,prop:0}}
+function runwayPose(s,alt,pitch,prop){const r=curRw();return{x:r.cx+r.dx*s,z:r.cz+r.dz*s,h:hdg(r.dx,r.dz),pitch,alt,prop}}
+function takeoffPose(t){const r=curRw(),s0=-r.hl+18,Lr=r.hl*2*.62,tr=3.4,a=2*Lr/(tr*tr);if(t<tr)return runwayPose(s0+.5*a*t*t,0,0,t);const v=a*tr,u=t-tr;return runwayPose(s0+Lr+v*u,v*u*Math.tan(.16)+u*u*4,Math.min(.2,u*.25),t)}
+function landingPose(t){const r=curRw(),tt=6.4,v=60,std=-r.hl+45,tm=2.1,dec=v/tm;if(t<tt){const u=tt-t;return runwayPose(std-v*u,u*v*Math.tan(.07),.06,t)}const u=Math.min(t-tt,tm);return runwayPose(std+v*u-.5*dec*u*u,0,.06*(1-u/tm),t*(1-u/tm*.8))}
+function drawPlane(L,p){const u=common(PP,L);const y=groundL(p.x,p.z)*S.exag+p.alt;gl.uniform4f(u('uM'),p.x,p.z,p.pitch,p.prop);gl.uniform2f(u('uA'),p.h,y);gl.uniform1f(u('uSc'),PSC);gl.bindVertexArray(planeVAO);gl.drawArrays(gl.TRIANGLES,0,planeCount)}
+function planeNow(){if(S.view==='world'||!curRw())return null;if(G.planeAnim)return G.planeAnim;if((G.state==='ground'||G.state==='overview'||(G.state==='takeoff'&&S.view==='aoe'))&&planeHere())return parkedPose();return null}
 
-window.drawActors=L=>{const pl=planeNow();if(pl)drawPlane(L,pl);if(S.view!=='aoe'||G.state!=='ground')return;gl.enable(gl.STENCIL_TEST);gl.stencilFunc(gl.ALWAYS,1,255);gl.stencilOp(gl.KEEP,gl.KEEP,gl.REPLACE);for(const c of PARTY)drawChar(L,c,false);gl.disable(gl.STENCIL_TEST)};
+window.drawActors=L=>{const pl=planeNow();if(pl)drawPlane(L,pl);if(S.view!=='aoe'||G.state!=='ground')return;gl.enable(gl.STENCIL_TEST);gl.stencilFunc(gl.ALWAYS,1,255);gl.stencilOp(gl.KEEP,gl.KEEP,gl.REPLACE);for(const c of vis())drawChar(L,c,false);gl.disable(gl.STENCIL_TEST)};
 window.drawActorsLate=L=>{if(S.view!=='aoe'||G.state!=='ground')return;gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
  if(G.mark){const T=(performance.now()-G.mark.t0)/1000;if(T<1.4)ring(L,G.mark.x,G.mark.z,(.4+T*.8)*SC,.18,.9*(1-T/1.4),[1,.85,.45]);else G.mark=null}
- gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthFunc(gl.GREATER);gl.enable(gl.STENCIL_TEST);gl.stencilFunc(gl.NOTEQUAL,1,255);gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP);for(const c of PARTY)drawChar(L,c,true);gl.disable(gl.STENCIL_TEST);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);gl.disable(gl.BLEND)};
+ gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthFunc(gl.GREATER);gl.enable(gl.STENCIL_TEST);gl.stencilFunc(gl.NOTEQUAL,1,255);gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP);for(const c of vis())drawChar(L,c,true);gl.disable(gl.STENCIL_TEST);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);gl.disable(gl.BLEND)};
 
 /* ---- movement: walk on land, swim in water, blocked by cliffs ---- */
 function waterAt(x,z){const w=waterLevelL(x,z);return w==null?null:w*S.exag}
-function canStep(x0,z0,x1,z1,st){const wx=SITE.x+x1,wz=SITE.z+z1;if(wx<1e4||wz<1e4||wx>WG.WX-1e4||wz>WG.WZ-1e4)return false;if(waterLevelL(x1,z1)!=null)return true;return(groundL(x1,z1)-groundL(x0,z0))/Math.max(st,1e-3)<1.25}
-function charUpdate(dt){let moved=0;const sw=waterLevelL(CH.x,CH.z)!=null;if(CH.tx!=null){const dx=CH.tx-CH.x,dz=CH.tz-CH.z,d=Math.hypot(dx,dz);if(d<.3)CH.tx=null;else{const sp=(sw?1.6:3.6)*(CH.res.energy<15?.6:1),st=Math.min(d,sp*dt);let nx=CH.x+dx/d*st,nz=CH.z+dz/d*st;
+function canStep(x0,z0,x1,z1,st){const wx=ORG.x+x1,wz=ORG.z+z1;if(wx<1e4||wz<1e4||wx>WG.WX-1e4||wz>WG.WZ-1e4)return false;if(waterLevelL(x1,z1)!=null)return true;return(groundL(x1,z1)-groundL(x0,z0))/Math.max(st,1e-3)<1.25}
+function charUpdate(dt){if(CH.inPlane){resTick(dt,0,false);return false}let moved=0;const sw=waterLevelL(CH.x,CH.z)!=null;if(CH.tx!=null){const dx=CH.tx-CH.x,dz=CH.tz-CH.z,d=Math.hypot(dx,dz);if(d<.3){CH.tx=null;if(CH.board){CH.board=false;board(CH)}}else{const sp=(sw?1.6:3.6)*(CH.res.energy<15?.6:1),st=Math.min(d,sp*dt);let nx=CH.x+dx/d*st,nz=CH.z+dz/d*st;
   if(!canStep(CH.x,CH.z,nx,nz,st)){if(canStep(CH.x,CH.z,nx,CH.z,st))nz=CH.z;else if(canStep(CH.x,CH.z,CH.x,nz,st))nx=CH.x;else{CH.tx=null;nx=CH.x;nz=CH.z;message('Too steep – try another route')}}
   const md=Math.hypot(nx-CH.x,nz-CH.z);if(md>1e-4){const want=Math.atan2(-(nx-CH.x),nz-CH.z);let dh=want-CH.heading;dh=((dh+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;CH.heading+=dh*Math.min(1,dt*10);CH.phase+=md*(sw?1.9:3.1);CH.x=nx;CH.z=nz;moved=md}}}
  CH.move+=((moved?1:0)-CH.move)*Math.min(1,dt*8);const w=waterAt(CH.x,CH.z);CH.swim+=((w!=null?1:0)-CH.swim)*Math.min(1,dt*5);if(w!=null&&!moved)CH.phase+=dt*1.2;
- const gy=groundL(CH.x,CH.z)*S.exag,ty=w!=null?Math.max(gy,w-1.05*SC+.12):gy;CH.y+=(ty-CH.y)*Math.min(1,dt*10);resTick(dt,moved,w!=null);return moved>0||CH.move>.02}
+ const gy=groundL(CH.x,CH.z)*S.exag,ty=w!=null?Math.max(gy,w-1.05*SC+.12):gy;CH.y+=(ty-CH.y)*Math.min(1,dt*10);if(moved&&!inCake())reveal(CH.x,CH.z);resTick(dt,moved,w!=null);return moved>0||CH.move>.02}
 /* ---- uncleared area: local terrain generated from the world around the character ---- */
 const WILD={N:193,size:768,cx:1e9,cz:1e9,h:null,cov:null,texH:gl.createTexture(),texC:gl.createTexture(),ready:false,segs:[],vao:gl.createVertexArray(),ib:gl.createBuffer(),count:0};
 {const N=WILD.N,ix=new Uint32Array((N-1)*(N-1)*6);let k=0;for(let y=0;y<N-1;y++)for(let x=0;x<N-1;x++){const a=y*N+x,b=a+1,c=a+N,d=c+1;ix[k++]=a;ix[k++]=c;ix[k++]=b;ix[k++]=b;ix[k++]=c;ix[k++]=d}gl.bindVertexArray(WILD.vao);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,WILD.ib);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,ix,gl.STATIC_DRAW);gl.bindVertexArray(null);WILD.count=k}
@@ -1026,59 +1051,60 @@ void main(){vec2 p=vPos.xz;if(max(abs(p.x),abs(p.y))<uCake)discard;vec3 N=normal
  c=mix(c,lin(vec3(.45,.44,.41))*(.65+.55*fbm(p/9.)),smoothstep(.42,.62,slope));
  c=mix(c,lin(vec3(.86,.88,.91))*(.92+.08*vnoise(p/3.)),smoothstep(-2.,-4.,T)*(1.-smoothstep(.45,.6,slope)));
  c=mix(c,lin(vec3(.86,.8,.6))*(.9+.12*vnoise(p/1.1)),smoothstep(2.5,.8,Hw)*(1.-smoothstep(.15,.3,slope)));
- c=roads(p,c);o=vec4(finish(light(c,N,1.,1.),vPos),1);}`);
+ c=roads(p,rwPaint(p,c));o=vec4(finish(light(c,N,1.,1.),vPos),1);}`);
 const wildC=instSet(P.tree,treeGeo(0),treeLayout),wildB=instSet(P.tree,treeGeo(1),treeLayout);
 function micro(wx,wz){return(vn(wx/24,wz/24,WG.SEED+931)-.5)*1.4+(vn(wx/9,wz/9,WG.SEED+932)-.5)*.5}
 function coverAt(wx,wz,H){const [T0,M0]=climate(wx,wz,H),T=T0+(vn(wx/700,wz/700,WG.SEED+941)-.5)*3,Mo=M0+(vn(wx/900,wz/900,WG.SEED+942)-.5)*.08;
  const des=sstep(20,24,T)*sstep(.42,.32,Mo),farm=sstep(6,9,T)*(1-sstep(23,26,T))*sstep(.27,.33,Mo)*(1-sstep(650,950,H))*(vn(wx/9000,wz/9000,WG.SEED+905)>=.38?1:0);
  const wood=vn(wx/2600,wz/2600,WG.SEED+904),thr=(.3+(.55-.3)*sstep(6,10,T))+.1*sstep(18,23,T);let fo=sstep(thr,thr+.07,Mo+(wood-.5)*.4)*(1-sstep(.5,2.5,1-T))*(1-sstep(1800,2300,H))*(1-des);
  fo=sstep(.45,.55,fo+(vn(wx/60,wz/60,WG.SEED+943)-.5)*.35);if(H<1.5)fo=0;return[fo,farm*(1-fo),des*(1-fo),T]}
-const seaL=()=>-SITE.shift;
-function buildWild(cx,cz){const N=WILD.N,sp=WILD.size/(N-1),x0=cx-WILD.size/2,z0=cz-WILD.size/2,h=new Float32Array(N*N),cv=new Uint8Array(N*N*4),half=mapHalf();
- const segs=netNear(SITE.x+cx,SITE.z+cz,WILD.size*.75+40);WILD.segs=segs;
+const seaL=()=>-ORG.shift;
+function buildWild(cx,cz){const N=WILD.N,sp=WILD.size/(N-1),x0=cx-WILD.size/2,z0=cz-WILD.size/2,h=new Float32Array(N*N),cv=new Uint8Array(N*N*4),half=cakeHalf();
+ const segs=netNear(ORG.x+cx,ORG.z+cz,WILD.size*.75+40);WILD.segs=segs;
  for(let j=0;j<N;j++)for(let i=0;i<N;i++){const k=j*N+i,lx=x0+i*sp,lz=z0+j*sp;if(Math.abs(lx)<half-world.cs&&Math.abs(lz)<half-world.cs){h[k]=hAt(lx,lz,world.h);continue}
-  const wx=SITE.x+lx,wz=SITE.z+lz;let H=worldH(wx,wz)+corrAt(wx,wz)+micro(wx,wz);
+  const wx=ORG.x+lx,wz=ORG.z+lz;let H=worldH(wx,wz)+corrAt(wx,wz)+micro(wx,wz);
   for(const s of segs){const [d,px,pz]=segDist(s,wx,wz),hw=s.k?4:12,bl=s.k?14:20;if(d<hw+bl){const rh=Math.max(1.5,worldH(px,pz,10)+corrAt(px,pz));H+=(rh-H)*(1-sstep(hw+2,hw+bl,d))}}
-  if(Math.abs(lx)<=half+world.cs*2&&Math.abs(lz)<=half+world.cs*2)H=hAt(clamp(lx,-half,half),clamp(lz,-half,half),world.h)+SITE.shift;
-  h[k]=H-SITE.shift;const c=coverAt(wx,wz,H);cv[k*4]=c[0]*255;cv[k*4+1]=c[1]*255;cv[k*4+2]=c[2]*255;cv[k*4+3]=255}
+  if(G.away){const [w,tg]=rwWeight(G.away.rw,lx,lz);if(w>0)H+=(tg-H)*w}
+  if(half>0&&Math.abs(lx)<=half+world.cs*2&&Math.abs(lz)<=half+world.cs*2)H=hAt(clamp(lx,-half,half),clamp(lz,-half,half),world.h)+ORG.shift;
+  h[k]=H-ORG.shift;const c=coverAt(wx,wz,H);cv[k*4]=c[0]*255;cv[k*4+1]=c[1]*255;cv[k*4+2]=c[2]*255;cv[k*4+3]=255}
  setTex(WILD.texH,gl.R32F,gl.RED,gl.FLOAT,N,N,h,gl.NEAREST);setTex(WILD.texC,gl.RGBA8,gl.RGBA,gl.UNSIGNED_BYTE,N,N,cv,gl.LINEAR);Object.assign(WILD,{cx,cz,h,cov:cv,ready:true});
  // trees
- const rng=mulberry(hash32(Math.round(SITE.x+cx)+'|'+Math.round(SITE.z+cz))),A=[],B=[],st=6.5;
+ const rng=mulberry(hash32(Math.round(ORG.x+cx)+'|'+Math.round(ORG.z+cz))),A=[],B=[],st=6.5;
  for(let z=z0+st/2;z<z0+WILD.size;z+=st)for(let x=x0+st/2;x<x0+WILD.size;x+=st){const px=x+(rng()-.5)*st*.9,pz=z+(rng()-.5)*st*.9;if(Math.max(Math.abs(px),Math.abs(pz))<half+2)continue;
   const u=(px-x0)/sp,v=(pz-z0)/sp,i=clamp(Math.round(u),0,N-1),j=clamp(Math.round(v),0,N-1),k=j*N+i,fo=cv[k*4]/255,base=h[k];if(base<seaL()+.6)continue;
-  if(rng()>fo*.8+.012)continue;let near=false;for(const s of segs)if(segDist(s,SITE.x+px,SITE.z+pz)[0]<(s.k?7:17))near=true;if(near)continue;
-  const T=climate(SITE.x+px,SITE.z+pz,base+SITE.shift)[0],isC=rng()<(T<8?.85:T<17?.45:.15),vv=rng(),hgt=isC?10+rng()*14:8+rng()*10,col=isC?[.13+.06*vv,.27+.1*vv,.17+.05*vv]:[.24+.12*vv,.4+.14*vv,.15+.05*vv];
+  if(rng()>fo*.8+.012)continue;let near=false;for(const s of segs)if(segDist(s,ORG.x+px,ORG.z+pz)[0]<(s.k?7:17))near=true;if(near)continue;if(G.away&&!treeOKr(G.away.rw,px,pz))continue;
+  const T=climate(ORG.x+px,ORG.z+pz,base+ORG.shift)[0],isC=rng()<(T<8?.85:T<17?.45:.15),vv=rng(),hgt=isC?10+rng()*14:8+rng()*10,col=isC?[.13+.06*vv,.27+.1*vv,.17+.05*vv]:[.24+.12*vv,.4+.14*vv,.15+.05*vv];
   (isC?A:B).push(px,pz,hgt,rng(),...col,base)}
  wildC.set(new Float32Array(A));wildB.set(new Float32Array(B));setSegs(segs);needsDraw=true}
-function setSegs(list){SEGS.n=0;for(const s of list.slice(0,48)){const i=SEGS.n++;SEGS.a.set([s.a[0]-SITE.x,s.a[1]-SITE.z,s.b[0]-SITE.x,s.b[1]-SITE.z],i*4);SEGS.k[i]=s.k}}
-function groundL(x,z){const half=mapHalf();if(Math.abs(x)<=half&&Math.abs(z)<=half)return hAt(x,z,world.h);
+function setSegs(list){SEGS.n=0;for(const s of list.slice(0,48)){const i=SEGS.n++;SEGS.a.set([s.a[0]-ORG.x,s.a[1]-ORG.z,s.b[0]-ORG.x,s.b[1]-ORG.z],i*4);SEGS.k[i]=s.k}}
+function groundL(x,z){const half=cakeHalf();if(Math.abs(x)<=half&&Math.abs(z)<=half)return hAt(x,z,world.h);
  if(WILD.ready){const N=WILD.N,sp=WILD.size/(N-1),u=(x-(WILD.cx-WILD.size/2))/sp,v=(z-(WILD.cz-WILD.size/2))/sp;if(u>=0&&v>=0&&u<N-1&&v<N-1){const i=u|0,j=v|0,fu=u-i,fv=v-j,k=j*N+i,a=WILD.h;return(a[k]*(1-fu)+a[k+1]*fu)*(1-fv)+(a[k+N]*(1-fu)+a[k+N+1]*fu)*fv}}
- return worldH(SITE.x+x,SITE.z+z,13)+corrAt(SITE.x+x,SITE.z+z)-SITE.shift}
-function waterLevelL(x,z){const half=mapHalf();if(Math.abs(x)<=half&&Math.abs(z)<=half){const {n,cs,wl}=world,cx=clamp(Math.round(x/cs+(n-1)/2),0,n-1),cz=clamp(Math.round(z/cs+(n-1)/2),0,n-1),w=wl[cz*n+cx];return w===w&&hAt(x,z,world.h)<w-.35?w:null}
+ return worldH(ORG.x+x,ORG.z+z,13)+corrAt(ORG.x+x,ORG.z+z)-ORG.shift}
+function waterLevelL(x,z){const half=cakeHalf();if(Math.abs(x)<=half&&Math.abs(z)<=half){const {n,cs,wl}=world,cx=clamp(Math.round(x/cs+(n-1)/2),0,n-1),cz=clamp(Math.round(z/cs+(n-1)/2),0,n-1),w=wl[cz*n+cx];return w===w&&hAt(x,z,world.h)<w-.35?w:null}
  return groundL(x,z)<seaL()-.35?seaL():null}
 window.groundTopL=(x,z)=>{const w=waterLevelL(x,z),g=groundL(x,z);return w!=null?Math.max(g,w):g};
 function pickL(px,py){if(!VP)return null;const {o,d}=ray(px,py),ex=S.exag;let prev=0;for(let t=0;t<2500;t+=1.5){const x=o[0]+d[0]*t,y=o[1]+d[1]*t,z=o[2]+d[2]*t;if(y<=groundTopL(x,z)*ex){let lo=prev,hi=t;for(let k=0;k<10;k++){const m=(lo+hi)/2;if(o[1]+d[1]*m<=groundTopL(o[0]+d[0]*m,o[2]+d[2]*m)*ex)hi=m;else lo=m}return[o[0]+d[0]*hi,0,o[2]+d[2]*hi]}prev=t}return null}
 window.drawWild=L=>{if(!WILD.ready)return;const u=common(WP,L),N=WILD.N,sp=WILD.size/(N-1);gl.activeTexture(gl.TEXTURE7);gl.bindTexture(gl.TEXTURE_2D,WILD.texH);gl.activeTexture(gl.TEXTURE8);gl.bindTexture(gl.TEXTURE_2D,WILD.texC);
- gl.uniform1i(u('uWH'),7);gl.uniform1i(u('uWC'),8);gl.uniform4f(u('uWP'),WILD.cx-WILD.size/2,WILD.cz-WILD.size/2,sp,N);gl.uniform1f(u('uSea'),seaL());gl.uniform2f(u('uSiteW'),SITE.x,SITE.z);gl.uniform1f(u('uCake'),mapHalf()-.5);
+ gl.uniform1i(u('uWH'),7);gl.uniform1i(u('uWC'),8);gl.uniform4f(u('uWP'),WILD.cx-WILD.size/2,WILD.cz-WILD.size/2,sp,N);gl.uniform1f(u('uSea'),seaL());gl.uniform2f(u('uSiteW'),ORG.x,ORG.z);gl.uniform1f(u('uCake'),cakeHalf()-.5);
  gl.bindVertexArray(WILD.vao);gl.drawElements(gl.TRIANGLES,WILD.count,gl.UNSIGNED_INT,0);
  const tu=common(P.tree,L);gl.uniform1f(tu('uTreeScale'),RS.treeScale??S.treeSize);for(const set of [wildC,wildB])if(set.count){gl.bindVertexArray(set.vao);gl.drawArraysInstanced(gl.TRIANGLES,0,set.verts,set.count)}gl.bindVertexArray(null)};
-function wildUpdate(){const half=mapHalf(),edge=Math.max(Math.abs(AOE.tx),Math.abs(AOE.tz));if(edge<half-700)return;if(!WILD.ready||Math.hypot(AOE.tx-WILD.cx,AOE.tz-WILD.cz)>170)buildWild(Math.round(AOE.tx/32)*32,Math.round(AOE.tz/32)*32)}
+function wildUpdate(){const half=cakeHalf(),edge=Math.max(Math.abs(AOE.tx),Math.abs(AOE.tz));if(edge<half-700)return;if(!WILD.ready||Math.hypot(AOE.tx-WILD.cx,AOE.tz-WILD.cz)>170)buildWild(Math.round(AOE.tx/32)*32,Math.round(AOE.tz/32)*32)}
 
 /* ---- resources: energy, water, food, money ---- */
 G.money=0;G.returning=false;G.storyT=0;
 window.STORY=window.STORY||{onWander:null};
-function inCake(c=CH){const h=mapHalf();return Math.abs(c.x)<=h&&Math.abs(c.z)<=h}
-function nearMotorway(){if(!WILD.ready)return false;const wx=SITE.x+CH.x,wz=SITE.z+CH.z;return WILD.segs.some(s=>s.k===0&&segDist(s,wx,wz)[0]<14)}
+function inCake(c=CH){if(G.away)return Math.hypot(ORG.x+c.x-G.away.cx,ORG.z+c.z-G.away.cz)<7000;const h=mapHalf();return Math.abs(c.x)<=h&&Math.abs(c.z)<=h}
+function nearMotorway(){if(!WILD.ready)return false;const wx=ORG.x+CH.x,wz=ORG.z+CH.z;return WILD.segs.some(s=>s.k===0&&segDist(s,wx,wz)[0]<14)}
 function resTick(dt,moved,swim){const inside=inCake();
- if(inside){if(CH.res.out){CH.res.out=false;CH.res.warn=0;message('Back in the camp area · supplies are replenished')}CH.res.water=Math.min(100,CH.res.water+dt*6);CH.res.food=Math.min(100,CH.res.food+dt*4);if(!moved)CH.res.energy=Math.min(100,CH.res.energy+dt*4)}
+ if(inside){if(CH.res.out){CH.res.out=false;CH.res.warn=0;message(G.away?'Back in the mapped area':'Back in the camp area · supplies are replenished')}if(!G.away){CH.res.water=Math.min(100,CH.res.water+dt*6);CH.res.food=Math.min(100,CH.res.food+dt*4);if(!moved)CH.res.energy=Math.min(100,CH.res.energy+dt*4)}}
  else{if(!CH.res.out){CH.res.out=true;message('Uncleared area: no houses or vehicles here. Energy, water and food are being used up.')}
   const k=swim?2.6:1;CH.res.energy-=moved/150*k;CH.res.water-=moved/120+dt*.03;CH.res.food-=moved/220+dt*.015;if(!moved&&CH.res.food>5&&CH.res.water>5)CH.res.energy=Math.min(100,CH.res.energy+dt*.6);
   const low=Math.min(CH.res.water,CH.res.food,CH.res.energy);if(low<30&&CH.res.warn<1){CH.res.warn=1;message((CH.res.water<30?'Drinking water':CH.res.food<30?'Food':'Energy')+' is running low. You cannot go further without supplies.')}
   if(low<=6&&!G.returning)forceReturn('Out of strength. '+(CH.res.water<=6?'Without drinking water':CH.res.food<=6?'Without food':'Exhausted')+', '+CH.name+' has to return to camp.');
-  G.storyT+=dt;if(G.storyT>1&&window.STORY.onWander){G.storyT=0;const r=window.STORY.onWander({distance:Math.hypot(CH.x-G.camp.x,CH.z-G.camp.z),res:{...CH.res}});if(r&&r.returnToCamp)forceReturn(r.message||'The character has to return to camp.');else if(r&&r.message)message(r.message)}}
+  G.storyT+=dt;if(G.storyT>1&&window.STORY.onWander){G.storyT=0;const r=window.STORY.onWander({distance:Math.hypot(CH.x-homePos().x,CH.z-homePos().z),res:{...CH.res}});if(r&&r.returnToCamp)forceReturn(r.message||'The character has to return to camp.');else if(r&&r.message)message(r.message)}}
  for(const k of ['energy','water','food'])CH.res[k]=clamp(CH.res[k],0,100);resHud()}
-async function forceReturn(msg){G.returning=true;busy(true);message(msg);await new Promise(r=>setTimeout(r,1800));await fade(true,900);CH.x=G.camp.x;CH.z=G.camp.z;CH.tx=null;CH.y=groundL(CH.x,CH.z)*S.exag;AOE.goal.tx=AOE.tx=CH.x;AOE.goal.tz=AOE.tz=CH.z;G.follow=true;
- Object.assign(CH.res,{energy:45,water:55,food:55,out:false,warn:0});await fade(false,900);busy(false);G.returning=false;message('Back at camp')}
+async function forceReturn(msg){G.returning=true;busy(true);message(msg);await new Promise(r=>setTimeout(r,1800));await fade(true,900);const hp=homePos();CH.x=hp.x;CH.z=hp.z;CH.tx=null;CH.y=groundL(CH.x,CH.z)*S.exag;AOE.goal.tx=AOE.tx=CH.x;AOE.goal.tz=AOE.tz=CH.z;G.follow=true;
+ Object.assign(CH.res,{energy:45,water:55,food:55,out:false,warn:0});await fade(false,900);busy(false);G.returning=false;message(G.away?'Back at the airfield':'Back at camp')}
 function resHud(){$('tHike').disabled=!(!inCake()&&nearMotorway())||GAMEBUSY;if(G.hover)showCard(G.hover)}
 $('tHike').onclick=()=>{if(G.money<25)message('Nobody stops. A ride costs money (at least €25); you have €'+G.money+'.');else message('Hitchhiking only works on routes planned in the story.')};
 
@@ -1089,7 +1115,7 @@ function chooseCamp(){const {n,cs,land,h}=world,isW=i=>land[i]===8||land[i]===9;
   if(!dw)continue;const sc=Math.hypot(x-n/2,y-n/2)+dw*2;if(sc<bs){bs=sc;best=[x,y]}}
  if(!best)best=[n>>1,n>>1];return{x:(best[0]-(n-1)/2)*cs,z:(best[1]-(n-1)/2)*cs}}
 const campW=()=>({x:SITE.x+G.camp.x,z:SITE.z+G.camp.z});
-function posW(){return G.state==='ground'||G.state==='boot'?{x:SITE.x+CH.x,z:SITE.z+CH.z}:{x:FLY.x,z:FLY.z}}
+function posW(){return G.state==='ground'||G.state==='boot'||G.state==='overview'?{x:ORG.x+CH.x,z:ORG.z+CH.z}:{x:FLY.x,z:FLY.z}}
 
 /* ---- fades & letterbox ---- */
 function fade(on,ms=450){$('fade').style.transitionDuration=ms+'ms';$('fade').classList.toggle('on',on);return new Promise(r=>setTimeout(r,ms+30))}
@@ -1098,86 +1124,115 @@ function busy(on){window.GAMEBUSY=on;document.body.classList.toggle('busy',on);s
 
 /* ---- views ---- */
 function placeParty(){const rw=world.runway,ax=rw?rw.dx:1,az=rw?rw.dz:0;for(const c of PARTY){c.x=G.camp.x+ax*c.off[0]-az*c.off[1];c.z=G.camp.z+az*c.off[0]+ax*c.off[1];c.tx=null;c.y=groundL(c.x,c.z)*S.exag;c.heading=Math.atan2(-(-az),ax)}}
-function groundView(){setView('aoe');AOE.goal={tx:CH.x,tz:CH.z,yaw:AOE.goal.yaw||0,pitch:.98,dist:62};Object.assign(AOE,AOE.goal);AOE.ty=hAt(CH.x,CH.z)*S.exag;G.follow=true;G.state='ground';syncBar()}
-window.gameStart=async()=>{const rw=world.runway;G.camp=rw?{x:rw.ax-rw.dz*rw.side*9+rw.dx*3,z:rw.az+rw.dx*rw.side*9+rw.dz*3}:chooseCamp();placeParty();$('fade').classList.add('on');drawPortrait();AOE.goal.yaw=Math.PI/4;groundView();
+function groundView(){setView('aoe');AOE.goal={tx:CH.x,tz:CH.z,yaw:AOE.goal.yaw||0,pitch:.98,dist:62};Object.assign(AOE,AOE.goal);AOE.ty=groundTopL(CH.x,CH.z)*S.exag;G.follow=true;G.state='ground';syncBar()}
+window.gameStart=async()=>{setLoc(null);const rw=world.runway;if(rw)AIR.push({id:'camp',camp:true,name:SITE.name,x:SITE.x+rw.cx,z:SITE.z+rw.cz,rw});G.camp=rw?{x:rw.ax-rw.dz*rw.side*9+rw.dx*3,z:rw.az+rw.dx*rw.side*9+rw.dz*3}:chooseCamp();placeParty();$('fade').classList.add('on');drawPortrait();AOE.goal.yaw=Math.PI/4;groundView();
  await new Promise(r=>setTimeout(r,200));await fade(false,1200);setTimeout(()=>{buildNetwork();resHud()},400);message('Camp · '+SITE.name+'. Click the ground to walk, click water to swim.')};
 function siteCam(v){Object.assign(cam,v);Object.assign(goal,v);cam.ty=hAt(cam.tx,cam.tz)*S.exag;needsDraw=true}
 function runTween(dur,fn){return new Promise(res=>{G.cine={t0:performance.now(),dur,fn,res}})}
-async function takeoff(){if(G.state!=='ground'||GAMEBUSY)return;busy(true);G.state='takeoff';letterbox(true,'Takeoff · '+SITE.name);
- const a0={dist:AOE.dist,pitch:AOE.pitch};await runTween(1400,p=>{AOE.goal.dist=a0.dist+(420-a0.dist)*p;AOE.goal.pitch=a0.pitch+(1.15-a0.pitch)*p;AOE.goal.tx=CH.x;AOE.goal.tz=CH.z});
- await fade(true,380);S.mode='drone';$('modeIso').classList.remove('on');$('modeDrone').classList.add('on');setView('site');const y0=AOE.yaw;siteCam({tx:CH.x,tz:CH.z,dist:420,pitch:1.15,yaw:y0});await fade(false,380);
- const s=mapSize()*2.6;await runTween(7500,p=>{const e=ease(p);if(world.runway)G.planeAnim=takeoffPose(p*7.5);siteCam({tx:CH.x*(1-e),tz:CH.z*(1-e),dist:Math.exp(Math.log(420)+(Math.log(s)-Math.log(420))*e),pitch:1.15+(.5-1.15)*e,yaw:y0+.9*e})});
- await fade(true,600);G.planeAnim=null;const cp=Math.cos(cam.pitch);FLY.x=SITE.x+cam.tx+cp*Math.sin(cam.yaw)*cam.dist;FLY.z=SITE.z+cam.tz+cp*Math.cos(cam.yaw)*cam.dist;FLY.y=Math.max(0,groundW(FLY.x,FLY.z))+Math.sin(cam.pitch)*cam.dist;FLY.yaw=cam.yaw;FLY.pitch=.42;FLY.alt=1000;FLY.si=0;FLY.travel=null;
- WO.x=Math.round(FLY.x/1024)*1024;WO.z=Math.round(FLY.z/1024)*1024;setView('world');G.state='air';letterbox(false);await fade(false,800);busy(false);message(G.dest?'On the way to the destination':'Airborne · open the map to pick a destination')}
-async function landing(){if(G.state!=='air'||GAMEBUSY)return;busy(true);G.state='landing';G.dest=null;G.landAfter=false;letterbox(true,'Landing · '+SITE.name);await fade(true,600);
- const agl=Math.max(200,FLY.y-Math.max(0,groundW(FLY.x,FLY.z))),p0=.5,dist=mapSize()*2.6,cp=Math.cos(p0),hm=mapHalf(),t0={tx:clamp(FLY.x-SITE.x-cp*Math.sin(FLY.yaw)*dist,-hm,hm),tz:clamp(FLY.z-SITE.z-cp*Math.cos(FLY.yaw)*dist,-hm,hm),dist,pitch:p0,yaw:FLY.yaw};
+async function takeoff(){if(G.state!=='ground'||GAMEBUSY)return;busy(true);G.state='takeoff';const P0=parkedPose();letterbox(true,'Takeoff · '+SITE.name);
+ const a0={dist:AOE.dist,pitch:AOE.pitch};await runTween(1400,p=>{AOE.goal.dist=a0.dist+(420-a0.dist)*p;AOE.goal.pitch=a0.pitch+(1.15-a0.pitch)*p;AOE.goal.tx=P0.x;AOE.goal.tz=P0.z});
+ await fade(true,380);S.mode='drone';$('modeIso').classList.remove('on');$('modeDrone').classList.add('on');setView('site');const y0=AOE.yaw;siteCam({tx:P0.x,tz:P0.z,dist:420,pitch:1.15,yaw:y0});await fade(false,380);
+ const s=mapSize()*2.6;await runTween(7500,p=>{const e=ease(p);if(world.runway)G.planeAnim=takeoffPose(p*7.5);siteCam({tx:P0.x*(1-e),tz:P0.z*(1-e),dist:Math.exp(Math.log(420)+(Math.log(s)-Math.log(420))*e),pitch:1.15+(.5-1.15)*e,yaw:y0+.9*e})});
+ await fade(true,600);G.planeAnim=null;const cp=Math.cos(cam.pitch);FLY.x=ORG.x+cam.tx+cp*Math.sin(cam.yaw)*cam.dist;FLY.z=ORG.z+cam.tz+cp*Math.cos(cam.yaw)*cam.dist;FLY.y=Math.max(0,groundW(FLY.x,FLY.z))+Math.sin(cam.pitch)*cam.dist;FLY.yaw=cam.yaw;FLY.pitch=.42;FLY.alt=1000;FLY.si=0;FLY.travel=null;
+ WO.x=Math.round(FLY.x/1024)*1024;WO.z=Math.round(FLY.z/1024)*1024;setView('world');G.state='air';PLANE.loc='air';letterbox(false);await fade(false,800);busy(false);message(G.dest?'On the way to the destination':'Airborne · open the map to pick a destination')}
+async function takeoffAway(){if(G.state!=='ground'||GAMEBUSY)return;busy(true);G.state='takeoff';const d=G.away;letterbox(true,'Takeoff · '+d.name);const r=curRw();
+ AOE.goal.tx=r.ax;AOE.goal.tz=r.az;AOE.goal.dist=160;AOE.goal.pitch=.85;let last=null;
+ await runTween(6500,p=>{const e=ease(p);G.planeAnim=last=takeoffPose(p*6.5);AOE.goal.tx=r.ax+(last.x-r.ax)*e;AOE.goal.tz=r.az+(last.z-r.az)*e;AOE.goal.dist=160+520*e;AOE.goal.pitch=.85-.3*e});
+ await fade(true,600);G.planeAnim=null;FLY.x=ORG.x+last.x;FLY.z=ORG.z+last.z;FLY.yaw=Math.atan2(-r.dx,-r.dz);FLY.pitch=.42;FLY.alt=1000;FLY.si=0;FLY.travel=null;FLY.y=Math.max(0,groundW(FLY.x,FLY.z))+400;
+ WO.x=Math.round(FLY.x/1024)*1024;WO.z=Math.round(FLY.z/1024)*1024;setView('world');G.state='air';PLANE.loc='air';letterbox(false);await fade(false,800);busy(false);message('On the way to '+(G.dest?G.dest.name:'the destination'))}
+function depart(){const p=PARTY.find(c=>c.inPlane&&c.pilot&&here(c));if(p){CH=p;drawPortrait()}if(G.away)takeoffAway();else takeoff()}
+async function landing(){if(G.state!=='air'||GAMEBUSY)return;busy(true);G.state='landing';G.dest=null;G.landAfter=false;setLoc(null);letterbox(true,'Landing · '+SITE.name);await fade(true,600);
+ const agl=Math.max(200,FLY.y-Math.max(0,groundW(FLY.x,FLY.z))),p0=.5,dist=mapSize()*2.6,cp=Math.cos(p0),hm=mapHalf(),t0={tx:clamp(FLY.x-ORG.x-cp*Math.sin(FLY.yaw)*dist,-hm,hm),tz:clamp(FLY.z-ORG.z-cp*Math.cos(FLY.yaw)*dist,-hm,hm),dist,pitch:p0,yaw:FLY.yaw};
  S.mode='drone';$('modeIso').classList.remove('on');$('modeDrone').classList.add('on');setView('site');siteCam(t0);await fade(false,700);
  const c=G.camp;await runTween(8500,p=>{const e=ease(p);if(world.runway)G.planeAnim=landingPose(p*8.5);siteCam({tx:t0.tx+(c.x-t0.tx)*e,tz:t0.tz+(c.z-t0.tz)*e,dist:Math.exp(Math.log(t0.dist)+(Math.log(160)-Math.log(t0.dist))*e),pitch:p0+(.34-p0)*e,yaw:t0.yaw+.8*e})});
- await fade(true,500);G.planeAnim=null;placeParty();AOE.goal.yaw=cam.yaw;groundView();letterbox(false);await fade(false,700);busy(false);message('Landed at camp')}
-function goLocal(){if(G.state==='ground'||GAMEBUSY)return;if(G.state!=='air')return;const c=campW(),d=Math.hypot(c.x-FLY.x,c.z-FLY.z);if(d<12000)landing();else{G.dest=c;G.landAfter=true;message('Flying back to camp ('+fmtM(d)+') to land')}}
-function goAerial(){if(G.state==='ground')takeoff()}
+ await fade(true,500);G.planeAnim=null;PLANE.loc='camp';arrive();AOE.goal.yaw=cam.yaw;groundView();letterbox(false);await fade(false,700);busy(false);message('Landed at camp')}
+async function landAway(d){if(G.state!=='air'||GAMEBUSY)return;busy(true);G.state='landing';G.dest=null;letterbox(true,'Landing · '+d.name);await fade(true,600);
+ setLoc(d);PLANE.loc=d.id;buildWild(0,0);const r=d.rw;setView('aoe');AOE.goal={tx:0,tz:0,yaw:AOE.yaw||0,pitch:.72,dist:560};Object.assign(AOE,AOE.goal);AOE.ty=groundL(0,0)*S.exag;G.follow=false;await fade(false,700);
+ await runTween(8500,p=>{const e=ease(p);G.planeAnim=landingPose(p*8.5);AOE.goal.tx=r.ax*e;AOE.goal.tz=r.az*e;AOE.goal.dist=560+(70-560)*e;AOE.goal.pitch=.72+(.98-.72)*e});
+ await fade(true,500);G.planeAnim=null;arrive();groundView();letterbox(false);await fade(false,700);busy(false);message('Landed at '+d.name)}
+function goLocal(){if(GAMEBUSY)return;if(G.state==='overview'){groundView();return}if(G.state==='air')message('In flight. The aircraft lands at the airfield you picked on the map.')}
+function goAerial(){if(GAMEBUSY||G.state!=='ground')return;G.state='overview';G.tray=false;
+ if(!G.away){const hm=mapHalf();S.mode='drone';$('modeIso').classList.remove('on');$('modeDrone').classList.add('on');setView('site');siteCam({tx:clamp(CH.x,-hm,hm),tz:clamp(CH.z,-hm,hm),dist:mapSize()*.9,pitch:.62,yaw:AOE.yaw})}
+ else{FLY.x=ORG.x+CH.x;FLY.z=ORG.z+CH.z+1800;FLY.yaw=0;FLY.pitch=.5;FLY.alt=1000;FLY.si=0;FLY.travel=null;FLY.y=Math.max(0,groundW(FLY.x,FLY.z))+1000;WO.x=Math.round(FLY.x/1024)*1024;WO.z=Math.round(FLY.z/1024)*1024;setView('world')}
+ syncBar();message('Aerial view · Local takes you back to the ground')}
 
 /* ---- flight autopilot ---- */
 function airTick(dt){FLY.si=0;FLY.travel=null;const v=G.dest?G.speed/3.6:70;
  if(G.dest){const dx=G.dest.x-FLY.x,dz=G.dest.z-FLY.z,d=Math.hypot(dx,dz),want=Math.atan2(-dx,-dz);let dy=want-FLY.yaw;dy=((dy+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;FLY.yaw+=clamp(dy,-dt*1.1,dt*1.1);
   const st=Math.min(d,v*dt*(Math.abs(dy)<1?1:.35));FLY.x+=-Math.sin(FLY.yaw)*st;FLY.z+=-Math.cos(FLY.yaw)*st;
-  if(G.landAfter&&d<Math.max(6000,v*3)){landing();return}if(d<Math.max(300,v*dt*1.5)){G.dest=null;message('Arrived · pick a new destination on the map')}}
+  if(d<Math.max(6000,v*3)){if(G.dest.camp)landing();else landAway(G.dest);return}}
  else{FLY.yaw+=dt*.1;FLY.x+=-Math.sin(FLY.yaw)*v*dt;FLY.z+=-Math.cos(FLY.yaw)*v*dt}needsDraw=true}
-window.gameHud=()=>{const g=groundW(FLY.x,FLY.z,11),agl=FLY.y-Math.max(0,g),hd=((-FLY.yaw*180/Math.PI)%360+360)%360;$('hud').textContent='';let parts=[[G.dest?Math.round(G.speed).toLocaleString('en-US')+' km/h':'circling','speed'],[fmtM(agl),'above ground'],[String(Math.round(hd)).padStart(3,'0')+'°','heading']];
- if(G.dest){const d=Math.hypot(G.dest.x-FLY.x,G.dest.z-FLY.z);parts.push([fmtM(d),G.landAfter?'to camp':'to destination'],[eta(d),'arrival in'])}
+window.gameHud=()=>{const g=groundW(FLY.x,FLY.z,11),agl=FLY.y-Math.max(0,g),hd=((-FLY.yaw*180/Math.PI)%360+360)%360;$('hud').textContent='';let parts=[[G.dest?Math.round(G.speed).toLocaleString('en-US')+' km/h':(G.state==='overview'?'hovering':'circling'),'speed'],[fmtM(agl),'above ground'],[String(Math.round(hd)).padStart(3,'0')+'°','heading']];
+ if(G.dest){const d=Math.hypot(G.dest.x-FLY.x,G.dest.z-FLY.z);parts.push([fmtM(d),'to '+G.dest.name],[eta(d),'arrival in'])}
  for(const [v,l] of parts){const s=document.createElement('span'),b=document.createElement('b');b.textContent=v;s.append(b,document.createTextNode(l));$('hud').append(s)}};
 function eta(d){const s=Math.round(d/(G.speed/3.6));return s<60?s+' s':s<3600?Math.floor(s/60)+' min '+String(s%60).padStart(2,'0')+' s':Math.floor(s/3600)+' h '+Math.floor(s%3600/60)+' min'}
+
+/* ---- mapping: what the party has seen ---- */
+const EXP=new Map(),EXC=200;let expLast=null;
+function cellColor(x,z){const H=worldH(x,z,10)+corrAt(x,z);if(H<0){const d=Math.min(1,-H/60);return[40+20*(1-d),90+40*(1-d),130+30*(1-d)]}const [fo,fa,de,T]=coverAt(x,z,H);let c=T<-3?[230,234,238]:de>.5?[214,186,128]:fo>.5?(T<8?[44,78,52]:[58,92,48]):fa>.5?[176,160,92]:[118,140,78];if(H<2.5)c=[220,205,160];const s=clamp(.85+(H-worldH(x-60,z,9))/90,.7,1.2);return c.map(v=>v*s)}
+function reveal(lx,lz){const wx=ORG.x+lx,wz=ORG.z+lz;if(expLast&&Math.hypot(wx-expLast[0],wz-expLast[1])<60)return;expLast=[wx,wz];const R=350;
+ for(let j=Math.floor((wz-R)/EXC);j<=Math.floor((wz+R)/EXC);j++)for(let i=Math.floor((wx-R)/EXC);i<=Math.floor((wx+R)/EXC);i++){const cx=(i+.5)*EXC,cz=(j+.5)*EXC;if(Math.hypot(cx-wx,cz-wz)>R)continue;const k=i+','+j;if(!EXP.has(k))EXP.set(k,{i,j,c:'rgb('+cellColor(cx,cz).map(Math.round).join(',')+')'})}}
+function areaImage(cx,cz,R=7000,P=112){const cv=document.createElement('canvas');cv.width=cv.height=P;const c=cv.getContext('2d'),im=c.createImageData(P,P);for(let j=0;j<P;j++)for(let i=0;i<P;i++){const dx=(i+.5)/P*2-1,dz=(j+.5)/P*2-1;if(dx*dx+dz*dz>1)continue;const col=cellColor(cx+dx*R,cz+dz*R),o=(j*P+i)*4;im.data[o]=col[0];im.data[o+1]=col[1];im.data[o+2]=col[2];im.data[o+3]=255}c.putImageData(im,0,0);return cv}
+window.STORY.addDestination=({name,x,z})=>{const f=chooseRunwayW(x,z);if(!f){message('No flat land for an airfield near '+name,true);return null}const d={id:'d'+AIR.length,name,cx:x,cz:z,x:f.wx,z:f.wz,wx:f.wx,wz:f.wz,rw:f.rw,img:areaImage(x,z)};AIR.push(d);return d};
+$('devDest').onclick=()=>{if(AIR.some(a=>a.test)){message('The test destination is already on the map');return}let best=null,bs=Infinity;for(let j=0;j<60;j++)for(let i=0;i<80;i++){const x=(i+.5)/80*WG.WX,z=(j+.5)/60*WG.WZ,d=Math.hypot(x-SITE.x,z-SITE.z);if(d<300e3||d>700e3)continue;const h=worldH(x,z,8);if(h<25||h>300)continue;const s=Math.abs(d-450e3)/1e5+h/400;if(s<bs){bs=s;best=[x,z]}}
+ if(!best){message('No suitable land found',true);return}const d=window.STORY.addDestination({name:'Test destination',x:best[0],z:best[1]});if(d){d.test=true;message('Test destination added: '+fmtM(Math.hypot(d.x-SITE.x,d.z-SITE.z))+' '+bearing(d.x-SITE.x,d.z-SITE.z)+' of camp')}};
 
 /* ---- 2D maps ---- */
 const airy=()=>G.state==='air'||G.state==='takeoff'||G.state==='landing';
 function mapXf(cv,big){const W=cv.width,H=cv.height,p=posW();if(big)return{W,H,cx:G.mv.cx,cz:G.mv.cz,mpp:G.mv.mpp};return{W,H,cx:p.x,cz:p.z,mpp:(airy()?160000:14000)/W}}
 function drawMap(cv,big){const c=cv.getContext('2d'),{W,H,cx,cz,mpp}=mapXf(cv,big),sx=x=>W/2+(x-cx)/mpp,sz=z=>H/2+(z-cz)/mpp,k=Math.max(1,W/600),p=posW(),dev=$('netDev').checked;c.fillStyle='#000';c.fillRect(0,0,W,H);
  if(dev){c.imageSmoothingEnabled=true;c.drawImage(WMAP.canvas,sx(0),sz(0),WG.WX/mpp,WG.WZ/mpp);if(NET.ready){const L=(pts,col,w,dash)=>{c.strokeStyle=col;c.lineWidth=w*k;c.setLineDash(dash.map(v=>v*k));c.beginPath();pts.forEach(([x,z],i)=>i?c.lineTo(sx(x),sz(z)):c.moveTo(sx(x),sz(z)));c.stroke()};for(const q of NET.roads)L(q,'#f2a33a',2.2,[]);for(const q of NET.rails)L(q,'#2b2b2b',1.6,[5,3]);c.setLineDash([]);c.fillStyle='#fff';for(const ci of NET.cities){c.beginPath();c.arc(sx(ci.x),sz(ci.z),2.5*k,0,7);c.fill()}}}
+ c.fillStyle='#000';for(const e of EXP.values()){const x=sx(e.i*EXC),z=sz(e.j*EXC),w=EXC/mpp+.8;if(x<-w||z<-w||x>W||z>H)continue;c.fillStyle=e.c;c.fillRect(x,z,w,w)}
+ for(const a of AIR)if(a.img){const R=7000/mpp;c.imageSmoothingEnabled=R*2<a.img.width;c.drawImage(a.img,sx(a.cx)-R,sz(a.cz)-R,R*2,R*2)}
  if(SITE.ready&&miniBase){const s=world.n*world.cs,px=Math.max(s/mpp,4*k),x0=sx(SITE.x)-px/2,z0=sz(SITE.z)-px/2;c.imageSmoothingEnabled=px<miniBase.width;c.drawImage(miniBase,x0,z0,px,px)}
+ const plan=planMode();for(const a of AIR){const x=sx(a.x),z=sz(a.z),r=a.camp?world.runway:a.rw,L=Math.max(9*k,520/mpp),sel=plan&&PLANE.loc!==a.id;c.save();c.translate(x,z);c.rotate(Math.atan2(r.dz,r.dx));c.fillStyle='#1b1b1b';c.fillRect(-L/2-2*k,-3*k,L+4*k,6*k);c.fillStyle='#f4f4f4';c.fillRect(-L/2,-1.2*k,L,2.4*k);c.restore();
+  if(sel){c.strokeStyle=(G.pick===a||G.dest===a)?'#ffd166':'#9ddd8c';c.lineWidth=2*k;c.beginPath();c.arc(x,z,13*k,0,7);c.stroke()}if(big){c.font='600 '+(12*k)+'px system-ui';c.lineWidth=3*k;c.strokeStyle='#000c';c.strokeText(a.name,x+15*k,z+4*k);c.fillStyle='#fff';c.fillText(a.name,x+15*k,z+4*k)}}
  if(big&&(G.pick||G.dest)){const t=G.pick||G.dest,tx=sx(t.x),tz=sz(t.z);c.strokeStyle='#ffffffcc';c.lineWidth=1.5*k;c.setLineDash([6*k,6*k]);c.beginPath();c.moveTo(sx(p.x),sz(p.z));c.lineTo(tx,tz);c.stroke();c.setLineDash([]);c.beginPath();c.arc(tx,tz,7*k,0,7);c.moveTo(tx-12*k,tz);c.lineTo(tx+12*k,tz);c.moveTo(tx,tz-12*k);c.lineTo(tx,tz+12*k);c.stroke()}
  if(big){c.fillStyle='#ffffff99';c.font=(11*k)+'px system-ui';c.fillText('Scale: '+fmtM(mpp*120*k)+' per 120 px · wheel zooms, drag pans',16*k,28*k)}
  const r=Math.max(5,(big?7:6)*Math.max(1,k*.7));c.beginPath();c.arc(sx(p.x),sz(p.z),r,0,7);c.fillStyle='#fff';c.fill();c.lineWidth=Math.max(2.5,r*.45);c.strokeStyle='#2f7fe0';c.stroke()}
 function mapToWorld(cv,e){const r=cv.getBoundingClientRect(),{W,H,cx,cz,mpp}=mapXf(cv,true),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;return{x:clamp(cx+(x-W/2)*mpp,20e3,WG.WX-20e3),z:clamp(cz+(y-H/2)*mpp,20e3,WG.WZ-20e3)}}
 function sizeCanvas(cv){const r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);const w=Math.max(1,Math.round(r.width*d)),h=Math.max(1,Math.round(r.height*d));if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}}
-function openMap(on){const el=$('gmap');el.hidden=on===undefined?!el.hidden:!on;if(!el.hidden){G.pick=null;sizeCanvas($('gmapCanvas'));const p=posW();G.mv={cx:p.x,cz:p.z,mpp:60000/$('gmapCanvas').width};syncMapInfo()}syncBar()}
+const planMode=()=>pilotAboard()||G.state==='air';
+function openMap(on){const el=$('gmap');el.hidden=on===undefined?!el.hidden:!on;el.classList.toggle('plan',planMode());if(!el.hidden){G.pick=null;sizeCanvas($('gmapCanvas'));const p=posW();G.mv={cx:p.x,cz:p.z,mpp:60000/$('gmapCanvas').width};syncMapInfo()}syncBar()}
 const SPMIN=200,SPMAX=50000;const spFromSlider=v=>Math.round(SPMIN*Math.pow(SPMAX/SPMIN,v/1000)/50)*50;
-function syncMapInfo(){$('gSpeedV').textContent=G.speed.toLocaleString('en-US')+' km/h';const t=G.pick||G.dest,p=posW();if(t){const d=Math.hypot(t.x-p.x,t.z-p.z);$('gInfo').textContent=(G.pick?'Destination: ':'En route: ')+fmtM(d)+' '+bearing(t.x-p.x,t.z-p.z)+' · flight time about '+eta(d)}else $('gInfo').textContent='Click the map to pick a destination.';$('gGo').disabled=!G.pick}
+function syncMapInfo(){$('gSpeedV').textContent=G.speed.toLocaleString('en-US')+' km/h';const t=G.pick||G.dest,p=posW();if(t){const d=Math.hypot(t.x-p.x,t.z-p.z);$('gInfo').textContent=(G.pick?'Destination: ':'En route to ')+t.name+' · '+fmtM(d)+' '+bearing(t.x-p.x,t.z-p.z)+' · flight time about '+eta(d)}else $('gInfo').textContent=planMode()?'Click an airfield to pick the destination.':'A pilot has to board the aircraft before a flight can be planned.';$('gGo').disabled=!G.pick}
 $('gSpeed').addEventListener('input',()=>{G.speed=spFromSlider(Number($('gSpeed').value));syncMapInfo()});G.speed=spFromSlider(Number($('gSpeed').value));
 {const cv=$('gmapCanvas');let dr=null;cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);dr={x:e.clientX,y:e.clientY,moved:false}});
  cv.addEventListener('pointermove',e=>{if(!dr)return;const dx=e.clientX-dr.x,dy=e.clientY-dr.y;if(Math.hypot(dx,dy)>4)dr.moved=true;if(dr.moved){const s=cv.width/cv.getBoundingClientRect().width;G.mv.cx-=dx*s*G.mv.mpp;G.mv.cz-=dy*s*G.mv.mpp;dr.x=e.clientX;dr.y=e.clientY}});
- cv.addEventListener('pointerup',e=>{if(dr&&!dr.moved){G.pick=mapToWorld(cv,e);syncMapInfo()}dr=null});
+ cv.addEventListener('pointerup',e=>{if(dr&&!dr.moved&&planMode()){const p=mapToWorld(cv,e),mpp=G.mv.mpp*cv.width/cv.getBoundingClientRect().width;let best=null,bd=24*mpp;for(const a of AIR){if(PLANE.loc===a.id)continue;const d=Math.hypot(a.x-p.x,a.z-p.z);if(d<bd){bd=d;best=a}}if(best)G.pick=best;else message('Pick an airfield. Only cleared areas have airfields.');syncMapInfo()}dr=null});
  cv.addEventListener('wheel',e=>{e.preventDefault();const before=mapToWorld(cv,e),f=Math.exp(e.deltaY*.0015);G.mv.mpp=clamp(G.mv.mpp*f,4,WG.WX*1.3/cv.width);const after=mapToWorld(cv,e);G.mv.cx+=before.x-after.x;G.mv.cz+=before.z-after.z},{passive:false})}
-$('gGo').onclick=()=>{if(!G.pick||GAMEBUSY)return;G.dest=G.pick;G.pick=null;G.landAfter=false;openMap(false);if(G.state==='ground')takeoff();else message('Heading for the destination · '+fmtM(Math.hypot(G.dest.x-FLY.x,G.dest.z-FLY.z)))};
+$('gGo').onclick=()=>{if(!G.pick||GAMEBUSY)return;G.dest=G.pick;G.pick=null;G.landAfter=false;openMap(false);if(G.state==='ground')depart();else message('Heading for '+G.dest.name+' · '+fmtM(Math.hypot(G.dest.x-FLY.x,G.dest.z-FLY.z)))};
 $('gmapClose').onclick=()=>openMap(false);
 
 /* ---- toolbar ---- */
-function syncBar(){const g=G.state==='ground';$('bLocal').classList.toggle('on',g||G.state==='landing');$('bAerial').classList.toggle('on',G.state==='air'||G.state==='takeoff');$('bMini').classList.toggle('on',G.miniOn);$('bMini').setAttribute('aria-pressed',G.miniOn);$('gminiWrap').hidden=!G.miniOn;
+function syncBar(){const g=G.state==='ground';$('bLocal').classList.toggle('on',g||G.state==='landing');$('bAerial').classList.toggle('on',G.state==='air'||G.state==='takeoff'||G.state==='overview');const pl=planMode();if(G.plIcon!==pl){G.plIcon=pl;$('bFull').innerHTML=pl?PLANE_SVG:ARROW_SVG;$('bFull').title=pl?'Plan a flight (M)':'Full-screen map (M)';$('bFull').classList.toggle('plane',pl)}$('bMini').classList.toggle('on',G.miniOn);$('bMini').setAttribute('aria-pressed',G.miniOn);$('gminiWrap').hidden=!G.miniOn;
  if(!g)G.tray=false;$('tray').hidden=!G.tray;$('bTools').classList.toggle('on',!!G.tray);$('bTools').setAttribute('aria-expanded',!!G.tray);
- document.querySelectorAll('#gbar button').forEach(b=>{if(b.id!=='bMini'&&b.id!=='bGear')b.disabled=GAMEBUSY||(b.id==='bTools'&&!g)});$('bLocal').title=G.state==='air'?'Fly to camp and land':'You are on the ground';$('bAerial').title=g?'Take off':'You are airborne';
+ document.querySelectorAll('#gbar button').forEach(b=>{if(b.id!=='bMini'&&b.id!=='bGear')b.disabled=GAMEBUSY||(b.id==='bTools'&&!g)});$('bLocal').title=G.state==='overview'?'Back to the ground':'Ground view';$('bAerial').title='Aerial view';
  if(G.tray){const r=$('bTools').getBoundingClientRect();$('tray').style.left=r.left+'px'}}
 function drawPortrait(){const cv=$('charPic'),c=cv.getContext('2d'),W=cv.width,h=CH,col=a=>'rgb('+a.map(v=>Math.round(v*255)).join(',')+')';c.clearRect(0,0,W,W);c.fillStyle=col(h.shirt);c.beginPath();c.arc(W/2,W/2,W/2,0,7);c.fill();
  c.fillStyle=col(h.skin);c.fillRect(W*.27,W*.26,W*.46,W*.52);c.fillStyle=col(h.hair);c.fillRect(W*.24,W*.18,W*.52,W*.16);c.fillRect(W*.24,W*.18,W*.08,W*.3);c.fillStyle='#1a1a1a';c.fillRect(W*.36,W*.46,W*.07,W*.07);c.fillRect(W*.57,W*.46,W*.07,W*.07);c.fillStyle='#00000040';c.fillRect(W*.42,W*.64,W*.16,W*.04);
  $('bChar').title=h.name+(h.cond?' · '+h.cond.name:'')+' – press to centre, press again to switch character';$('bChar').setAttribute('aria-label',$('bChar').title)}
 $('bLocal').onclick=goLocal;$('bAerial').onclick=goAerial;$('bFull').onclick=()=>openMap(true);$('bMini').onclick=()=>{G.miniOn=!G.miniOn;syncBar()};$('bGear').onclick=()=>$('panel').classList.toggle('open');$('bTools').onclick=()=>{G.tray=!G.tray;syncBar()};
-function nextChar(){CH=PARTY[(PARTY.indexOf(CH)+1)%PARTY.length];drawPortrait();message(CH.name+(CH.cond?' · '+CH.cond.name+' (needs care within '+CH.cond.days+' days)':''))}
-$('bChar').onclick=()=>{if(GAMEBUSY)return;if(G.state!=='ground'){goLocal();return}if(G.follow&&Math.hypot(AOE.tx-CH.x,AOE.tz-CH.z)<4)nextChar();G.follow=true;AOE.goal.tx=CH.x;AOE.goal.tz=CH.z;needsDraw=true};
+function nextChar(){const hs=PARTY.filter(here);CH=hs[(hs.indexOf(CH)+1)%hs.length]||CH;drawPortrait();message(CH.name+(CH.cond?' · '+CH.cond.name+' (needs care within '+CH.cond.days+' days)':''))}
+$('bChar').onclick=()=>{if(GAMEBUSY)return;if(G.state==='overview'){goLocal();return}if(G.state!=='ground')return;if(G.follow&&Math.hypot(AOE.tx-CH.x,AOE.tz-CH.z)<4)nextChar();G.follow=true;AOE.goal.tx=CH.x;AOE.goal.tz=CH.z;needsDraw=true};
 /* ---- energy ball over the active character, details on hover ---- */
 function toScreen(x,y,z){if(!VP)return null;const v=M.xf(VP,[x,y,z]);if(!(v[2]<1&&v[2]>-1))return null;return[(v[0]+1)/2*cssW,(1-v[1])/2*cssH]}
 const hue=e=>Math.round(clamp(e,0,100)*1.2);
-function syncBall(){const el=$('ball');if(S.view!=='aoe'||G.state!=='ground'||GAMEBUSY){el.hidden=true;return}const s=toScreen(CH.x,CH.y+2.05*SC+.5,CH.z);if(!s){el.hidden=true;return}el.hidden=false;el.style.left=s[0]+'px';el.style.top=s[1]+'px';el.style.background='hsl('+hue(CH.res.energy)+',72%,42%)';el.firstChild.textContent=CH.cond?CH.cond.days:'';el.title=CH.name+' · energy '+Math.round(CH.res.energy)+'%'+(CH.cond?' · '+CH.cond.name+': needs care within '+CH.cond.days+' days':'')}
-function charAt(mx,my){let best=null,bd=28;for(const c of PARTY){const s=toScreen(c.x,c.y+1.1*SC,c.z);if(!s)continue;const d=Math.hypot(s[0]-mx,s[1]-my);if(d<bd){bd=d;best=c}}return best}
+function syncBall(){const el=$('ball');if(S.view!=='aoe'||G.state!=='ground'||GAMEBUSY){el.hidden=true;return}const pp=CH.inPlane&&planeHere()?parkedPose():null,s=pp?toScreen(pp.x,groundL(pp.x,pp.z)*S.exag+6.5,pp.z):toScreen(CH.x,CH.y+2.05*SC+.5,CH.z);if(!s){el.hidden=true;return}el.hidden=false;el.style.left=s[0]+'px';el.style.top=s[1]+'px';el.style.background='hsl('+hue(CH.res.energy)+',72%,42%)';el.firstChild.textContent=CH.cond?CH.cond.days:'';el.title=CH.name+' · energy '+Math.round(CH.res.energy)+'%'+(CH.cond?' · '+CH.cond.name+': needs care within '+CH.cond.days+' days':'')}
+function charAt(mx,my){let best=null,bd=28;for(const c of vis()){const s=toScreen(c.x,c.y+1.1*SC,c.z);if(!s)continue;const d=Math.hypot(s[0]-mx,s[1]-my);if(d<bd){bd=d;best=c}}return best}
 function showCard(c,mx,my){const el=$('hoverCard');if(!c){el.hidden=true;G.hover=null;return}G.hover=c;if(mx!=null){el.style.left=Math.min(cssW-200,mx+16)+'px';el.style.top=Math.max(8,my-120)+'px'}
  const bar=(l,v)=>'<div class="rr"><span>'+l+'</span><i><b style="width:'+Math.round(v)+'%;background:hsl('+hue(v)+',70%,45%)"></b></i></div>';
- el.innerHTML='<strong></strong>'+bar('Energy',c.res.energy)+bar('Water',c.res.water)+bar('Food',c.res.food)+(c.cond?'<p class="cond"></p>':'')+'<p class="zone"></p>';el.querySelector('strong').textContent=c.name+(c===CH?' · active':'');
- if(c.cond)el.querySelector('.cond').textContent=c.cond.name+' · needs care within '+c.cond.days+' days';el.querySelector('.zone').textContent=inCake(c)?'Camp area':'Uncleared area · '+fmtM(Math.hypot(c.x-G.camp.x,c.z-G.camp.z))+' from camp';el.hidden=false}
+ el.innerHTML='<strong></strong>'+bar('Energy',c.res.energy)+bar('Water',c.res.water)+bar('Food',c.res.food)+(c.cond?'<p class="cond"></p>':'')+'<p class="zone"></p>';el.querySelector('strong').textContent=c.name+(c.pilot?' · pilot':'')+(c===CH?' · active':'');
+ if(c.cond)el.querySelector('.cond').textContent=c.cond.name+' · needs care within '+c.cond.days+' days';el.querySelector('.zone').textContent=inCake(c)?(G.away?'Mapped area':'Camp area'):'Uncleared area · '+fmtM(Math.hypot(c.x-homePos().x,c.z-homePos().z))+' from '+(G.away?'the airfield':'camp');el.hidden=false}
 /* ---- input wiring (wrap the generic views) ---- */
 const baseA={...VIEWS.aoe},baseW={...VIEWS.world};
 VIEWS.aoe.down=e=>{if(GAMEBUSY)return;G.click={x:e.clientX,y:e.clientY,b:e.button};baseA.down(e)};
 VIEWS.aoe.move=e=>{if(GAMEBUSY)return;baseA.move(e);if(!AOE.drag){const c=charAt(e.clientX,e.clientY);showCard(c,e.clientX,e.clientY)}if(AOE.drag&&G.click&&Math.hypot(e.clientX-G.click.x,e.clientY-G.click.y)>5&&G.click.b===0)G.follow=false};
-VIEWS.aoe.up=e=>{const c=G.click;baseA.up(e);G.click=null;if(GAMEBUSY||!c||c.b!==0||Math.hypot(e.clientX-c.x,e.clientY-c.y)>5)return;const r=canvas.getBoundingClientRect(),p=pickL(e.clientX-r.left,e.clientY-r.top);if(p){CH.tx=p[0];CH.tz=p[2];G.follow=true;G.mark={x:p[0],z:p[2],t0:performance.now()};needsDraw=true}};
+VIEWS.aoe.up=e=>{const c=G.click;baseA.up(e);G.click=null;if(GAMEBUSY||!c||c.b!==0||Math.hypot(e.clientX-c.x,e.clientY-c.y)>5)return;const r=canvas.getBoundingClientRect(),p=pickL(e.clientX-r.left,e.clientY-r.top);if(p){const pl=planeHere()?parkedPose():null;if(pl&&Math.hypot(p[0]-pl.x,p[2]-pl.z)<8){if(CH.inPlane){message(CH.name+' is already in the aircraft');return}const dp=doorPos();CH.tx=dp.x;CH.tz=dp.z;CH.board=true;G.follow=true;G.mark={x:dp.x,z:dp.z,t0:performance.now()};needsDraw=true;return}
+ if(CH.inPlane){disembark(CH);message(CH.name+' left the aircraft');syncBar()}CH.board=false;CH.tx=p[0];CH.tz=p[2];G.follow=true;G.mark={x:p[0],z:p[2],t0:performance.now()};needsDraw=true}};
 VIEWS.aoe.wheel=e=>{if(!GAMEBUSY)baseA.wheel(e)};VIEWS.aoe.leave=()=>{baseA.leave();showCard(null)};VIEWS.aoe.dbl=()=>{};VIEWS.aoe.mini=()=>{};
 VIEWS.aoe.key=(e,k)=>{if(k==='tab')e.preventDefault();if(GAMEBUSY)return;if(k==='tab'&&G.state==='ground'){nextChar();G.follow=true;AOE.goal.tx=CH.x;AOE.goal.tz=CH.z;needsDraw=true}if(k===' '){G.follow=true;e.preventDefault()}if(k==='q'||k==='e')baseA.key(e,k);if(k==='m')openMap();if(k==='escape')openMap(false)};
-VIEWS.aoe.frame=(dt,now)=>{if(G.state==='ground'){wildUpdate();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].some(k=>keys.has(k)))G.follow=false;AOE.mouse=null;if(charUpdate(dt))needsDraw=true;for(const c of PARTY)if(c!==CH){c.move*=.9;const w=waterLevelL(c.x,c.z);c.y=w!=null?Math.max(groundL(c.x,c.z)*S.exag,w*S.exag-1.05*SC+.12):groundL(c.x,c.z)*S.exag;if(inCake(c)){c.res.water=Math.min(100,c.res.water+dt*6);c.res.food=Math.min(100,c.res.food+dt*4);c.res.energy=Math.min(100,c.res.energy+dt*4)}}if(G.follow){AOE.goal.tx=CH.x;AOE.goal.tz=CH.z}if(G.mark)needsDraw=true}baseA.frame(dt,now)};
+VIEWS.aoe.frame=(dt,now)=>{if(G.state==='ground'){wildUpdate();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].some(k=>keys.has(k)))G.follow=false;AOE.mouse=null;if(charUpdate(dt))needsDraw=true;for(const c of vis())if(c!==CH){c.move*=.9;const w=waterLevelL(c.x,c.z);c.y=w!=null?Math.max(groundL(c.x,c.z)*S.exag,w*S.exag-1.05*SC+.12):groundL(c.x,c.z)*S.exag;if(inCake(c)&&!G.away){c.res.water=Math.min(100,c.res.water+dt*6);c.res.food=Math.min(100,c.res.food+dt*4);c.res.energy=Math.min(100,c.res.energy+dt*4)}}if(G.follow){AOE.goal.tx=CH.x;AOE.goal.tz=CH.z}if(G.mark)needsDraw=true}baseA.frame(dt,now)};
 VIEWS.world.down=e=>{if(!GAMEBUSY)baseW.down(e)};VIEWS.world.move=e=>{if(GAMEBUSY||!FLY.drag)return;const dy=e.clientY-FLY.drag.y;FLY.drag={x:e.clientX,y:e.clientY};FLY.pitch=clamp(FLY.pitch+dy*.003,.05,1.5);needsDraw=true};
 VIEWS.world.key=(e,k)=>{if(GAMEBUSY)return;if(k==='m')openMap();if(k==='escape')openMap(false)};VIEWS.world.mini=()=>{};VIEWS.world.wheel=e=>{if(!GAMEBUSY)baseW.wheel(e)};
 
@@ -1186,7 +1241,7 @@ window.gameTick=(dt,now)=>{wmapStep();const c=G.cine;if(c){const p=clamp((now-c.
  if(G.state==='air'&&!GAMEBUSY)airTick(dt);
  syncBall();if(G.miniOn){sizeCanvas($('gmini'));drawMap($('gmini'),false)}if(!$('gmap').hidden){sizeCanvas($('gmapCanvas'));drawMap($('gmapCanvas'),true);if(G.state==='air')syncMapInfo()}};
 syncBar();
-window.__game={G,get CH(){return CH},PARTY,NET,WILD,buildWild,takeoff,landing,goLocal,openMap};
+window.__game={G,ORG,PLANE,AIR,EXP,depart,landAway,goAerial,board,get CH(){return CH},PARTY,NET,WILD,buildWild,takeoff,landing,goLocal,openMap};
 })()}
 
 requestAnimationFrame(frame);
