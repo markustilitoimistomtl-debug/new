@@ -942,7 +942,7 @@ window.gameTreeOK=(x,z)=>{const r=world.runway;if(!r)return true;const [al,ac]=r
 (function(){
 document.body.classList.add('game');
 const G={state:'boot',camp:null,dest:null,pick:null,landAfter:false,speed:5000,miniOn:true,follow:true,click:null,mark:null,cine:null};
-const PARTY=[{name:'Aino',shirt:[.85,.42,.18],hair:[.32,.2,.1],skin:[.88,.7,.56],off:[0,0]},{name:'Veikko',shirt:[.2,.45,.8],hair:[.13,.11,.1],skin:[.8,.62,.5],off:[2.6,1.4],cond:{name:'Hammassärky',days:9,note:'Ei hengenvaarallinen, mutta pitäisi hoitaa lähiaikoina ennen kuin pahenee.'}},{name:'Lumi',shirt:[.3,.62,.3],hair:[.86,.74,.44],skin:[.92,.76,.64],off:[-1.8,2.4]}]
+const PARTY=[{name:'Leilani',shirt:[.85,.42,.18],hair:[.32,.2,.1],skin:[.88,.7,.56],off:[0,0]},{name:'Mateo',shirt:[.2,.45,.8],hair:[.13,.11,.1],skin:[.8,.62,.5],off:[2.6,1.4]},{name:'Nia',shirt:[.3,.62,.3],hair:[.86,.74,.44],skin:[.92,.76,.64],off:[-1.8,2.4]}]
  .map(p=>Object.assign({x:0,z:0,tx:null,tz:null,heading:0,phase:0,move:0,swim:0,y:0,res:{energy:100,water:100,food:100,out:false,warn:0}},p));
 let CH=PARTY[0];
 const SC=1.6; // character drawn larger than life, AoE-style readability
