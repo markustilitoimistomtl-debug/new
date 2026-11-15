@@ -928,21 +928,25 @@ function netNear(x,z,r){if(!NET.ready)return[];const out=new Set(),x0=Math.floor
  for(let zz=z0;zz<=z1;zz++)for(let xx=x0;xx<=x1;xx++)for(const id of NET.hash.get(xx+','+zz)||[])out.add(id);return[...out].map(i=>NET.segs[i]).filter(s=>segDist(s,x,z)[0]<r)}
 /* ---- airstrip & parked aircraft ---- */
 function chooseRunway(){const {n,cs,h,land,wl}=world,L=520,HW=9;
- const cell=(x,z)=>{const cx=Math.round(x/cs+(n-1)/2),cz=Math.round(z/cs+(n-1)/2);if(cx<4||cz<4||cx>n-5||cz>n-5)return -1;return cz*n+cx};
- const wet=i=>land[i]===8||land[i]===9||(wl[i]===wl[i]&&h[i]<wl[i]+.8);let best=null,bc=Infinity;const lim=Math.min(1500,(n-1)/2*cs-L/2-60);
- for(let cz=-lim;cz<=lim;cz+=50)for(let cx=-lim;cx<=lim;cx+=50)for(let a=0;a<180;a+=15){const an=a*Math.PI/180,dx=Math.sin(an),dz=Math.cos(an);let ok=true,sx=0,sy=0,sxx=0,sxy=0,N=0,forest=0;const hs=[];
-  for(let s=-L/2-10;s<=L/2+10&&ok;s+=20)for(const o of [-HW-12,0,HW+12]){const i=cell(cx+dx*s-dz*o,cz+dz*s+dx*o);if(i<0||wet(i)){ok=false;break}const y=h[i];hs.push(s,y);sx+=s;sy+=y;sxx+=s*s;sxy+=s*y;N++;if(land[i]===0||land[i]===10)forest++}
-  if(!ok)continue;const sl=(N*sxy-sx*sy)/(N*sxx-sx*sx),b=(sy-sl*sx)/N;if(Math.abs(sl)>.04)continue;let res=0;for(let k=0;k<hs.length;k+=2)res+=(hs[k+1]-(b+sl*hs[k]))**2;
-  const cost=res/N+forest*2+Math.hypot(cx,cz)*.003+Math.abs(sl)*900;if(cost<bc){bc=cost;best={cx,cz,dx,dz,hl:L/2,hw:HW,h0:b,slope:sl}}}
+ const cell=(x,z)=>{const cx=Math.round(x/cs+(n-1)/2),cz=Math.round(z/cs+(n-1)/2);if(cx<2||cz<2||cx>n-3||cz>n-3)return -1;return cz*n+cx};
+ const wet=i=>land[i]===8||land[i]===9||(wl[i]===wl[i]&&h[i]<wl[i]+.8);let best=null,bc=Infinity;const lim=(n-1)/2*cs-L/2-130;
+ const IN=[-HW-12,0,HW+12],OUT=[-120,-80,80,120];
+ for(let cz=-lim;cz<=lim;cz+=40)for(let cx=-lim;cx<=lim;cx+=40)for(let a=0;a<180;a+=15){const an=a*Math.PI/180,dx=Math.sin(an),dz=Math.cos(an);
+  let ok=true;for(let s=-L/2;s<=L/2;s+=130){const i=cell(cx+dx*s,cz+dz*s);if(i<0||wet(i)){ok=false;break}}if(!ok)continue;
+  let sx=0,sy=0,sxx=0,sxy=0,N=0;const hs=[];
+  for(let s=-L/2-10;s<=L/2+10&&ok;s+=26)for(const o of IN){const i=cell(cx+dx*s-dz*o,cz+dz*s+dx*o);if(i<0||wet(i)){ok=false;break}const y=h[i];hs.push(s,o,y);if(Math.abs(o)<30){sx+=s;sy+=y;sxx+=s*s;sxy+=s*y;N++}}
+  if(!ok)continue;const sl=(N*sxy-sx*sy)/(N*sxx-sx*sx),b=(sy-sl*sx)/N;if(Math.abs(sl)>.06)continue;
+  let inner=0;for(let k=0;k<hs.length;k+=3)inner+=Math.abs(hs[k+2]-(b+sl*hs[k]));for(let s=-L/2;s<=L/2;s+=52)for(const o of [-45,45]){const i=cell(cx+dx*s-dz*o,cz+dz*s+dx*o);if(i<0)continue;inner+=Math.abs(h[i]-(b+sl*s))*(wet(i)?3:1)*3/5}inner/=hs.length/3;
+  let outer=0,no=0,forest=0;for(let s=-L/2;s<=L/2;s+=52)for(const o of OUT){const i=cell(cx+dx*s-dz*o,cz+dz*s+dx*o);if(i<0)continue;const dev=Math.abs(h[i]-(b+sl*s));outer+=Math.max(0,dev-.18*(Math.abs(o)-45));no++;if(land[i]===0||land[i]===10)forest++}
+  outer/=Math.max(1,no);const cost=inner+3*outer+Math.abs(sl)*250+forest*.04+Math.hypot(cx,cz)*.0004;if(cost<bc){bc=cost;best={cx,cz,dx,dz,hl:L/2,hw:HW,h0:b,slope:sl,cost}}}
  if(!best)return null;const r=best,al=-r.hl+r.hl*2*.3;let pick=null;
  for(const side of [1,-1]){const o=side*(r.hw+26),x=r.cx+r.dx*al-r.dz*o,z=r.cz+r.dz*al+r.dx*o,i=cell(x,z);if(i<0||wet(i))continue;const d=Math.abs(h[i]-(r.h0+r.slope*al));if(!pick||d<pick.d)pick={side,x,z,d}}
  if(!pick)pick={side:1,x:r.cx+r.dx*al-r.dz*(r.hw+26),z:r.cz+r.dz*al+r.dx*(r.hw+26)};Object.assign(r,{side:pick.side,ax:pick.x,az:pick.z,apAl:al,apAc:pick.side*(r.hw+26)});return r}
 function rwLocal(r,x,z){const qx=x-r.cx,qz=z-r.cz;return[qx*r.dx+qz*r.dz,-qx*r.dz+qz*r.dx]}
 window.gameFlatten=()=>{if(!world.runway)world.runway=chooseRunway();const r=world.runway;if(!r)return;const {n,cs,h}=world;
- for(let cz=0;cz<n;cz++)for(let cx=0;cx<n;cx++){const x=(cx-(n-1)/2)*cs,z=(cz-(n-1)/2)*cs;if(Math.abs(x-r.cx)>r.hl+120||Math.abs(z-r.cz)>r.hl+120)continue;const [al,ac]=rwLocal(r,x,z);
-  const e1=Math.max(Math.abs(al)-r.hl-12,Math.abs(ac)-r.hw-16),e2=Math.max(Math.abs(al-r.apAl)-24,Math.abs(ac-r.apAc)-20),w=Math.max(1-sstep(0,26,e1),1-sstep(0,22,e2));if(w<=0)continue;
-  const i=cz*n+cx,tg=r.h0+r.slope*clamp(al,-r.hl-30,r.hl+30)+.25;h[i]+=(tg-h[i])*w}};
-function rwWeight(r,x,z){const [al,ac]=rwLocal(r,x,z),e1=Math.max(Math.abs(al)-r.hl-12,Math.abs(ac)-r.hw-16),e2=Math.max(Math.abs(al-r.apAl)-24,Math.abs(ac-r.apAc)-20);return[Math.max(1-sstep(0,26,e1),1-sstep(0,22,e2)),r.h0+r.slope*clamp(al,-r.hl-30,r.hl+30)+.25]}
+ for(let cz=0;cz<n;cz++)for(let cx=0;cx<n;cx++){const x=(cx-(n-1)/2)*cs,z=(cz-(n-1)/2)*cs;if(Math.abs(x-r.cx)>r.hl+420||Math.abs(z-r.cz)>r.hl+420)continue;const i=cz*n+cx;h[i]=rwGrade(r,x,z,h[i])}};
+function rwGrade(r,x,z,H){const [al,ac]=rwLocal(r,x,z),e1=Math.max(Math.abs(al)-r.hl-12,Math.abs(ac)-r.hw-16),e2=Math.max(Math.abs(al-r.apAl)-24,Math.abs(ac-r.apAc)-20),e=Math.max(0,Math.min(e1,e2)),tg=r.h0+r.slope*clamp(al,-r.hl-30,r.hl+30)+.25,lim=.3*e,d=H-tg;
+ if(Math.abs(d)<=lim)return H;const g=tg+Math.sign(d)*lim;return g+(H-g)*sstep(260,400,e)}
 function treeOKr(r,x,z){const [al,ac]=rwLocal(r,x,z);return!((Math.abs(al)<r.hl+34&&Math.abs(ac)<r.hw+30)||(Math.abs(al-r.apAl)<32&&Math.abs(ac-r.apAc)<28))}
 function chooseRunwayW(x0,z0){const L=520,HW=9;let best=null,bc=Infinity;
  ring:for(let r=0;r<=4000;r+=250){const K=r?Math.round(r/250)*6:1;for(let k=0;k<K;k++){const a0=k/K*Math.PI*2,cx=x0+Math.cos(a0)*r,cz=z0+Math.sin(a0)*r;
@@ -1064,7 +1068,7 @@ function buildWild(cx,cz){const N=WILD.N,sp=WILD.size/(N-1),x0=cx-WILD.size/2,z0
  for(let j=0;j<N;j++)for(let i=0;i<N;i++){const k=j*N+i,lx=x0+i*sp,lz=z0+j*sp;if(Math.abs(lx)<half-world.cs&&Math.abs(lz)<half-world.cs){h[k]=hAt(lx,lz,world.h);continue}
   const wx=ORG.x+lx,wz=ORG.z+lz;let H=worldH(wx,wz)+corrAt(wx,wz)+micro(wx,wz);
   for(const s of segs){const [d,px,pz]=segDist(s,wx,wz),hw=s.k?4:12,bl=s.k?14:20;if(d<hw+bl){const rh=Math.max(1.5,worldH(px,pz,10)+corrAt(px,pz));H+=(rh-H)*(1-sstep(hw+2,hw+bl,d))}}
-  if(G.away){const [w,tg]=rwWeight(G.away.rw,lx,lz);if(w>0)H+=(tg-H)*w}
+  if(G.away)H=rwGrade(G.away.rw,lx,lz,H);
   if(half>0&&Math.abs(lx)<=half+world.cs*2&&Math.abs(lz)<=half+world.cs*2)H=hAt(clamp(lx,-half,half),clamp(lz,-half,half),world.h)+ORG.shift;
   h[k]=H-ORG.shift;const c=coverAt(wx,wz,H);cv[k*4]=c[0]*255;cv[k*4+1]=c[1]*255;cv[k*4+2]=c[2]*255;cv[k*4+3]=255}
  setTex(WILD.texH,gl.R32F,gl.RED,gl.FLOAT,N,N,h,gl.NEAREST);setTex(WILD.texC,gl.RGBA8,gl.RGBA,gl.UNSIGNED_BYTE,N,N,cv,gl.LINEAR);Object.assign(WILD,{cx,cz,h,cov:cv,ready:true});
