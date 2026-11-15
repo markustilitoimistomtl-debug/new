@@ -43,8 +43,7 @@ dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:1
 #placeAoe{width:100%}
 @media(max-width:1100px){#hud span:nth-child(n+5){display:none}}@media(max-width:700px){#hud{top:auto;bottom:calc(40px + env(safe-area-inset-bottom,0px))}#landBtn{bottom:calc(100px + env(safe-area-inset-bottom,0px))}}
 .game #panel{display:none}.game #panel.open{display:block;z-index:30}.game #mini,.game #compass,.game #status,.game #toggle,.game #landBtn,.game #place,.game #crumbs{display:none!important}
-#settings{display:none}.game #settings{display:block;position:fixed;left:max(12px,env(safe-area-inset-left,0px));top:calc(12px + env(safe-area-inset-top,0px));z-index:31;width:38px;height:38px;padding:0;border-radius:50%;background:var(--panel);font-size:17px}
-.game #panel{top:calc(58px + env(safe-area-inset-top,0px));bottom:calc(160px + env(safe-area-inset-bottom,0px))}
+.game #panel{top:calc(14px + env(safe-area-inset-top,0px));bottom:calc(160px + env(safe-area-inset-bottom,0px))}
 #fade{position:fixed;inset:0;background:#05080a;opacity:0;pointer-events:none;z-index:40;transition:opacity .45s}#fade.on{opacity:1}
 #cine .bar{position:fixed;left:0;right:0;height:11vh;background:#000;z-index:35;transition:transform .9s ease}#cine .top{top:0;transform:translateY(-101%)}#cine .bot{bottom:0;transform:translateY(101%);display:flex;align-items:center;padding:0 max(28px,env(safe-area-inset-left,0px))}#cine.on .bar{transform:none}
 #cineTitle{font:600 15px var(--display);letter-spacing:3px;text-transform:uppercase;color:#d8e4e2}
@@ -54,6 +53,12 @@ dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:1
 .gbtns{display:flex;gap:4px}.gbtns button{min-width:96px;height:42px;font:600 13px var(--display);letter-spacing:.3px;background:#1b272cf0;border-radius:8px 8px 0 0;border-bottom:0;box-shadow:0 0 14px #0006}.gbtns button.on{background:#33503a;border-color:var(--accent);color:#eaffdf}.gbtns button.mini{min-width:64px}.gbtns button:disabled{opacity:.45}
 #res{display:none}.game[data-view=aoe] #res{display:grid}#res{position:fixed;left:calc(max(12px,env(safe-area-inset-left,0px)) + 48px);top:calc(12px + env(safe-area-inset-top,0px));z-index:11;gap:4px;background:#0e1619d9;border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:200px;font-size:11px}.rr{display:grid;grid-template-columns:52px 1fr;align-items:center;gap:6px;color:var(--muted)}.rr i{height:7px;background:#26343a;border-radius:4px;overflow:hidden;display:block}.rr b{display:block;height:100%;background:var(--accent);transition:width .3s}.rr b.low{background:var(--warn)}.rr em{font-style:normal;color:var(--text);font-variant-numeric:tabular-nums}#rZone{color:var(--accent);font-size:10.5px;margin-top:2px}#rZone.out{color:var(--warn)}
 .tool{width:auto;min-width:64px;height:42px;padding:0 10px;border-radius:8px 8px 0 0;border-bottom:0;font:600 12px var(--display);background:#1b272cf0}.tool:disabled{opacity:.4}
+.gbtns .ico{min-width:46px;width:46px;padding:0;display:grid;place-items:center}.ico svg{width:22px;height:22px}.gbtns .ico.on{color:#eaffdf}
+#gminiWrap{position:relative;line-height:0}#bFull{position:absolute;right:5px;top:5px;width:28px;height:28px;padding:0;border-radius:6px;background:#000b;border:1px solid #ffffff55;color:#fff;display:grid;place-items:center}#bFull svg{width:16px;height:16px}#bFull:hover{border-color:var(--accent)}
+.gbtns .char{min-width:52px;width:52px;padding:0}.char canvas{width:40px;height:40px;display:block;margin:0 auto}
+#tray{display:none}.game #tray{display:flex;gap:4px;position:fixed;bottom:calc(50px + env(safe-area-inset-bottom,0px));z-index:12;background:#0e1619e6;border:1px solid var(--line);border-radius:10px;padding:6px}.game #tray[hidden]{display:none}#tray .tool{border-radius:8px;border-bottom:1px solid #3d4f56}#tray span{width:42px;height:42px;border:1px dashed #6b7f86;border-radius:8px;display:block}
+#ball{position:fixed;z-index:9;min-width:20px;height:20px;padding:0 5px;border-radius:10px;transform:translate(-50%,-100%);border:2px solid #fff;display:grid;place-items:center;font:700 11px var(--display);color:#fff;pointer-events:none;box-shadow:0 0 10px #000a;text-shadow:0 1px 2px #000}
+#hoverCard{position:fixed;z-index:22;background:var(--panel-solid);border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:190px;font-size:11px;pointer-events:none;display:grid;gap:5px;box-shadow:0 8px 20px #0008}#hoverCard[hidden]{display:none}#hoverCard strong{font:600 13px var(--display)}#hoverCard p{margin:0;color:var(--muted)}#hoverCard .cond{color:var(--warn)}.rr{display:grid;grid-template-columns:52px 1fr;align-items:center;gap:6px;color:var(--muted)}.rr i{height:7px;background:#26343a;border-radius:4px;overflow:hidden;display:block}.rr b{display:block;height:100%}
 #gtools{display:flex;gap:4px}#gtools span{width:42px;height:42px;border:1px dashed #6b7f86;border-bottom:0;border-radius:8px 8px 0 0;display:block;background:#0e161966}
 .busy #gbar{opacity:0;pointer-events:none;transition:opacity .4s}
 #gmap{position:fixed;inset:0;z-index:25;background:#0b1a26}#gmapCanvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}#gmapClose{position:absolute;right:max(16px,env(safe-area-inset-right,0px));top:calc(14px + env(safe-area-inset-top,0px));width:42px;height:42px;font-size:22px;padding:0;border-radius:50%;background:var(--panel)}
@@ -108,7 +113,7 @@ dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:1
 <div class="ctl"><label for="treeSize">Puiden koko <output id="treeSizeV"></output></label><input id="treeSize" type="range" min="0.6" max="3" step="0.1" value="1.2"></div>
 <label class="check"><input type="checkbox" id="buildings"> Rakennukset taajamiin</label>
 <p class="hint" id="objinfo">–</p></section>
-<section data-view="site world aoe"><h2>Suunnittelu</h2><label class="check"><input type="checkbox" id="netDev"> Näytä liikenneverkko kartalla</label><p class="hint">Moottoritiet ja rautatiet ovat pelaajalta piilossa. Ne näkyvät vain kartta-alueiden horisontissa ja lähinäkymässä.</p></section>
+<section data-view="site world aoe"><h2>Suunnittelu</h2><label class="check"><input type="checkbox" id="netDev"> Näytä koko maailma ja liikenneverkko kartalla</label><p class="hint">Pelaajan kartalla raivaamaton alue on musta. Moottoritiet ja rautatiet ovat pelaajalta piilossa. Ne näkyvät vain kartta-alueiden horisontissa ja lähinäkymässä.</p></section>
 <section data-view="site world aoe"><h2>Vienti</h2><button id="shot">Tallenna kuvakaappaus (PNG)</button></section>
 <section data-view="site"><h2>Ohjaus</h2><dl>
 <dt>Vasen veto</dt><dd>Panoroi</dd><dt>Oikea veto</dt><dd>Kierrä &amp; kallista</dd><dt>Rulla / nipistys</dt><dd>Zoomaa kohdistimeen</dd><dt>Klikkaus</dt><dd>Tarkastele paikkaa lähempää</dd><dt><kbd>Esc</kbd></dt><dd>Takaisin yleiskuvaan</dd>
@@ -121,10 +126,11 @@ dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:1
 <div id="hud" data-view="world" aria-live="off"></div><button id="landBtn" class="primary" hidden></button>
 <div id="wmap" hidden><div class="wbox"><div class="whead"><h2>Maailmankartta</h2><button id="wmapClose" aria-label="Sulje">×</button></div><canvas id="wmapCanvas" width="1024" height="768"></canvas><p class="hint">Klikkaa kohdetta, niin autopilotti lentää sinne. Oranssi rengas on kartta-alue.</p></div></div>
 <div id="fade"></div><div id="cine"><div class="bar top"></div><div class="bar bot"><span id="cineTitle"></span></div></div>
-<div id="res" aria-label="Resurssit"><div class="rr"><span>Energia</span><i><b id="rE"></b></i></div><div class="rr"><span>Vesi</span><i><b id="rW"></b></i></div><div class="rr"><span>Ruoka</span><i><b id="rF"></b></i></div><div class="rr"><span>Raha</span><em id="rM">0 €</em></div><div id="rZone"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
-<button id="settings" title="Kehittäjäasetukset" aria-label="Kehittäjäasetukset">⚙</button>
-<div id="gbar"><canvas id="gmini" aria-label="Pieni maailmankartta"></canvas><div class="gbtns" role="toolbar" aria-label="Näkymät"><button id="bLocal">Local view</button><button id="bAerial">Aerial view</button><button id="bMap">Map</button><button id="bMini" class="mini" aria-pressed="true">On/Off</button></div><div id="gtools" aria-label="Työkalut"><button id="tHike" class="tool" disabled title="Liftaa (moottoritien varressa)">Liftaa</button><span></span><span></span><span></span><span></span><span></span></div></div>
+<div id="gbar"><div id="gminiWrap"><canvas id="gmini" aria-label="Pikkukartta"></canvas><button id="bFull" title="Kartta koko ruudulle (M)" aria-label="Kartta koko ruudulle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div><div class="gbtns" role="toolbar" aria-label="Näkymät">
+<button id="bMini" class="ico" aria-pressed="true" title="Näytä tai piilota pikkukartta" aria-label="Pikkukartta"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 4.6l2.7 7.4H9.3z" fill="#e5533d"/><path d="M12 19.4L9.3 12h5.4z" fill="currentColor"/></svg></button><button id="bLocal">Local</button><button id="bAerial">Aerial</button><button id="bTools" aria-expanded="false">Tools</button><button id="bGear" class="ico" title="Asetukset" aria-label="Asetukset"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></g></svg></button><button id="bChar" class="char"><canvas id="charPic" width="88" height="88"></canvas></button></div></div>
+<div id="tray" hidden><button id="tHike" class="tool" disabled title="Liftaa (moottoritien varressa)">Liftaa</button><span></span><span></span><span></span><span></span><span></span></div>
+<div id="ball" hidden><span></span></div><div id="hoverCard" hidden></div>
 <div id="gmap" hidden><canvas id="gmapCanvas" aria-label="Maailmankartta: klikkaa kohdetta"></canvas><button id="gmapClose" aria-label="Sulje kartta">×</button>
 <div class="gmapbar"><div class="ctl"><label for="gSpeed">Lentonopeus <output id="gSpeedV"></output></label><input id="gSpeed" type="range" min="0" max="1000" value="633"></div><p id="gInfo" class="hint"></p><button id="gGo" class="primary" disabled>Lennä</button></div></div>
 <div id="drop">Pudota Terrain Forge -projekti tähän</div>
@@ -155,7 +161,7 @@ const M={
 };
 
 /* ---------- WebGL setup ---------- */
-const canvas=$('gl'),gl=canvas.getContext('webgl2',{antialias:true,alpha:false});
+const canvas=$('gl'),gl=canvas.getContext('webgl2',{antialias:true,alpha:false,stencil:true});
 if(!gl){$('loading').textContent='Selaimesi ei tue WebGL2:ta. Kokeile Chromea, Edgeä, Firefoxia tai Safaria 15+.';throw Error('no webgl2')}
 const COMMON=`#version 300 es
 precision highp float;precision highp int;precision highp sampler2D;precision highp usampler2D;
@@ -635,7 +641,7 @@ function common(p,L){gl.useProgram(p);const u=n=>U(p,n);gl.uniform1i(u('uHeight'
  gl.uniform3fv(u('uOff'),RS.off);gl.uniform1f(u('uCurv'),RS.curv);gl.uniform1f(u('uNoShade'),RS.noShade);gl.uniform1f(u('uClip'),RS.clip);gl.uniform1f(u('uBaked'),RS.baked);gl.uniform3fv(u('uMCol'),RS.mcol);gl.uniform1f(u('uClose'),RS.close||0);gl.uniform4fv(u('uSeg'),SEGS.a);gl.uniform1fv(u('uSegK'),SEGS.k);gl.uniform1i(u('uSegN'),SEGS.n);
  gl.uniform3fv(u('uPal'),PAL);return u}
 function bindSiteTextures(){gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex.height);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,tex.shade);gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,tex.land);gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,OUT.tex.h);gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,OUT.tex.shade);gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,OUT.tex.land);}
-function render(){gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(.05,.07,.08,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);if(!world)return;if(S.view==='site')matrices();const L=sunUniforms();bindSiteTextures();
+function render(){gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(.05,.07,.08,1);gl.clearStencil(0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT|gl.STENCIL_BUFFER_BIT);if(!world)return;if(S.view==='site')matrices();const L=sunUniforms();bindSiteTextures();
  gl.disable(gl.DEPTH_TEST);gl.disable(gl.BLEND);common(P.sky,L);gl.bindVertexArray(skyVAO);gl.drawArrays(gl.TRIANGLES,0,3);
  gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);
  drawSite(L,!(GAME&&S.view==='aoe'));if(GAME&&S.view==='aoe'&&window.drawWild)window.drawWild(L);let u;
@@ -936,11 +942,13 @@ window.gameTreeOK=(x,z)=>{const r=world.runway;if(!r)return true;const [al,ac]=r
 (function(){
 document.body.classList.add('game');
 const G={state:'boot',camp:null,dest:null,pick:null,landAfter:false,speed:5000,miniOn:true,follow:true,click:null,mark:null,cine:null};
-const CH={x:0,z:0,tx:null,tz:null,heading:0,phase:0,move:0,swim:0,y:0};
+const PARTY=[{name:'Aino',shirt:[.85,.42,.18],hair:[.32,.2,.1],skin:[.88,.7,.56],off:[0,0]},{name:'Veikko',shirt:[.2,.45,.8],hair:[.13,.11,.1],skin:[.8,.62,.5],off:[2.6,1.4],cond:{name:'Hammassärky',days:9,note:'Ei hengenvaarallinen, mutta pitäisi hoitaa lähiaikoina ennen kuin pahenee.'}},{name:'Lumi',shirt:[.3,.62,.3],hair:[.86,.74,.44],skin:[.92,.76,.64],off:[-1.8,2.4]}]
+ .map(p=>Object.assign({x:0,z:0,tx:null,tz:null,heading:0,phase:0,move:0,swim:0,y:0,res:{energy:100,water:100,food:100,out:false,warn:0}},p));
+let CH=PARTY[0];
 const SC=1.6; // character drawn larger than life, AoE-style readability
 
 /* ---- character mesh: simple blocky human ---- */
-const AP=compile(`in vec4 aPos;uniform vec4 uA0;uniform vec4 uA1;uniform vec3 uCol;uniform float uSc;out vec3 vPos;out vec3 vCol;
+const AP=compile(`in vec4 aPos;uniform vec4 uA0;uniform vec4 uA1;uniform vec3 uCol,uSkin,uHair;uniform float uSc;out vec3 vPos;out vec3 vCol;
 vec3 rotX(vec3 p,float py,float a){float y=p.y-py,z=p.z;return vec3(p.x,py+y*cos(a)-z*sin(a),y*sin(a)+z*cos(a));}
 void main(){vec3 p=aPos.xyz;int part=int(aPos.w+.5);float ph=uA0.w,mv=uA1.y,sw=uA1.z,s=sin(ph);
  float leg=mix(s*.6*mv,sin(ph*2.3)*.35,sw),arm=-s*.5*mv;
@@ -948,14 +956,14 @@ void main(){vec3 p=aPos.xyz;int part=int(aPos.w+.5);float ph=uA0.w,mv=uA1.y,sw=u
  if(part==4)p=rotX(p,1.42,mix(arm,-ph,sw));if(part==5)p=rotX(p,1.42,mix(-arm,-ph+3.1416,sw));
  p=rotX(p,1.,1.35*sw);p*=uSc;float c=cos(uA0.z),si=sin(uA0.z);p.xz=mat2(c,si,-si,c)*p.xz;
  vPos=vec3(uA0.x+p.x,uA1.x+p.y+abs(s)*.06*mv*(1.-sw),uA0.y+p.z);
- vCol=part==1?vec3(.86,.68,.54):part==2||part==3?vec3(.2,.24,.33):part==6?vec3(.42,.3,.17):part==7?vec3(.16,.11,.08):uCol;gl_Position=proj(vPos);}`,
+ vCol=part==1?uSkin:part==2||part==3?vec3(.2,.24,.33):part==6?vec3(.42,.3,.17):part==7?uHair:uCol;gl_Position=proj(vPos);}`,
 `in vec3 vPos;in vec3 vCol;out vec4 o;uniform float uXray;void main(){if(uXray>.5){o=vec4(.35,.6,1.,.45);return;}vec3 N=normalize(cross(dFdx(vPos),dFdy(vPos)));vec3 V=viewVec(vPos);if(dot(N,V)<0.)N=-N;o=vec4(finish(light(lin(vCol),N,1.,1.)*1.15,vPos),1);}`);
 const actorVAO=gl.createVertexArray();let actorCount=0;
 {const v=[];const box=(x0,x1,y0,y1,z0,z1,pt)=>{const c=[[x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0],[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]];for(const f of [[0,1,2,3],[5,4,7,6],[4,0,3,7],[1,5,6,2],[3,2,6,7],[4,5,1,0]]){const [a,b,cc,d]=f.map(i=>c[i]);v.push(...a,pt,...b,pt,...cc,pt,...a,pt,...cc,pt,...d,pt)}};
  box(-.21,.21,.9,1.48,-.12,.12,0);box(-.11,.11,1.5,1.76,-.11,.11,1);box(.03,.18,0,.92,-.08,.08,2);box(-.18,-.03,0,.92,-.08,.08,3);box(.22,.32,.88,1.46,-.06,.06,4);box(-.32,-.22,.88,1.46,-.06,.06,5);
  box(-.17,.17,.98,1.42,-.27,-.12,6);box(-.12,.12,1.71,1.81,-.12,.07,7);
  const b=gl.createBuffer();gl.bindVertexArray(actorVAO);gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(v),gl.STATIC_DRAW);const l=gl.getAttribLocation(AP,'aPos');gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,4,gl.FLOAT,false,16,0);gl.bindVertexArray(null);actorCount=v.length/4}
-function drawChar(L,xray){const u=common(AP,L);gl.uniform4f(u('uA0'),CH.x,CH.z,CH.heading,CH.phase);gl.uniform4f(u('uA1'),CH.y,CH.move,CH.swim,0);gl.uniform3f(u('uCol'),.85,.42,.18);gl.uniform1f(u('uSc'),SC);gl.uniform1f(u('uXray'),xray?1:0);gl.bindVertexArray(actorVAO);gl.drawArrays(gl.TRIANGLES,0,actorCount)}
+function drawChar(L,c,xray){const u=common(AP,L);gl.uniform4f(u('uA0'),c.x,c.z,c.heading,c.phase);gl.uniform4f(u('uA1'),c.y,c.move,c.swim,0);gl.uniform3fv(u('uCol'),c.shirt);gl.uniform3fv(u('uSkin'),c.skin);gl.uniform3fv(u('uHair'),c.hair);gl.uniform1f(u('uSc'),SC);gl.uniform1f(u('uXray'),xray?1:0);gl.bindVertexArray(actorVAO);gl.drawArrays(gl.TRIANGLES,0,actorCount)}
 function ring(L,x,z,r,h,a,col){const w=waterAt(x,z);RS.mcol=col;const u=common(P.marker,L);gl.uniform3f(u('uC'),x,w!=null?w/S.exag+.03:-1e9,z);gl.uniform1f(u('uRad'),r);gl.uniform1f(u('uHgt'),h);gl.uniform1f(u('uAlpha'),a);gl.bindVertexArray(markerVAO);gl.drawArrays(gl.TRIANGLES,0,markerCount);RS.mcol=[1,.74,.42]}
 /* ---- small aircraft (high wing, single engine) ---- */
 const PP=compile(`in vec4 aPos;uniform vec4 uM;uniform float uSc;out vec3 vPos;out vec3 vCol;
@@ -980,15 +988,15 @@ function landingPose(t){const r=world.runway,tt=6.4,v=60,std=-r.hl+45,tm=2.1,dec
 function drawPlane(L,p){const u=common(PP,L);const y=hAt(p.x,p.z,world.h)*S.exag+p.alt;gl.uniform4f(u('uM'),p.x,p.z,p.pitch,p.prop);gl.uniform2f(u('uA'),p.h,y);gl.uniform1f(u('uSc'),PSC);gl.bindVertexArray(planeVAO);gl.drawArrays(gl.TRIANGLES,0,planeCount)}
 function planeNow(){if(S.view==='world'||!world.runway)return null;if(G.planeAnim)return G.planeAnim;if(G.state==='ground'||(G.state==='takeoff'&&S.view==='aoe'))return parkedPose();return null}
 
-window.drawActors=L=>{const pl=planeNow();if(pl)drawPlane(L,pl);if(S.view!=='aoe'||G.state!=='ground')return;drawChar(L,false)};
-window.drawActorsLate=L=>{if(S.view!=='aoe'||G.state!=='ground')return;gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);ring(L,CH.x,CH.z,.75*SC,.22,.85,[.55,.8,1]);
+window.drawActors=L=>{const pl=planeNow();if(pl)drawPlane(L,pl);if(S.view!=='aoe'||G.state!=='ground')return;gl.enable(gl.STENCIL_TEST);gl.stencilFunc(gl.ALWAYS,1,255);gl.stencilOp(gl.KEEP,gl.KEEP,gl.REPLACE);for(const c of PARTY)drawChar(L,c,false);gl.disable(gl.STENCIL_TEST)};
+window.drawActorsLate=L=>{if(S.view!=='aoe'||G.state!=='ground')return;gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
  if(G.mark){const T=(performance.now()-G.mark.t0)/1000;if(T<1.4)ring(L,G.mark.x,G.mark.z,(.4+T*.8)*SC,.18,.9*(1-T/1.4),[1,.85,.45]);else G.mark=null}
- gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthFunc(gl.GREATER);gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(-4,-40);drawChar(L,true);gl.disable(gl.POLYGON_OFFSET_FILL);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);gl.disable(gl.BLEND)};
+ gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthFunc(gl.GREATER);gl.enable(gl.STENCIL_TEST);gl.stencilFunc(gl.NOTEQUAL,1,255);gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP);for(const c of PARTY)drawChar(L,c,true);gl.disable(gl.STENCIL_TEST);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);gl.disable(gl.BLEND)};
 
 /* ---- movement: walk on land, swim in water, blocked by cliffs ---- */
 function waterAt(x,z){const w=waterLevelL(x,z);return w==null?null:w*S.exag}
 function canStep(x0,z0,x1,z1,st){const wx=SITE.x+x1,wz=SITE.z+z1;if(wx<1e4||wz<1e4||wx>WG.WX-1e4||wz>WG.WZ-1e4)return false;if(waterLevelL(x1,z1)!=null)return true;return(groundL(x1,z1)-groundL(x0,z0))/Math.max(st,1e-3)<1.25}
-function charUpdate(dt){let moved=0;const sw=waterLevelL(CH.x,CH.z)!=null;if(CH.tx!=null){const dx=CH.tx-CH.x,dz=CH.tz-CH.z,d=Math.hypot(dx,dz);if(d<.3)CH.tx=null;else{const sp=(sw?1.6:3.6)*(RES.energy<15?.6:1),st=Math.min(d,sp*dt);let nx=CH.x+dx/d*st,nz=CH.z+dz/d*st;
+function charUpdate(dt){let moved=0;const sw=waterLevelL(CH.x,CH.z)!=null;if(CH.tx!=null){const dx=CH.tx-CH.x,dz=CH.tz-CH.z,d=Math.hypot(dx,dz);if(d<.3)CH.tx=null;else{const sp=(sw?1.6:3.6)*(CH.res.energy<15?.6:1),st=Math.min(d,sp*dt);let nx=CH.x+dx/d*st,nz=CH.z+dz/d*st;
   if(!canStep(CH.x,CH.z,nx,nz,st)){if(canStep(CH.x,CH.z,nx,CH.z,st))nz=CH.z;else if(canStep(CH.x,CH.z,CH.x,nz,st))nx=CH.x;else{CH.tx=null;nx=CH.x;nz=CH.z;message('Liian jyrkkää – kokeile toista reittiä')}}
   const md=Math.hypot(nx-CH.x,nz-CH.z);if(md>1e-4){const want=Math.atan2(-(nx-CH.x),nz-CH.z);let dh=want-CH.heading;dh=((dh+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;CH.heading+=dh*Math.min(1,dt*10);CH.phase+=md*(sw?1.9:3.1);CH.x=nx;CH.z=nz;moved=md}}}
  CH.move+=((moved?1:0)-CH.move)*Math.min(1,dt*8);const w=waterAt(CH.x,CH.z);CH.swim+=((w!=null?1:0)-CH.swim)*Math.min(1,dt*5);if(w!=null&&!moved)CH.phase+=dt*1.2;
@@ -1057,23 +1065,22 @@ window.drawWild=L=>{if(!WILD.ready)return;const u=common(WP,L),N=WILD.N,sp=WILD.
 function wildUpdate(){const half=mapHalf(),edge=Math.max(Math.abs(AOE.tx),Math.abs(AOE.tz));if(edge<half-700)return;if(!WILD.ready||Math.hypot(AOE.tx-WILD.cx,AOE.tz-WILD.cz)>170)buildWild(Math.round(AOE.tx/32)*32,Math.round(AOE.tz/32)*32)}
 
 /* ---- resources: energy, water, food, money ---- */
-const RES={energy:100,water:100,food:100,money:0,out:false,warn:0,returning:false,storyT:0};
+G.money=0;G.returning=false;G.storyT=0;
 window.STORY=window.STORY||{onWander:null};
-function inCake(){const h=mapHalf();return Math.abs(CH.x)<=h&&Math.abs(CH.z)<=h}
+function inCake(c=CH){const h=mapHalf();return Math.abs(c.x)<=h&&Math.abs(c.z)<=h}
 function nearMotorway(){if(!WILD.ready)return false;const wx=SITE.x+CH.x,wz=SITE.z+CH.z;return WILD.segs.some(s=>s.k===0&&segDist(s,wx,wz)[0]<14)}
 function resTick(dt,moved,swim){const inside=inCake();
- if(inside){if(RES.out){RES.out=false;RES.warn=0;message('Takaisin leirin alueella · varusteet täydentyvät')}RES.water=Math.min(100,RES.water+dt*6);RES.food=Math.min(100,RES.food+dt*4);if(!moved)RES.energy=Math.min(100,RES.energy+dt*4)}
- else{if(!RES.out){RES.out=true;message('Raivaamaton alue: täällä ei ole taloja eikä kulkuneuvoja. Energia, vesi ja ravinto kuluvat.')}
-  const k=swim?2.6:1;RES.energy-=moved/150*k;RES.water-=moved/120+dt*.03;RES.food-=moved/220+dt*.015;if(!moved&&RES.food>5&&RES.water>5)RES.energy=Math.min(100,RES.energy+dt*.6);
-  const low=Math.min(RES.water,RES.food,RES.energy);if(low<30&&RES.warn<1){RES.warn=1;message((RES.water<30?'Juomavesi':RES.food<30?'Ravinto':'Energia')+' käy vähiin. Pidemmälle ei pääse ilman täydennystä.')}
-  if(low<=6&&!RES.returning)forceReturn('Voimat loppuivat. '+(RES.water<=6?'Ilman juomavettä':RES.food<=6?'Ilman ravintoa':'Uupuneena')+' hahmo joutuu palaamaan leiriin.');
-  RES.storyT+=dt;if(RES.storyT>1&&window.STORY.onWander){RES.storyT=0;const r=window.STORY.onWander({distance:Math.hypot(CH.x-G.camp.x,CH.z-G.camp.z),res:{...RES}});if(r&&r.returnToCamp)forceReturn(r.message||'Hahmon on palattava leiriin.');else if(r&&r.message)message(r.message)}}
- for(const k of ['energy','water','food'])RES[k]=clamp(RES[k],0,100);resHud()}
-async function forceReturn(msg){RES.returning=true;busy(true);message(msg);await new Promise(r=>setTimeout(r,1800));await fade(true,900);CH.x=G.camp.x;CH.z=G.camp.z;CH.tx=null;CH.y=groundL(CH.x,CH.z)*S.exag;AOE.goal.tx=AOE.tx=CH.x;AOE.goal.tz=AOE.tz=CH.z;G.follow=true;
- Object.assign(RES,{energy:45,water:55,food:55,out:false,warn:0});await fade(false,900);busy(false);RES.returning=false;message('Takaisin leirissä')}
-function resHud(){const set=(id,v)=>{const b=$(id);b.style.width=v+'%';b.classList.toggle('low',v<30)};set('rE',RES.energy);set('rW',RES.water);set('rF',RES.food);$('rM').textContent=RES.money+' €';
- const out=!inCake(),d=Math.hypot(CH.x-G.camp.x,CH.z-G.camp.z);$('rZone').textContent=out?'Raivaamaton alue · '+fmtM(d)+' leiristä':'Leirin alue';$('rZone').classList.toggle('out',out);$('tHike').disabled=!(out&&nearMotorway())||GAMEBUSY}
-$('tHike').onclick=()=>{if(RES.money<25)message('Kukaan ei pysähdy. Kyytiin tarvitaan rahaa (vähintään 25 €), sinulla on '+RES.money+' €.');else message('Liftaus onnistuu vain tarinaan suunnitelluilla reiteillä.')};
+ if(inside){if(CH.res.out){CH.res.out=false;CH.res.warn=0;message('Takaisin leirin alueella · varusteet täydentyvät')}CH.res.water=Math.min(100,CH.res.water+dt*6);CH.res.food=Math.min(100,CH.res.food+dt*4);if(!moved)CH.res.energy=Math.min(100,CH.res.energy+dt*4)}
+ else{if(!CH.res.out){CH.res.out=true;message('Raivaamaton alue: täällä ei ole taloja eikä kulkuneuvoja. Energia, vesi ja ravinto kuluvat.')}
+  const k=swim?2.6:1;CH.res.energy-=moved/150*k;CH.res.water-=moved/120+dt*.03;CH.res.food-=moved/220+dt*.015;if(!moved&&CH.res.food>5&&CH.res.water>5)CH.res.energy=Math.min(100,CH.res.energy+dt*.6);
+  const low=Math.min(CH.res.water,CH.res.food,CH.res.energy);if(low<30&&CH.res.warn<1){CH.res.warn=1;message((CH.res.water<30?'Juomavesi':CH.res.food<30?'Ravinto':'Energia')+' käy vähiin. Pidemmälle ei pääse ilman täydennystä.')}
+  if(low<=6&&!G.returning)forceReturn('Voimat loppuivat. '+(CH.res.water<=6?'Ilman juomavettä':CH.res.food<=6?'Ilman ravintoa':'Uupuneena')+' '+CH.name+' joutuu palaamaan leiriin.');
+  G.storyT+=dt;if(G.storyT>1&&window.STORY.onWander){G.storyT=0;const r=window.STORY.onWander({distance:Math.hypot(CH.x-G.camp.x,CH.z-G.camp.z),res:{...CH.res}});if(r&&r.returnToCamp)forceReturn(r.message||'Hahmon on palattava leiriin.');else if(r&&r.message)message(r.message)}}
+ for(const k of ['energy','water','food'])CH.res[k]=clamp(CH.res[k],0,100);resHud()}
+async function forceReturn(msg){G.returning=true;busy(true);message(msg);await new Promise(r=>setTimeout(r,1800));await fade(true,900);CH.x=G.camp.x;CH.z=G.camp.z;CH.tx=null;CH.y=groundL(CH.x,CH.z)*S.exag;AOE.goal.tx=AOE.tx=CH.x;AOE.goal.tz=AOE.tz=CH.z;G.follow=true;
+ Object.assign(CH.res,{energy:45,water:55,food:55,out:false,warn:0});await fade(false,900);busy(false);G.returning=false;message('Takaisin leirissä')}
+function resHud(){$('tHike').disabled=!(!inCake()&&nearMotorway())||GAMEBUSY;if(G.hover)showCard(G.hover)}
+$('tHike').onclick=()=>{if(G.money<25)message('Kukaan ei pysähdy. Kyytiin tarvitaan rahaa (vähintään 25 €), sinulla on '+G.money+' €.');else message('Liftaus onnistuu vain tarinaan suunnitelluilla reiteillä.')};
 
 /* ---- camp ---- */
 function chooseCamp(){const {n,cs,land,h}=world,isW=i=>land[i]===8||land[i]===9;let best=null,bs=Infinity;
@@ -1090,8 +1097,9 @@ function letterbox(on,title){$('cine').classList.toggle('on',on);$('cineTitle').
 function busy(on){window.GAMEBUSY=on;document.body.classList.toggle('busy',on);syncBar()}
 
 /* ---- views ---- */
+function placeParty(){const rw=world.runway,ax=rw?rw.dx:1,az=rw?rw.dz:0;for(const c of PARTY){c.x=G.camp.x+ax*c.off[0]-az*c.off[1];c.z=G.camp.z+az*c.off[0]+ax*c.off[1];c.tx=null;c.y=groundL(c.x,c.z)*S.exag;c.heading=Math.atan2(-(-az),ax)}}
 function groundView(){setView('aoe');AOE.goal={tx:CH.x,tz:CH.z,yaw:AOE.goal.yaw||0,pitch:.98,dist:62};Object.assign(AOE,AOE.goal);AOE.ty=hAt(CH.x,CH.z)*S.exag;G.follow=true;G.state='ground';syncBar()}
-window.gameStart=async()=>{const rw=world.runway;G.camp=rw?{x:rw.ax-rw.dz*rw.side*9+rw.dx*3,z:rw.az+rw.dx*rw.side*9+rw.dz*3}:chooseCamp();CH.x=G.camp.x;CH.z=G.camp.z;CH.y=hAt(CH.x,CH.z,world.h)*S.exag;$('fade').classList.add('on');AOE.goal.yaw=Math.PI/4;groundView();
+window.gameStart=async()=>{const rw=world.runway;G.camp=rw?{x:rw.ax-rw.dz*rw.side*9+rw.dx*3,z:rw.az+rw.dx*rw.side*9+rw.dz*3}:chooseCamp();placeParty();$('fade').classList.add('on');drawPortrait();AOE.goal.yaw=Math.PI/4;groundView();
  await new Promise(r=>setTimeout(r,200));await fade(false,1200);setTimeout(()=>{buildNetwork();resHud()},400);message('Leiri · '+SITE.name+'. Klikkaa maastoa kävelläksesi, veteen uidaksesi.')};
 function siteCam(v){Object.assign(cam,v);Object.assign(goal,v);cam.ty=hAt(cam.tx,cam.tz)*S.exag;needsDraw=true}
 function runTween(dur,fn){return new Promise(res=>{G.cine={t0:performance.now(),dur,fn,res}})}
@@ -1105,7 +1113,7 @@ async function landing(){if(G.state!=='air'||GAMEBUSY)return;busy(true);G.state=
  const agl=Math.max(200,FLY.y-Math.max(0,groundW(FLY.x,FLY.z))),p0=.5,dist=mapSize()*2.6,cp=Math.cos(p0),hm=mapHalf(),t0={tx:clamp(FLY.x-SITE.x-cp*Math.sin(FLY.yaw)*dist,-hm,hm),tz:clamp(FLY.z-SITE.z-cp*Math.cos(FLY.yaw)*dist,-hm,hm),dist,pitch:p0,yaw:FLY.yaw};
  S.mode='drone';$('modeIso').classList.remove('on');$('modeDrone').classList.add('on');setView('site');siteCam(t0);await fade(false,700);
  const c=G.camp;await runTween(8500,p=>{const e=ease(p);if(world.runway)G.planeAnim=landingPose(p*8.5);siteCam({tx:t0.tx+(c.x-t0.tx)*e,tz:t0.tz+(c.z-t0.tz)*e,dist:Math.exp(Math.log(t0.dist)+(Math.log(160)-Math.log(t0.dist))*e),pitch:p0+(.34-p0)*e,yaw:t0.yaw+.8*e})});
- await fade(true,500);G.planeAnim=null;CH.x=c.x;CH.z=c.z;CH.tx=null;CH.y=hAt(CH.x,CH.z,world.h)*S.exag;AOE.goal.yaw=cam.yaw;groundView();letterbox(false);await fade(false,700);busy(false);message('Laskeuduttu leiriin')}
+ await fade(true,500);G.planeAnim=null;placeParty();AOE.goal.yaw=cam.yaw;groundView();letterbox(false);await fade(false,700);busy(false);message('Laskeuduttu leiriin')}
 function goLocal(){if(G.state==='ground'||GAMEBUSY)return;if(G.state!=='air')return;const c=campW(),d=Math.hypot(c.x-FLY.x,c.z-FLY.z);if(d<12000)landing();else{G.dest=c;G.landAfter=true;message('Lennetään leiriin ('+fmtM(d)+') ja laskeudutaan')}}
 function goAerial(){if(G.state==='ground')takeoff()}
 
@@ -1121,44 +1129,63 @@ window.gameHud=()=>{const g=groundW(FLY.x,FLY.z,11),agl=FLY.y-Math.max(0,g),hd=(
 function eta(d){const s=Math.round(d/(G.speed/3.6));return s<60?s+' s':s<3600?Math.floor(s/60)+' min '+String(s%60).padStart(2,'0')+' s':Math.floor(s/3600)+' h '+Math.floor(s%3600/60)+' min'}
 
 /* ---- 2D maps ---- */
-function drawMap(cv,big){const c=cv.getContext('2d'),W=cv.width,H=cv.height;c.fillStyle='#0b1a26';c.fillRect(0,0,W,H);const sc=Math.min(W/WG.WX,H/WG.WZ),ox=(W-WG.WX*sc)/2,oz=(H-WG.WZ*sc)/2;c.imageSmoothingEnabled=true;c.drawImage(WMAP.canvas,ox,oz,WG.WX*sc,WG.WZ*sc);
- if(WMAP.rows<WMAP.H){c.fillStyle='#0b1a26cc';c.fillRect(ox,oz+WMAP.rows/WMAP.H*WG.WZ*sc,WG.WX*sc,(1-WMAP.rows/WMAP.H)*WG.WZ*sc)}
- const k=W/600,p=posW(),px=ox+p.x*sc,pz=oz+p.z*sc;
- if(big&&(G.pick||G.dest)){const t=G.pick||G.dest,tx=ox+t.x*sc,tz=oz+t.z*sc;c.strokeStyle='#ffffffcc';c.lineWidth=1.5*k;c.setLineDash([6*k,6*k]);c.beginPath();c.moveTo(px,pz);c.lineTo(tx,tz);c.stroke();c.setLineDash([]);c.beginPath();c.arc(tx,tz,7*k,0,7);c.moveTo(tx-12*k,tz);c.lineTo(tx+12*k,tz);c.moveTo(tx,tz-12*k);c.lineTo(tx,tz+12*k);c.stroke()}
- if($('netDev').checked&&NET.ready){const L=(pts,col,w,dash)=>{c.strokeStyle=col;c.lineWidth=w*k;c.setLineDash(dash.map(v=>v*k));c.beginPath();pts.forEach(([x,z],i)=>i?c.lineTo(ox+x*sc,oz+z*sc):c.moveTo(ox+x*sc,oz+z*sc));c.stroke()};for(const p of NET.roads)L(p,'#f2a33a',2.2,[]);for(const p of NET.rails)L(p,'#2b2b2b',1.6,[5,3]);c.setLineDash([]);c.fillStyle='#fff';for(const ci of NET.cities){c.beginPath();c.arc(ox+ci.x*sc,oz+ci.z*sc,2.5*k,0,7);c.fill()}}
- const r=Math.max(5,(big?7:6)*Math.max(1,k*.7));c.beginPath();c.arc(px,pz,r,0,7);c.fillStyle='#fff';c.fill();c.lineWidth=Math.max(2.5,r*.45);c.strokeStyle='#2f7fe0';c.stroke();return{sc,ox,oz}}
-function mapToWorld(cv,e){const r=cv.getBoundingClientRect(),W=cv.width,H=cv.height,x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H,sc=Math.min(W/WG.WX,H/WG.WZ),ox=(W-WG.WX*sc)/2,oz=(H-WG.WZ*sc)/2;return{x:clamp((x-ox)/sc,20e3,WG.WX-20e3),z:clamp((y-oz)/sc,20e3,WG.WZ-20e3)}}
+const airy=()=>G.state==='air'||G.state==='takeoff'||G.state==='landing';
+function mapXf(cv,big){const W=cv.width,H=cv.height,p=posW();if(big)return{W,H,cx:G.mv.cx,cz:G.mv.cz,mpp:G.mv.mpp};return{W,H,cx:p.x,cz:p.z,mpp:(airy()?160000:14000)/W}}
+function drawMap(cv,big){const c=cv.getContext('2d'),{W,H,cx,cz,mpp}=mapXf(cv,big),sx=x=>W/2+(x-cx)/mpp,sz=z=>H/2+(z-cz)/mpp,k=Math.max(1,W/600),p=posW(),dev=$('netDev').checked;c.fillStyle='#000';c.fillRect(0,0,W,H);
+ if(dev){c.imageSmoothingEnabled=true;c.drawImage(WMAP.canvas,sx(0),sz(0),WG.WX/mpp,WG.WZ/mpp);if(NET.ready){const L=(pts,col,w,dash)=>{c.strokeStyle=col;c.lineWidth=w*k;c.setLineDash(dash.map(v=>v*k));c.beginPath();pts.forEach(([x,z],i)=>i?c.lineTo(sx(x),sz(z)):c.moveTo(sx(x),sz(z)));c.stroke()};for(const q of NET.roads)L(q,'#f2a33a',2.2,[]);for(const q of NET.rails)L(q,'#2b2b2b',1.6,[5,3]);c.setLineDash([]);c.fillStyle='#fff';for(const ci of NET.cities){c.beginPath();c.arc(sx(ci.x),sz(ci.z),2.5*k,0,7);c.fill()}}}
+ if(SITE.ready&&miniBase){const s=world.n*world.cs,px=Math.max(s/mpp,4*k),x0=sx(SITE.x)-px/2,z0=sz(SITE.z)-px/2;c.imageSmoothingEnabled=px<miniBase.width;c.drawImage(miniBase,x0,z0,px,px)}
+ if(big&&(G.pick||G.dest)){const t=G.pick||G.dest,tx=sx(t.x),tz=sz(t.z);c.strokeStyle='#ffffffcc';c.lineWidth=1.5*k;c.setLineDash([6*k,6*k]);c.beginPath();c.moveTo(sx(p.x),sz(p.z));c.lineTo(tx,tz);c.stroke();c.setLineDash([]);c.beginPath();c.arc(tx,tz,7*k,0,7);c.moveTo(tx-12*k,tz);c.lineTo(tx+12*k,tz);c.moveTo(tx,tz-12*k);c.lineTo(tx,tz+12*k);c.stroke()}
+ if(big){c.fillStyle='#ffffff99';c.font=(11*k)+'px system-ui';c.fillText('Mittakaava: '+fmtM(mpp*120*k)+' / 120 px · rulla zoomaa, veto siirtää',16*k,28*k)}
+ const r=Math.max(5,(big?7:6)*Math.max(1,k*.7));c.beginPath();c.arc(sx(p.x),sz(p.z),r,0,7);c.fillStyle='#fff';c.fill();c.lineWidth=Math.max(2.5,r*.45);c.strokeStyle='#2f7fe0';c.stroke()}
+function mapToWorld(cv,e){const r=cv.getBoundingClientRect(),{W,H,cx,cz,mpp}=mapXf(cv,true),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;return{x:clamp(cx+(x-W/2)*mpp,20e3,WG.WX-20e3),z:clamp(cz+(y-H/2)*mpp,20e3,WG.WZ-20e3)}}
 function sizeCanvas(cv){const r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);const w=Math.max(1,Math.round(r.width*d)),h=Math.max(1,Math.round(r.height*d));if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}}
-function openMap(on){const el=$('gmap');el.hidden=on===undefined?!el.hidden:!on;if(!el.hidden){G.pick=null;syncMapInfo()}syncBar()}
+function openMap(on){const el=$('gmap');el.hidden=on===undefined?!el.hidden:!on;if(!el.hidden){G.pick=null;sizeCanvas($('gmapCanvas'));const p=posW();G.mv={cx:p.x,cz:p.z,mpp:60000/$('gmapCanvas').width};syncMapInfo()}syncBar()}
 const SPMIN=200,SPMAX=50000;const spFromSlider=v=>Math.round(SPMIN*Math.pow(SPMAX/SPMIN,v/1000)/50)*50;
 function syncMapInfo(){$('gSpeedV').textContent=G.speed.toLocaleString('fi-FI')+' km/h';const t=G.pick||G.dest,p=posW();if(t){const d=Math.hypot(t.x-p.x,t.z-p.z);$('gInfo').textContent=(G.pick?'Valittu kohde: ':'Matkalla: ')+fmtM(d)+' '+bearing(t.x-p.x,t.z-p.z)+' · lentoaika noin '+eta(d)}else $('gInfo').textContent='Klikkaa karttaa valitaksesi kohteen.';$('gGo').disabled=!G.pick}
 $('gSpeed').addEventListener('input',()=>{G.speed=spFromSlider(Number($('gSpeed').value));syncMapInfo()});G.speed=spFromSlider(Number($('gSpeed').value));
-$('gmapCanvas').addEventListener('pointerdown',e=>{G.pick=mapToWorld($('gmapCanvas'),e);syncMapInfo()});
+{const cv=$('gmapCanvas');let dr=null;cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);dr={x:e.clientX,y:e.clientY,moved:false}});
+ cv.addEventListener('pointermove',e=>{if(!dr)return;const dx=e.clientX-dr.x,dy=e.clientY-dr.y;if(Math.hypot(dx,dy)>4)dr.moved=true;if(dr.moved){const s=cv.width/cv.getBoundingClientRect().width;G.mv.cx-=dx*s*G.mv.mpp;G.mv.cz-=dy*s*G.mv.mpp;dr.x=e.clientX;dr.y=e.clientY}});
+ cv.addEventListener('pointerup',e=>{if(dr&&!dr.moved){G.pick=mapToWorld(cv,e);syncMapInfo()}dr=null});
+ cv.addEventListener('wheel',e=>{e.preventDefault();const before=mapToWorld(cv,e),f=Math.exp(e.deltaY*.0015);G.mv.mpp=clamp(G.mv.mpp*f,4,WG.WX*1.3/cv.width);const after=mapToWorld(cv,e);G.mv.cx+=before.x-after.x;G.mv.cz+=before.z-after.z},{passive:false})}
 $('gGo').onclick=()=>{if(!G.pick||GAMEBUSY)return;G.dest=G.pick;G.pick=null;G.landAfter=false;openMap(false);if(G.state==='ground')takeoff();else message('Suunta kohteeseen · '+fmtM(Math.hypot(G.dest.x-FLY.x,G.dest.z-FLY.z)))};
 $('gmapClose').onclick=()=>openMap(false);
 
 /* ---- toolbar ---- */
-function syncBar(){$('bLocal').classList.toggle('on',G.state==='ground'||G.state==='landing');$('bAerial').classList.toggle('on',G.state==='air'||G.state==='takeoff');$('bMap').classList.toggle('on',!$('gmap').hidden);$('bMini').classList.toggle('on',G.miniOn);$('bMini').setAttribute('aria-pressed',G.miniOn);
- $('gmini').hidden=!G.miniOn;$('gtools').hidden=G.state!=='ground';document.querySelectorAll('#gbar button').forEach(b=>b.disabled=GAMEBUSY&&b.id!=='bMini');$('bLocal').title=G.state==='air'?'Lennä leiriin ja laskeudu':'Olet maassa';$('bAerial').title=G.state==='ground'?'Nouse ilmaan':'Olet ilmassa'}
-$('bLocal').onclick=goLocal;$('bAerial').onclick=goAerial;$('bMap').onclick=()=>openMap();$('bMini').onclick=()=>{G.miniOn=!G.miniOn;syncBar()};$('settings').onclick=()=>$('panel').classList.toggle('open');
-
+function syncBar(){const g=G.state==='ground';$('bLocal').classList.toggle('on',g||G.state==='landing');$('bAerial').classList.toggle('on',G.state==='air'||G.state==='takeoff');$('bMini').classList.toggle('on',G.miniOn);$('bMini').setAttribute('aria-pressed',G.miniOn);$('gminiWrap').hidden=!G.miniOn;
+ if(!g)G.tray=false;$('tray').hidden=!G.tray;$('bTools').classList.toggle('on',!!G.tray);$('bTools').setAttribute('aria-expanded',!!G.tray);
+ document.querySelectorAll('#gbar button').forEach(b=>{if(b.id!=='bMini'&&b.id!=='bGear')b.disabled=GAMEBUSY||(b.id==='bTools'&&!g)});$('bLocal').title=G.state==='air'?'Lennä leiriin ja laskeudu':'Olet maassa';$('bAerial').title=g?'Nouse ilmaan':'Olet ilmassa';
+ if(G.tray){const r=$('bTools').getBoundingClientRect();$('tray').style.left=r.left+'px'}}
+function drawPortrait(){const cv=$('charPic'),c=cv.getContext('2d'),W=cv.width,h=CH,col=a=>'rgb('+a.map(v=>Math.round(v*255)).join(',')+')';c.clearRect(0,0,W,W);c.fillStyle=col(h.shirt);c.beginPath();c.arc(W/2,W/2,W/2,0,7);c.fill();
+ c.fillStyle=col(h.skin);c.fillRect(W*.27,W*.26,W*.46,W*.52);c.fillStyle=col(h.hair);c.fillRect(W*.24,W*.18,W*.52,W*.16);c.fillRect(W*.24,W*.18,W*.08,W*.3);c.fillStyle='#1a1a1a';c.fillRect(W*.36,W*.46,W*.07,W*.07);c.fillRect(W*.57,W*.46,W*.07,W*.07);c.fillStyle='#00000040';c.fillRect(W*.42,W*.64,W*.16,W*.04);
+ $('bChar').title=h.name+(h.cond?' · '+h.cond.name:'')+' – paina keskittääksesi, uudelleen vaihtaaksesi hahmoa';$('bChar').setAttribute('aria-label',$('bChar').title)}
+$('bLocal').onclick=goLocal;$('bAerial').onclick=goAerial;$('bFull').onclick=()=>openMap(true);$('bMini').onclick=()=>{G.miniOn=!G.miniOn;syncBar()};$('bGear').onclick=()=>$('panel').classList.toggle('open');$('bTools').onclick=()=>{G.tray=!G.tray;syncBar()};
+$('bChar').onclick=()=>{if(GAMEBUSY)return;if(G.state!=='ground'){goLocal();return}const centered=G.follow&&Math.hypot(AOE.tx-CH.x,AOE.tz-CH.z)<4;if(centered){CH=PARTY[(PARTY.indexOf(CH)+1)%PARTY.length];drawPortrait();message(CH.name+(CH.cond?' · '+CH.cond.name+' (hoito '+CH.cond.days+' pv sisällä)':''))}G.follow=true;AOE.goal.tx=CH.x;AOE.goal.tz=CH.z;needsDraw=true};
+/* ---- energy ball over the active character, details on hover ---- */
+function toScreen(x,y,z){if(!VP)return null;const v=M.xf(VP,[x,y,z]);if(!(v[2]<1&&v[2]>-1))return null;return[(v[0]+1)/2*cssW,(1-v[1])/2*cssH]}
+const hue=e=>Math.round(clamp(e,0,100)*1.2);
+function syncBall(){const el=$('ball');if(S.view!=='aoe'||G.state!=='ground'||GAMEBUSY){el.hidden=true;return}const s=toScreen(CH.x,CH.y+2.05*SC+.5,CH.z);if(!s){el.hidden=true;return}el.hidden=false;el.style.left=s[0]+'px';el.style.top=s[1]+'px';el.style.background='hsl('+hue(CH.res.energy)+',72%,42%)';el.firstChild.textContent=CH.cond?CH.cond.days:'';el.title=CH.name+' · energia '+Math.round(CH.res.energy)+' %'+(CH.cond?' · '+CH.cond.name+': hoito '+CH.cond.days+' päivän sisällä':'')}
+function charAt(mx,my){let best=null,bd=28;for(const c of PARTY){const s=toScreen(c.x,c.y+1.1*SC,c.z);if(!s)continue;const d=Math.hypot(s[0]-mx,s[1]-my);if(d<bd){bd=d;best=c}}return best}
+function showCard(c,mx,my){const el=$('hoverCard');if(!c){el.hidden=true;G.hover=null;return}G.hover=c;if(mx!=null){el.style.left=Math.min(cssW-200,mx+16)+'px';el.style.top=Math.max(8,my-120)+'px'}
+ const bar=(l,v)=>'<div class="rr"><span>'+l+'</span><i><b style="width:'+Math.round(v)+'%;background:hsl('+hue(v)+',70%,45%)"></b></i></div>';
+ el.innerHTML='<strong></strong>'+bar('Energia',c.res.energy)+bar('Vesi',c.res.water)+bar('Ruoka',c.res.food)+(c.cond?'<p class="cond"></p>':'')+'<p class="zone"></p>';el.querySelector('strong').textContent=c.name+(c===CH?' · aktiivinen':'');
+ if(c.cond)el.querySelector('.cond').textContent=c.cond.name+' · hoito '+c.cond.days+' päivän sisällä';el.querySelector('.zone').textContent=inCake(c)?'Leirin alue':'Raivaamaton alue · '+fmtM(Math.hypot(c.x-G.camp.x,c.z-G.camp.z))+' leiristä';el.hidden=false}
 /* ---- input wiring (wrap the generic views) ---- */
 const baseA={...VIEWS.aoe},baseW={...VIEWS.world};
 VIEWS.aoe.down=e=>{if(GAMEBUSY)return;G.click={x:e.clientX,y:e.clientY,b:e.button};baseA.down(e)};
-VIEWS.aoe.move=e=>{if(GAMEBUSY)return;baseA.move(e);if(AOE.drag&&G.click&&Math.hypot(e.clientX-G.click.x,e.clientY-G.click.y)>5&&G.click.b===0)G.follow=false};
+VIEWS.aoe.move=e=>{if(GAMEBUSY)return;baseA.move(e);if(!AOE.drag){const c=charAt(e.clientX,e.clientY);showCard(c,e.clientX,e.clientY)}if(AOE.drag&&G.click&&Math.hypot(e.clientX-G.click.x,e.clientY-G.click.y)>5&&G.click.b===0)G.follow=false};
 VIEWS.aoe.up=e=>{const c=G.click;baseA.up(e);G.click=null;if(GAMEBUSY||!c||c.b!==0||Math.hypot(e.clientX-c.x,e.clientY-c.y)>5)return;const r=canvas.getBoundingClientRect(),p=pickL(e.clientX-r.left,e.clientY-r.top);if(p){CH.tx=p[0];CH.tz=p[2];G.follow=true;G.mark={x:p[0],z:p[2],t0:performance.now()};needsDraw=true}};
-VIEWS.aoe.wheel=e=>{if(!GAMEBUSY)baseA.wheel(e)};VIEWS.aoe.dbl=()=>{};VIEWS.aoe.mini=()=>{};
+VIEWS.aoe.wheel=e=>{if(!GAMEBUSY)baseA.wheel(e)};VIEWS.aoe.leave=()=>{baseA.leave();showCard(null)};VIEWS.aoe.dbl=()=>{};VIEWS.aoe.mini=()=>{};
 VIEWS.aoe.key=(e,k)=>{if(GAMEBUSY)return;if(k===' '){G.follow=true;e.preventDefault()}if(k==='q'||k==='e')baseA.key(e,k);if(k==='m')openMap();if(k==='escape')openMap(false)};
-VIEWS.aoe.frame=(dt,now)=>{if(G.state==='ground'){wildUpdate();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].some(k=>keys.has(k)))G.follow=false;AOE.mouse=null;if(charUpdate(dt))needsDraw=true;if(G.follow){AOE.goal.tx=CH.x;AOE.goal.tz=CH.z}if(G.mark)needsDraw=true}baseA.frame(dt,now)};
+VIEWS.aoe.frame=(dt,now)=>{if(G.state==='ground'){wildUpdate();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].some(k=>keys.has(k)))G.follow=false;AOE.mouse=null;if(charUpdate(dt))needsDraw=true;for(const c of PARTY)if(c!==CH){c.move*=.9;const w=waterLevelL(c.x,c.z);c.y=w!=null?Math.max(groundL(c.x,c.z)*S.exag,w*S.exag-1.05*SC+.12):groundL(c.x,c.z)*S.exag;if(inCake(c)){c.res.water=Math.min(100,c.res.water+dt*6);c.res.food=Math.min(100,c.res.food+dt*4);c.res.energy=Math.min(100,c.res.energy+dt*4)}}if(G.follow){AOE.goal.tx=CH.x;AOE.goal.tz=CH.z}if(G.mark)needsDraw=true}baseA.frame(dt,now)};
 VIEWS.world.down=e=>{if(!GAMEBUSY)baseW.down(e)};VIEWS.world.move=e=>{if(GAMEBUSY||!FLY.drag)return;const dy=e.clientY-FLY.drag.y;FLY.drag={x:e.clientX,y:e.clientY};FLY.pitch=clamp(FLY.pitch+dy*.003,.05,1.5);needsDraw=true};
 VIEWS.world.key=(e,k)=>{if(GAMEBUSY)return;if(k==='m')openMap();if(k==='escape')openMap(false)};VIEWS.world.mini=()=>{};VIEWS.world.wheel=e=>{if(!GAMEBUSY)baseW.wheel(e)};
 
 /* ---- per-frame hook ---- */
 window.gameTick=(dt,now)=>{wmapStep();const c=G.cine;if(c){const p=clamp((now-c.t0)/c.dur,0,1);c.fn(p);needsDraw=true;if(p>=1){G.cine=null;c.res()}}
  if(G.state==='air'&&!GAMEBUSY)airTick(dt);
- if(G.miniOn&&!$('gmini').hidden){sizeCanvas($('gmini'));drawMap($('gmini'),false)}if(!$('gmap').hidden){sizeCanvas($('gmapCanvas'));drawMap($('gmapCanvas'),true);if(G.state==='air')syncMapInfo()}};
+ syncBall();if(G.miniOn){sizeCanvas($('gmini'));drawMap($('gmini'),false)}if(!$('gmap').hidden){sizeCanvas($('gmapCanvas'));drawMap($('gmapCanvas'),true);if(G.state==='air')syncMapInfo()}};
 syncBar();
-window.__game={G,CH,RES,NET,WILD,buildWild,takeoff,landing,goLocal,openMap};
+window.__game={G,get CH(){return CH},PARTY,NET,WILD,buildWild,takeoff,landing,goLocal,openMap};
 })()}
 
 requestAnimationFrame(frame);
