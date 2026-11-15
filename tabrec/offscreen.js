@@ -29,12 +29,95 @@ function videoConstraints(streamId, res, fps, exact) {
 
 // Named work: exactly "name.ext". Otherwise tab title + time + resolution.
 function fileName(job, title, res, ext) {
-  const base = job ? safeName(job) : `${safeName(title)}_${stamp()}_${res}p`;
+  const base = job ? safeName(job) : `${safeName(title)}_${stamp()}` + (res ? `_${res}p` : '');
   return `TabRec/${base}.${ext}`;
+}
+
+/* ============ MP3 (audio only) ============ */
+
+// Same interface as MediaRecorder (state, stop, ondataavailable, onstop, onerror),
+// so stopping, cancelling and saving work the same way as for video.
+class Mp3Recorder {
+  constructor(ctx, stream, kbps) {
+    this.mimeType = 'audio/mpeg';
+    this.state = 'recording';
+    this.ondataavailable = null; this.onstop = null; this.onerror = null;
+    this.ctx = ctx;
+    this.enc = new lamejs.Mp3Encoder(2, ctx.sampleRate, kbps);
+    this.src = ctx.createMediaStreamSource(stream);
+    this.proc = ctx.createScriptProcessor(4096, 2, 2);
+    this.proc.onaudioprocess = e => {
+      if (this.state !== 'recording') return;
+      try {
+        const b = e.inputBuffer;
+        const l = toInt16(b.getChannelData(0));
+        const r = b.numberOfChannels > 1 ? toInt16(b.getChannelData(1)) : l;
+        this.emit(this.enc.encodeBuffer(l, r));
+      } catch (err) {
+        this.state = 'inactive';
+        if (this.onerror) this.onerror({ error: err });
+      }
+    };
+    this.src.connect(this.proc);
+    this.proc.connect(ctx.destination); // the processor only runs while connected; it outputs silence
+  }
+  emit(buf) {
+    if (buf && buf.length && this.ondataavailable) this.ondataavailable({ data: new Blob([new Uint8Array(buf)]) });
+  }
+  start() {}
+  stop() {
+    if (this.state === 'inactive') return;
+    this.state = 'inactive';
+    try { this.src.disconnect(); this.proc.disconnect(); } catch (e) {}
+    this.emit(this.enc.flush());
+    const done = this.onstop;
+    if (done) setTimeout(done, 0);
+  }
+}
+
+function toInt16(f) {
+  const o = new Int16Array(f.length);
+  for (let i = 0; i < f.length; i++) {
+    const s = Math.max(-1, Math.min(1, f[i]));
+    o[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+  return o;
+}
+
+async function startMp3({ streamId, settings, title, tabId }) {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { mandatory: { chromeMediaSource: 'tab', chromeMediaSourceId: streamId } },
+      video: false
+    });
+  } catch (e) {
+    return { ok: false, error: 'Capture was blocked: ' + (e.message || e.name) };
+  }
+  if (!stream.getAudioTracks().length) { cleanup(); return { ok: false, error: 'The tab has no audio to record.' }; }
+  if (typeof lamejs === 'undefined') { cleanup(); return { ok: false, error: 'MP3 encoder is missing.' }; }
+  audioCtx = new AudioContext();
+  // tab capture mutes the tab: play it back so you still hear it
+  audioCtx.createMediaStreamSource(stream).connect(audioCtx.destination);
+  const kbps = settings.mp3Kbps || 192;
+  try {
+    recorder = new Mp3Recorder(audioCtx, stream, kbps);
+  } catch (e) {
+    cleanup();
+    return { ok: false, error: 'Could not create the MP3 recorder: ' + (e.message || e.name) };
+  }
+  meta = { res: null, title, job: (settings.jobName || '').trim(), ext: 'mp3' };
+  chunks = [];
+  recTabId = tabId;
+  recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  recorder.onstop = finish;
+  recorder.onerror = e => fail('Recording error: ' + (e.error && e.error.message || 'unknown'));
+  stream.getAudioTracks()[0].addEventListener('ended', () => { if (recorder && recorder.state !== 'inactive') recorder.stop(); });
+  return { ok: true, actual: `${audioCtx.sampleRate} Hz stereo`, mime: `audio/mpeg; ${kbps} kbps`, audioOnly: true };
 }
 
 async function start({ streamId, settings, title, tabId }) {
   if (recorder) return { ok: false, error: 'A recording is already running.' };
+  if (settings.format === 'mp3') return startMp3({ streamId, settings, title, tabId });
   const video = videoConstraints(streamId, settings.res, settings.fps, settings.exact);
   const audio = settings.audio ? { mandatory: { chromeMediaSource: 'tab', chromeMediaSourceId: streamId } } : false;
 
@@ -129,10 +212,12 @@ async function frameToJpeg(track, quality, skipFrames) {
 async function screenshot({ streamId, settings, title, tabId }) {
   let track, temp = null, res = settings.shotRes;
   try {
-    if (recorder && stream && tabId === recTabId) {
+    if (recorder && stream && tabId === recTabId && stream.getVideoTracks().length) {
       // the tab is already being recorded and can't be captured twice: use the recording's picture
       track = stream.getVideoTracks()[0].clone();
       res = meta.res;
+    } else if (recorder && tabId === recTabId) {
+      return { ok: false, error: 'This tab is being recorded as MP3.' };
     } else {
       if (!streamId) return { ok: false, error: 'Capture id is missing.' };
       temp = await navigator.mediaDevices.getUserMedia({

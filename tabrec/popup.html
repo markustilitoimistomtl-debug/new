@@ -27,6 +27,7 @@
   .jobname { font-weight:600; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .timer { font:600 26px ui-monospace, monospace; text-align:center; }
   .hint { font-size:11px; color:var(--dim); }
+  body:not(.mp3mode) .mp3, body.mp3mode .vid { display:none !important; }
   [hidden] { display:none !important; }
 </style>
 </head>
@@ -39,19 +40,22 @@
       <label class="f">Project name
         <input type="text" id="jobName" maxlength="60" placeholder="Empty = tab title" autocomplete="off">
       </label>
-      <label class="f">Resolution
+      <label class="f vid">Resolution
         <select id="res"></select>
       </label>
       <div class="row">
-        <label class="f">Frame rate
+        <label class="f vid">Frame rate
           <select id="fps"><option value="60">60 fps</option><option value="30">30 fps</option></select>
         </label>
         <label class="f">File format
-          <select id="format"><option value="auto">Automatic</option><option value="mp4">MP4</option><option value="webm">WebM</option></select>
+          <select id="format"><option value="auto">Automatic</option><option value="mp4">MP4</option><option value="webm">WebM</option><option value="mp3">MP3 (audio only)</option></select>
         </label>
       </div>
-      <label class="chk"><input type="checkbox" id="audio"> Record tab audio</label>
-      <label class="chk"><input type="checkbox" id="exact"> Exact 16:9 size (black bars if needed)</label>
+      <label class="f mp3">MP3 bitrate
+        <select id="mp3Kbps"><option value="320">320 kbps</option><option value="192">192 kbps – default</option><option value="128">128 kbps</option></select>
+      </label>
+      <label class="chk vid"><input type="checkbox" id="audio"> Record tab audio</label>
+      <label class="chk vid"><input type="checkbox" id="exact"> Exact 16:9 size (black bars if needed)</label>
       <fieldset>
         <legend>Screenshot (JPG)</legend>
         <div class="row">

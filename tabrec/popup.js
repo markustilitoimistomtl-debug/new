@@ -19,7 +19,12 @@ function fill() {
   $('shotRes').value = settings.shotRes;
   $('shotQuality').value = String(settings.shotQuality);
   $('jobName').value = settings.jobName || '';
+  $('mp3Kbps').value = String(settings.mp3Kbps);
+  mode();
 }
+
+// MP3 records sound only: hide the video settings
+function mode() { document.body.classList.toggle('mp3mode', $('format').value === 'mp3'); }
 
 function read() {
   settings = {
@@ -30,14 +35,16 @@ function read() {
     exact: $('exact').checked,
     shotRes: $('shotRes').value,
     shotQuality: +$('shotQuality').value,
-    jobName: $('jobName').value
+    jobName: $('jobName').value,
+    mp3Kbps: +$('mp3Kbps').value
   };
+  mode();
   chrome.storage.local.set({ settings });
 }
 
 $('jobName').addEventListener('input', read);
 $('jobName').addEventListener('keydown', e => { if (e.key === 'Enter') $('go').click(); });
-for (const id of ['res', 'fps', 'format', 'audio', 'exact', 'shotRes', 'shotQuality']) $(id).addEventListener('change', read);
+for (const id of ['res', 'fps', 'format', 'audio', 'exact', 'shotRes', 'shotQuality', 'mp3Kbps']) $(id).addEventListener('change', read);
 
 function status(text, err) {
   $('status').textContent = text || '';
@@ -63,7 +70,7 @@ function render(state) {
     $('liveName').hidden = !state.jobName;
     $('liveName').textContent = state.jobName || '';
     const R = RESOLUTIONS[state.res];
-    $('liveInfo').textContent = `${R ? R.label : state.res + 'p'} · capture ${state.actual || '?'} · ${(state.mime || '').split(';')[0]}`;
+    $('liveInfo').textContent = state.audioOnly ? `MP3 · ${state.actual || ''} · ${(state.mime || '').split(';')[1] || ''}` : `${R ? R.label : state.res + 'p'} · capture ${state.actual || '?'} · ${(state.mime || '').split(';')[0]}`;
     const upd = () => { $('timer').textContent = fmt(Date.now() - state.startedAt); };
     upd(); tick = setInterval(upd, 500);
   } else if (state && state.cancelled) {

@@ -23,7 +23,9 @@ Keep the folder: Chrome runs the extension from it. Requires Chrome 116 or newer
 3. Settings:
    - **Resolution**: 720p, 1080p, **1440p (default)** or 4K
    - **Frame rate**: 60 or 30 fps
-   - **File format**: Automatic (MP4 if supported, otherwise WebM), MP4 or WebM
+   - **File format**: Automatic (MP4 if supported, otherwise WebM), MP4, WebM or **MP3 (audio only)**.
+     With MP3 only the tab's sound is recorded; choose the bitrate (320 / **192 default** / 128 kbps).
+     Cancel and project name work the same way.
    - **Record tab audio** on/off
    - **Exact 16:9 size**: the video is exactly the chosen size, with black bars if the page has
      another shape. Off: the aspect ratio is kept and the resolution is an upper limit.
@@ -36,7 +38,8 @@ Keep the folder: Chrome runs the extension from it. Requires Chrome 116 or newer
 - **📷 Take screenshot (JPG)** or **Alt+Shift+S**.
 - Own settings: resolution (**default 1440p**) and JPG quality (default 92 %).
 - The tab is rendered directly at the chosen size, so the image is sharp, not upscaled.
-- During a recording the screenshot is taken from the recorded picture, so its size is the
+- While recording MP3 on the same tab, the screenshot is the visible tab at window size.
+- During a video recording the screenshot is taken from the recorded picture, so its size is the
   recording's resolution (a tab can't be captured twice at once).
 
 Everything is saved to the `TabRec` folder in Downloads.
@@ -47,3 +50,8 @@ Chrome's tab capture defaults to a small size. TabRec asks the capture for the c
 minimum and maximum, so Chrome renders the tab at that size instead of upscaling a small picture.
 Bitrate follows the resolution (1440p60 ≈ 24 Mbit/s). Tab audio still plays through the speakers
 while recording.
+
+## Third-party
+
+MP3 encoding uses [lamejs](https://github.com/zhuker/lamejs) 1.2.1 (`vendor/lame.min.js`, LGPL-3.0),
+a JavaScript port of [LAME](https://lame.sourceforge.io/). See `vendor/lamejs-LICENSE.txt`.

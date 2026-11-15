@@ -40,7 +40,7 @@ async function start(tab, streamId) {
   await ensureOffscreen();
   const res = await chrome.runtime.sendMessage({ target: 'offscreen', type: 'start', streamId, settings, title: tab.title || '', tabId: tab.id });
   if (!res || !res.ok) return res || { ok: false, error: 'Could not start recording.' };
-  await setState({ recording: true, startedAt: Date.now(), tabId: tab.id, res: settings.res, jobName: (settings.jobName || '').trim(), actual: res.actual, mime: res.mime });
+  await setState({ recording: true, startedAt: Date.now(), tabId: tab.id, res: settings.res, audioOnly: !!res.audioOnly, jobName: (settings.jobName || '').trim(), actual: res.actual, mime: res.mime });
   return res;
 }
 
@@ -79,6 +79,21 @@ async function screenshot(tab, streamId) {
   const settings = await getSettings();
   // a tab that is being recorded can't be captured a second time; the recording's stream is used instead
   const sameTab = state.recording && state.tabId === tab.id;
+  if (sameTab && state.audioOnly) {
+    // MP3 recording has no picture: take a plain screenshot of the visible tab (window size)
+    try {
+      const url = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'jpeg', quality: settings.shotQuality });
+      const name = (settings.jobName || '').trim();
+      const p = n => String(n).padStart(2, '0'), d = new Date();
+      const st = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+      const base = (name || tab.title || 'tab').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60) || 'tab';
+      const filename = `TabRec/${name ? base : base + '_' + st}.jpg`;
+      await chrome.downloads.download({ url, filename, saveAs: false, conflictAction: 'uniquify' });
+      return { ok: true, filename, size: Math.round(url.length * 0.75), actual: 'window size' };
+    } catch (e) {
+      return { ok: false, error: 'Screenshot failed: ' + (e.message || e) };
+    }
+  }
   if (!sameTab && !streamId) streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id });
   await ensureOffscreen();
   const res = await chrome.runtime.sendMessage({

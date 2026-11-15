@@ -14,7 +14,8 @@ const DEFAULTS = {
   fps: 60,
   exact: true,     // exact 16:9 frame size (black bars if the page has another shape)
   audio: true,
-  format: 'auto',  // auto = MP4 if the browser supports it, otherwise WebM
+  format: 'auto',  // auto = MP4 if the browser supports it, otherwise WebM; 'mp3' = audio only
+  mp3Kbps: 192,    // MP3 bitrate
   shotRes: '1440', // screenshot resolution (JPG)
   shotQuality: 92, // JPG quality, percent
   jobName: ''      // name for the work; used in file names instead of the tab title when set
