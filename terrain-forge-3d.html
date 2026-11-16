@@ -318,15 +318,16 @@ void main(){vec3 alb;float d=vTerr-vPos.y;float k=vPos.x*vN.z+vPos.z*vN.x;
  else{float band=fract(vPos.y/(14.*uExag)+fbm(vec2(k/40.,vPos.y/30.))*.6);alb=mix(lin(vec3(.3,.21,.14)),lin(vec3(.4,.3,.2)),step(.5,band));alb=mix(alb,lin(vec3(.27,.26,.25)),smoothstep(90.*uExag,200.*uExag,d));alb*=.8+.3*vnoise(vec2(k/6.,vPos.y/4.));}
  vec3 col=alb*(uSunCol*max(dot(vN,uSun),0.)*.45+uSkyCol*.6);o=vec4(finish(col,vPos),1);}`);
 
-P.tree=compile(`in vec4 aPos;in vec4 aInst;in vec4 aCol;out vec3 vPos;out vec3 vCol;out float vPart;out float vLy;out float vSp;out float vSeed;uniform float uTreeScale;
+P.tree=compile(`in vec4 aPos;in vec4 aInst;in vec4 aCol;out vec3 vPos;out vec3 vCol;out float vPart;out float vLy;out float vSp;out float vSeed;out vec3 vL;uniform float uTreeScale;
 void main(){if(max(abs(aInst.x),abs(aInst.y))>uClip){gl_Position=vec4(2.,2.,2.,1.);return;}float hgt=aInst.z*uTreeScale;float base=aCol.w*uExag;vSp=floor(aInst.w);vSeed=fract(aInst.w);float a=vSeed*6.2832;mat2 R=mat2(cos(a),sin(a),-sin(a),cos(a));vec3 lp=aPos.xyz;lp.xz=R*lp.xz;
  vec3 wp=vec3(aInst.x+lp.x*hgt,base+lp.y*hgt-.4,aInst.y+lp.z*hgt);wp.xz+=vec2(sin(uTime*1.3+aInst.x*.07),cos(uTime*1.1+aInst.y*.07))*lp.y*lp.y*hgt*.012;
- vPos=wp;vCol=aCol.rgb;vPart=aPos.w;vLy=lp.y;gl_Position=proj(wp);}`,
-`in vec3 vPos;in vec3 vCol;in float vPart;in float vLy;in float vSp;in float vSeed;out vec4 o;
+ vPos=wp;vCol=aCol.rgb;vPart=aPos.w;vLy=lp.y;vL=lp;gl_Position=proj(wp);}`,
+`in vec3 vPos;in vec3 vCol;in float vPart;in float vLy;in float vSp;in float vSeed;in vec3 vL;out vec4 o;
 void main(){vec3 N=normalize(cross(dFdx(vPos),dFdy(vPos)));vec3 V=viewVec(vPos);if(dot(N,V)<0.)N=-N;
- int tr=int(vSp+.5);vec3 trunk=tr==1?mix(lin(vec3(.33,.27,.22)),lin(vec3(.52,.33,.22)),smoothstep(.2,.6,vLy)):tr==2?lin(vec3(.9,.89,.84))*(fract(vLy*31.+vSeed*7.)<.16?.22:1.):tr==3?lin(vec3(.36,.29,.22)):lin(vec3(.31,.23,.16));
- vec3 alb=vPart<.5?trunk:vPart<1.5?lin(vCol)*(.66+.5*vLy)*(.86+.28*hash2(floor(vPos.xz*1.7)+floor(vPos.y*1.7))):lin(vec3(.78,.1,.05));vec2 sh=anyShade(vPos.xz);
- vec3 col=light(alb,N,sh.r,.75+.25*vLy);col+=lin(vCol)*uSunCol*.12*pow(max(dot(-V,uSun),0.),4.)*sh.r;o=vec4(finish(col,vPos),1);}`);
+ int tr=int(vSp+.5);
+ if(vPart>.5){vec3 ns=tr==0?normalize(vec3(vL.x,.42,vL.z)):normalize(vL-vec3(0.,tr==1?.84:tr==2?.7:tr==4?.25:.64,0.)*vec3(1.,1.,1.));if(tr==1||tr==4)ns=normalize(ns*vec3(1.,1.6,1.));N=normalize(mix(N,ns,.9));}vec3 trunk=tr==1?mix(lin(vec3(.33,.27,.22)),lin(vec3(.52,.33,.22)),smoothstep(.2,.6,vLy)):tr==2?lin(vec3(.9,.89,.84))*(fract(vLy*31.+vSeed*7.)<.16?.22:1.):tr==3?lin(vec3(.36,.29,.22)):lin(vec3(.31,.23,.16));
+ vec3 alb=vPart<.5?trunk:vPart<1.5?lin(vCol)*(.6+.3*vLy)*(.68+.55*(vnoise(vPos.xz*1.6+vPos.y*1.1)*.6+vnoise(vPos.xz*4.3-vPos.y*3.)*.4)):lin(vec3(.7,.12,.06));vec2 sh=anyShade(vPos.xz);
+ float occ=vPart>.5?.6+.4*smoothstep(-.2,.8,dot(N,vec3(0,1,0))*.5+.5):1.;vec3 col=light(alb,N,sh.r,(.7+.3*vLy)*occ);col+=lin(vCol)*uSunCol*.1*pow(max(dot(-V,uSun),0.),4.)*sh.r;o=vec4(finish(col,vPos),1);}`);
 
 P.bld=compile(`in vec4 aPos;in vec4 aA;in vec4 aB;in vec4 aWall;in vec3 aRoof;out vec3 vPos;out vec3 vWall;out vec3 vRoof;out float vPart;out float vY;out float vWin;
 void main(){vec3 lp=aPos.xyz;float h=aA.w;float y=lp.y<.001?-6.:lp.y<=1.001?lp.y*h:h+(lp.y-1.)*aB.z;vec2 q=vec2(lp.x*aB.x,lp.z*aB.y);float a=aA.z;q=mat2(cos(a),sin(a),-sin(a),cos(a))*q;
@@ -372,15 +373,17 @@ function tBlob(g,cx,cy,cz,rx,ry,rz,part,seed,lv=1,jit=.22){const ic=ICO[lv],P=ic
 function tTrunk(g,r0,r1,h,n,lean=0){const a=k=>k/n*Math.PI*2,p=(r,y,k)=>[Math.cos(a(k))*r+lean*y,y,Math.sin(a(k))*r];for(let k=0;k<n;k++)g.quad(p(r0,0,k),p(r0,0,k+1),p(r1,h,k+1),p(r1,h,k),0)}
 function tTier(g,y0,y1,r,n,off,part,droop,seed){const a=k=>(k+off)/n*Math.PI*2,rr=k=>r*(.82+.36*lat(k%n,seed,5)),tip=[0,y1,0],ctr=[0,y0+(y1-y0)*.3,0];
  for(let k=0;k<n;k++){const p=[Math.cos(a(k))*rr(k),y0-droop,Math.sin(a(k))*rr(k)],q=[Math.cos(a(k+1))*rr(k+1),y0-droop,Math.sin(a(k+1))*rr(k+1)];g.tri(p,q,tip,part);g.tri(q,p,ctr,part)}}
+function tClumps(g,cx,cy,cz,rx,ry,rz,n,size,seed,part=1,flat=1){for(let i=0;i<n;i++){const u=lat(i,seed,1),v=lat(i,seed,2),w=.55+.45*Math.cbrt(lat(i,seed,3)),th=u*Math.PI*2,ph=Math.acos(2*v-1),
+  x=cx+Math.sin(ph)*Math.cos(th)*rx*w,y=cy+Math.cos(ph)*ry*w,z=cz+Math.sin(ph)*Math.sin(th)*rz*w,s=size*(.7+.55*lat(i,seed,4));tBlob(g,x,y,z,s,s*flat,s,part,seed*31+i,0,.3)}}
 const TGEO={
- spruce(){const g=geo();tTrunk(g,.028,.01,.35,6);for(let k=0;k<8;k++){const y0=.07+k*.105;tTier(g,y0,y0+.25,.25*(1-k/8.6)+.035,8,k*.5,1,.03,k+11)}tTier(g,.88,1.03,.045,6,0,1,0,3);return new Float32Array(g.v)},
- larch(){const g=geo();tTrunk(g,.024,.008,.95,5);for(let k=0;k<6;k++){const y0=.16+k*.135;tTier(g,y0,y0+.17,.21*(1-k/6.8)+.03,7,k*.6,1,.045,k+21)}return new Float32Array(g.v)},
- pine(){const g=geo();tTrunk(g,.034,.018,.8,6,.02);const B=[[0,.87,0,.2,.1,.19],[.13,.77,.06,.13,.075,.13],[-.11,.81,-.08,.14,.08,.13],[.05,.96,-.05,.12,.06,.11],[.16,.62,-.02,.08,.045,.08]];B.forEach((b,i)=>tBlob(g,...b,1,40+i,1,.28));return new Float32Array(g.v)},
- birch(){const g=geo();tTrunk(g,.021,.008,.9,5,.03);const B=[[.01,.66,0,.16,.24,.16],[.09,.83,.03,.12,.16,.12],[-.07,.52,-.05,.12,.15,.12],[.02,.94,-.04,.08,.09,.08],[-.1,.74,.06,.1,.13,.1]];B.forEach((b,i)=>tBlob(g,...b,1,50+i,1,.25));return new Float32Array(g.v)},
- round(){const g=geo();tTrunk(g,.04,.024,.48,6);const B=[[0,.66,0,.3,.25,.3],[.17,.59,.08,.18,.17,.18],[-.15,.72,-.1,.19,.17,.19],[.05,.84,.12,.15,.12,.15]];B.forEach((b,i)=>tBlob(g,...b,1,60+i,1,.24));return new Float32Array(g.v)},
- rowan(){const g=geo();tTrunk(g,.035,.02,.5,6,.02);const B=[[0,.68,0,.27,.22,.27],[.15,.6,.06,.15,.14,.15],[-.13,.74,-.08,.16,.14,.16]];B.forEach((b,i)=>tBlob(g,...b,1,70+i,1,.24));
-  for(let i=0;i<16;i++){const an=i*2.4,y=.55+.28*lat(i,7,9),r=.25*(1-Math.abs(y-.68)*1.6);tBlob(g,Math.cos(an)*r,y,Math.sin(an)*r,.032,.032,.032,2,90+i,0,.1)}return new Float32Array(g.v)},
- shrub(){const g=geo();const B=[[0,.38,0,.45,.36,.45],[.32,.26,.12,.3,.26,.3],[-.27,.3,-.2,.3,.27,.3],[.05,.22,-.33,.25,.2,.25]];B.forEach((b,i)=>tBlob(g,...b,1,80+i,1,.3));return new Float32Array(g.v)}};
+ spruce(){const g=geo();tTrunk(g,.028,.01,.35,6);for(let k=0;k<9;k++){const y0=.06+k*.095;tTier(g,y0,y0+.22,.25*(1-k/9.4)+.03,11,k*.37,1,.035,k+11)}tTier(g,.86,1.03,.04,7,0,1,0,3);return new Float32Array(g.v)},
+ larch(){const g=geo();tTrunk(g,.024,.008,.95,5);for(let k=0;k<7;k++){const y0=.15+k*.115;tTier(g,y0,y0+.15,.2*(1-k/7.6)+.03,9,k*.6,1,.04,k+21)}return new Float32Array(g.v)},
+ pine(){const g=geo();tTrunk(g,.034,.018,.82,6,.02);tBlob(g,0,.86,0,.15,.07,.15,1,41,0,.25);tClumps(g,.02,.85,0,.2,.1,.19,16,.08,42,1,.78);tClumps(g,.14,.68,0,.07,.04,.07,3,.06,43,1,.6);return new Float32Array(g.v)},
+ birch(){const g=geo();tTrunk(g,.021,.008,.9,5,.03);tBlob(g,.01,.7,0,.11,.19,.11,1,51,1,.2);tClumps(g,.01,.7,0,.15,.25,.15,15,.08,52);return new Float32Array(g.v)},
+ round(){const g=geo();tTrunk(g,.04,.024,.48,6);tBlob(g,0,.66,0,.22,.18,.22,1,61,1,.2);tClumps(g,0,.66,0,.3,.24,.3,17,.12,62);return new Float32Array(g.v)},
+ rowan(){const g=geo();tTrunk(g,.035,.02,.5,6,.02);tBlob(g,0,.68,0,.18,.15,.18,1,71,1,.2);tClumps(g,0,.68,0,.26,.21,.26,14,.11,72);
+  for(let i=0;i<18;i++){const an=i*2.4,y=.55+.28*lat(i,7,9),r=.27*(1-Math.abs(y-.68)*1.6);tBlob(g,Math.cos(an)*r,y,Math.sin(an)*r,.028,.028,.028,2,90+i,0,.1)}return new Float32Array(g.v)},
+ shrub(){const g=geo();tBlob(g,0,.32,0,.36,.28,.36,1,81,1,.25);tClumps(g,0,.34,0,.48,.3,.48,12,.2,82);return new Float32Array(g.v)}};
 const TILE=256;
 function treeSet(gD,gS){const ib=gl.createBuffer(),aI=gl.getAttribLocation(P.tree,'aInst'),aC=gl.getAttribLocation(P.tree,'aCol'),mk=g=>{const vao=gl.createVertexArray(),gb=gl.createBuffer();gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,gb);gl.bufferData(gl.ARRAY_BUFFER,g,gl.STATIC_DRAW);const l=gl.getAttribLocation(P.tree,'aPos');gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,4,gl.FLOAT,false,16,0);
   gl.bindBuffer(gl.ARRAY_BUFFER,ib);for(const [q,off] of [[aI,0],[aC,16]]){gl.enableVertexAttribArray(q);gl.vertexAttribPointer(q,4,gl.FLOAT,false,32,off);gl.vertexAttribDivisor(q,1)}gl.bindVertexArray(null);return{vao,verts:g.length/4}};
@@ -393,7 +396,7 @@ function treeSet(gD,gS){const ib=gl.createBuffer(),aI=gl.getAttribLocation(P.tre
 const TTYPES=['spruce','larch','pine','birch','round','rowan','shrub'];
 function mkForest(){const o={};for(const k of TTYPES)o[k]=treeSet(TGEO[k](),treeGeo(['spruce','larch','pine'].includes(k)?0:1));return o}
 // species: geometry, trunk class (0 brown, 1 pine, 2 birch, 3 broadleaf), height range
-const SPEC=[{g:'spruce',tr:0,h:[14,28]},{g:'spruce',tr:0,h:[9,17]},{g:'pine',tr:1,h:[14,25]},{g:'larch',tr:0,h:[14,24]},{g:'birch',tr:2,h:[10,20]},{g:'round',tr:3,h:[9,17]},{g:'round',tr:3,h:[4,8]},{g:'rowan',tr:3,h:[5,9]},{g:'shrub',tr:3,h:[.9,2.4]},{g:'round',tr:3,h:[16,30]}];
+const SPEC=[{g:'spruce',tr:0,h:[14,28]},{g:'spruce',tr:0,h:[9,17]},{g:'pine',tr:1,h:[14,25]},{g:'larch',tr:0,h:[14,24]},{g:'birch',tr:2,h:[10,20]},{g:'round',tr:3,h:[9,17]},{g:'round',tr:3,h:[4,8]},{g:'rowan',tr:3,h:[5,9]},{g:'shrub',tr:4,h:[.9,2.4]},{g:'round',tr:3,h:[16,30]}];
 const SPW={0:[44,2,18,4,14,6,1,4,7,0],10:[0,0,0,0,0,25,0,3,12,60],13:[24,1,30,5,18,4,2,3,13,0],16:[6,0,4,0,32,8,28,2,20,0],14:[2,1,3,1,28,18,8,14,25,0],15:[12,0,6,1,34,3,2,6,36,0],7:[2,0,2,0,30,36,10,10,10,0],18:[2,0,40,0,18,0,6,0,34,0],1:[6,4,4,2,22,30,6,12,14,0],2:[2,0,2,0,25,30,10,6,25,0],3:[6,4,4,2,22,30,6,12,14,0]};
 function pickTree(t,x,z,alt,T,rng){const w=(SPW[t]||SPW[0]).slice();
  for(let i=0;i<w.length;i++)w[i]*=.3+1.4*vn(x/130+i*3.7,z/130-i*2.3,700+i);
@@ -401,7 +404,7 @@ function pickTree(t,x,z,alt,T,rng){const w=(SPW[t]||SPW[0]).slice();
  if(T!=null){const c=T<5?1.6:T>17?.5:1,b=T<5?.4:T>17?1.6:1;for(const i of [0,1,2,3])w[i]*=c;for(const i of [4,5,6,7,9])w[i]*=b}
  let s=0;for(const v of w)s+=v;let u=rng()*s,i=0;for(;i<w.length-1;i++){u-=w[i];if(u<=0)break}
  const sp=SPEC[i],v=rng(),r2=rng();let h=sp.h[0]+rng()*(sp.h[1]-sp.h[0]);if(t===15&&i!==8)h*=.35;
- const col=i===0?[.11+.05*v,.24+.07*v,.15+.04*v]:i===1?[.29+.05*v,.4+.05*v,.42+.05*v]:i===2?[.21+.06*v,.32+.07*v,.15+.04*v]:i===3?(r2<.25?[.86,.66+.1*v,.16]:[.42+.08*v,.56+.06*v,.22]):i===4?(r2<.12?[.85+.05*v,.76+.06*v,.2]:[.45+.08*v,.6+.06*v,.25]):i===5?(r2<.05?[.62,.58,.2]:[.27+.08*v,.45+.08*v,.17+.04*v]):i===6?[.46+.05*v,.55+.05*v,.42+.04*v]:i===7?[.3+.06*v,.45+.06*v,.18]:i===8?[.28+.1*v,.4+.08*v,.16+.04*v]:[.1+.08*v,.36+.14*v,.12+.06*v];
+ const col=i===0?[.11+.05*v,.24+.07*v,.15+.04*v]:i===1?[.24+.04*v,.34+.04*v,.36+.04*v]:i===2?[.21+.06*v,.32+.07*v,.15+.04*v]:i===3?(r2<.08?[.66,.58,.24]:[.34+.06*v,.47+.05*v,.21]):i===4?(r2<.04?[.6,.58,.26]:[.31+.05*v,.45+.05*v,.21]):i===5?[.23+.06*v,.38+.06*v,.16+.03*v]:i===6?[.42+.05*v,.5+.05*v,.39+.04*v]:i===7?[.27+.05*v,.41+.05*v,.17]:i===8?[.24+.07*v,.35+.06*v,.15+.03*v]:[.1+.08*v,.36+.14*v,.12+.06*v];
  return{g:sp.g,w:sp.tr+rng()*.999,h,col}}
 function treeCollector(){const L={};for(const k of TTYPES)L[k]=[];return{add(tp,x,z,base){L[tp.g].push([x,z,tp.h,tp.w,...tp.col,base])},count(){let n=0;for(const k in L)n+=L[k].length;return n},
  finish(sets,tiled){for(const k of TTYPES){const a=L[k];let tiles=null;if(tiled){const nk=e=>(Math.floor(e[0]/TILE)+4096)*8192+(Math.floor(e[1]/TILE)+4096);for(const e of a)e.k=nk(e);a.sort((p,q)=>p.k-q.k);tiles=new Map();a.forEach((e,i)=>{const kk=Math.floor(e[0]/TILE)+','+Math.floor(e[1]/TILE),t=tiles.get(kk);if(t)t[1]++;else tiles.set(kk,[i,1])})}
