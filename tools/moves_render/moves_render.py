@@ -45,6 +45,7 @@ ap.add_argument("--fbx-model", default=None)
 ap.add_argument("--fbx-anim", nargs="*", default=[])
 ap.add_argument("--fbx-forward", default="-Y")
 ap.add_argument("--export-test-fbx", default=None, help=argparse.SUPPRESS)
+ap.add_argument("--rest", action="store_true", help="mittausasento: lepoasento kadet suorina (measure.py), ei pelin liike")
 A = ap.parse_args(argv)
 OUT = os.path.abspath(A.out); os.makedirs(OUT, exist_ok=True)
 
@@ -396,6 +397,8 @@ def chest(rig): return (wpos(rig, "hand.R") + wpos(rig, "hand.L")) / 2 + Vector(
 def move_pose(rig, ball, move, f, n):
     """Pose rig (at root origin, unrotated) for frame f/n; returns ball position or None."""
     p = f / n; t = f / max(1, n - 1); bp = None; V = Vector
+    if move == "rest":   # measurement pose for measure.py: rest pose, arms straight down
+        pose(rig, {}); ground(rig); return None
     if move in LOCO:
         c = dict(LOCO[move]); fl = c.pop("flight"); P = gait(p, **c)
         if move == "dribble_run":
@@ -622,16 +625,16 @@ def run_mannequin():
         join_parts(rig)
         roots.append(r); rigs.append(rig); balls.append(build_ball(r))
     calibrate(rigs[0])
-    moves = [m for m in MOVES if not A.moves or m in A.moves]
+    moves = ["rest"] if A.rest else [m for m in MOVES if not A.moves or m in A.moves]
     man = {"size": A.size, "foot": foot_px(roots[0].location.x * 0), "elev": A.elev, "dirs": [d for d, _ in DIRS],
            "palette": A.palette, "palette_colors": PAL, "layers": variants, "hair": HAIR_SEL, "moves": {}}
     man["foot"] = [A.size / 2, foot_px()[1]]
     man["ball_radius"] = round(0.12 * A.size / SP, 2)
     tmp = os.path.join(OUT, "_wide.png")
     for name in moves:
-        loop, fac, fps = MOVES[name]
+        loop, fac, fps = MOVES.get(name, (False, 1, 1))
         base = A.frames if name in LOCO else A.frames_other
-        n = max(4, round(base * fac))
+        n = 1 if name == "rest" else max(4, round(base * fac))
         man["moves"][name] = {"frames": n, "fps": round(fps * n / (48 if name in LOCO else 24 * fac), 2), "loop": loop,
                               "ball": {d: [] for d, _ in DIRS}}
         for i in range(n):
