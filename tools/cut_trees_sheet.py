@@ -9,6 +9,25 @@ KINDS = [['spruce', 'birch', 'pine', 'bluespruce', 'birchgold', 'larch', 'spruce
          ['rowan', 'spruce', 'broad', 'pine', 'birchgold', 'bluespruce', 'broad']]
 CW, CH = 192, 240
 
+def grade(sub, kind):
+    # bring every crown to the muted tones of the painted heath: limit brightness and saturation,
+    # pull yellow-green leaves towards green (autumn trees keep their hue, only darker)
+    rgb = sub[:, :, :3].astype(np.float32) / 255.0; a = sub[:, :, 3] > 40
+    hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+    H, S, V = hsv[:, :, 0], hsv[:, :, 1], hsv[:, :, 2]
+    leaf = a & (S > 0.15)
+    autumn = kind in ('rowan', 'birchgold', 'larchgold')
+    if not autumn:
+        H[leaf] = np.where((H[leaf] > 40) & (H[leaf] < 110), H[leaf] + (110 - H[leaf]) * 0.35, H[leaf])
+    mv = V[leaf].mean() if leaf.any() else 0.5
+    target = 0.40 if not autumn else 0.46
+    if mv > target: V[a] *= target / mv
+    ms = S[leaf].mean() if leaf.any() else 0.5
+    if ms > 0.55: S[leaf] *= 0.55 / ms
+    out = cv2.cvtColor(np.dstack([H, S, V]), cv2.COLOR_HSV2RGB)
+    sub = sub.copy(); sub[:, :, :3] = np.clip(out * 255, 0, 255).astype(np.uint8)
+    return sub
+
 def main(src, out):
     rgb = np.array(Image.open(src).convert('RGB'))
     hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
@@ -59,6 +78,7 @@ def main(src, out):
         m = ids
         ys, xs = np.nonzero(m); y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
         sub = np.dstack([rgb[y0:y1, x0:x1], (alpha[y0:y1, x0:x1] * m[y0:y1, x0:x1] * 255).astype(np.uint8)])
+        sub = grade(sub, KINDS[r][k])
         h, w = sub.shape[:2]
         # trunk base: lowest opaque pixel near the centre column
         cx = int(np.median(xs[ys > y1 - 8]) - x0) if (ys > y1 - 8).any() else w // 2
