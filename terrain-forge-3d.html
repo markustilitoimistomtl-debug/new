@@ -433,7 +433,7 @@ void main(){vec2 c=aC;float m=aI.w;vec3 b=vec3(aI.x,aI.z,aI.y);vB=b;vQ=c*2.-1.;
 `in vec2 vUv;in vec3 vPos;in vec2 vQ;in vec3 vB;out vec4 o;uniform sampler2D uTex;uniform float uMode;
 void main(){if(uMode>.5){float r=length(vQ);if(r>1.)discard;o=vec4(0.,0.,0.,.34*(1.-smoothstep(.35,1.,r)));return;}
  vec4 t=texture(uTex,vUv);if(t.a<.5)discard;float s=anyShade(vB.xz).r;vec3 c=lin(t.rgb)*(.62+.3*s);o=vec4(finish(c,vPos),1);}`);
-const TKINDS={};if(TREE_META)TREE_META.trees.forEach((t,i)=>{(TKINDS[t.kind]=TKINDS[t.kind]||[]).push(i)});
+const TKINDS={};if(TREE_META)TREE_META.trees.forEach((t,i)=>{(TKINDS[t.kind]=TKINDS[t.kind]||[]).push(i)});for(const [k,f] of [['larchgold','birchgold'],['willow','birch'],['shrub','broad'],['larch','pine'],['bluespruce','spruce'],['birchgold','birch'],['rowan','broad']])if(!TKINDS[k])TKINDS[k]=TKINDS[f];
 function treeSpriteKind(tp){const g=tp.g,gold=tp.col[0]>.55;return g==='spruce'?(tp.col[2]>tp.col[1]*.95?'bluespruce':'spruce'):g==='larch'?(gold?'larchgold':'larch'):g==='pine'?'pine':g==='birch'?(gold?'birchgold':'birch'):g==='rowan'?'rowan':g==='shrub'?'shrub':(tp.col[0]>.4&&tp.col[2]>.36?'willow':'broad')}
 function spriteForest(){const ib=gl.createBuffer(),vao=gl.createVertexArray();gl.bindVertexArray(vao);gl.bindBuffer(gl.ARRAY_BUFFER,ib);
  const aI=gl.getAttribLocation(TSP,'aI'),aU=gl.getAttribLocation(TSP,'aU');for(const [l,o] of [[aI,0],[aU,16]]){gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,4,gl.FLOAT,false,32,o);gl.vertexAttribDivisor(l,1)}
