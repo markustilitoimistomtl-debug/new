@@ -1,0 +1,12 @@
+Kuva: m_before/body/rest_S/rest_S_000.png   pituus 694 px
+Mitta                            | Mitattu                                  | Tavoite                      | OK
+----------------------------------------------------------------------------------------------------------------
+Pään korkeus (leuka-päälaki)     | 86 px = 12.4 % pituudesta                | 12-13 %                      | OK
+Pään leveys                      | 78 px = 91 % pään korkeudesta            | 65-75 %                      | ei
+Hartioiden leveys                | 226 px = 2.90 x pään leveys              | 2.2-2.5 x                    | ei
+Olkavarren paksuus               | 36 px = 46 % pään leveydestä             | 40-50 %                      | OK
+Kyynärvarren paksuus             | 35 px = 45 % pään leveydestä             | 32-40 %                      | ei
+Reiden paksuus (shortsit)        | 75 px = 96 % pään leveydestä             | 75-90 %                      | ei
+Säären paksuus                   | 44 px = 56 % pään leveydestä             | 45-55 %                      | ei
+Käden ulottuma                   | sormenpäät -135 % haarasta polveen       | reiden puoliväli (40-60 %)   | ei
+Jalkojen pituus (lattia-haara)   | 249 px = 35.9 % pituudesta               | 48-52 %                      | ei
