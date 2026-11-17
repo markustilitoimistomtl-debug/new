@@ -31,6 +31,19 @@ def main(src, out):
     for g in (H * .27, H * .49, H * .715):
         lo, hi = int(g - H * .05), int(g + H * .05); rb.append(lo + int(np.argmin(prof[lo:hi])))
     rb.append(H)
+    # decontaminate the rim: light, greyish edge pixels take the darkened colour of the crown next to them
+    inner = cv2.erode(fg, np.ones((3, 3), np.uint8), iterations=3)
+    fgc = rgb.astype(np.float32) * inner[..., None]
+    wsum = cv2.blur(inner.astype(np.float32), (15, 15)) + 1e-4
+    local = cv2.blur(fgc, (15, 15)) / wsum[..., None]
+    rim = (fg > 0) & (inner == 0)
+    L = rgb.astype(np.float32).mean(2) / 255.0; sat = S / 255.0
+    whiteish = np.clip((L - 0.42) / 0.25, 0, 1) * np.clip((0.45 - sat) / 0.3, 0, 1)
+    w = np.where(rim, np.maximum(whiteish, 0.35), np.where(fg > 0, whiteish, 0))[..., None]
+    dark = local * 0.62
+    rgb = (rgb * (1 - w) + dark * w).clip(0, 255).astype(np.uint8)
+    fg = cv2.erode(fg, np.ones((2, 2), np.uint8))
+    alpha = np.minimum(alpha, fg)
     trees = {}
     for r in range(4):
         for k in range(7):
