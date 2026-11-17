@@ -46,6 +46,7 @@ ap.add_argument("--fbx-anim", nargs="*", default=[])
 ap.add_argument("--fbx-forward", default="-Y")
 ap.add_argument("--export-test-fbx", default=None, help=argparse.SUPPRESS)
 ap.add_argument("--rest", action="store_true", help="mittausasento: lepoasento kadet suorina (measure.py), ei pelin liike")
+ap.add_argument("--sleeves", default="none", choices=["none", "long"], help="long = pitkahihainen lammittelypaita (hihat paidan avainvarissa)")
 A = ap.parse_args(argv)
 OUT = os.path.abspath(A.out); os.makedirs(OUT, exist_ok=True)
 
@@ -192,10 +193,18 @@ def build_mannequin(root):
         part(rig, "cyl", f"shin.{s}", V((lx, 0, 0.18)), (SHIN_R * 0.95, SHIN_R * 0.95, 0.14), P["sock"])
         part(rig, "cube", f"foot.{s}", V((lx, -0.045, 0.065)), (0.08, 0.25, 0.10), P["shoe"], smooth=False)
         part(rig, "cube", f"foot.{s}", V((lx, -0.045, 0.012)), (0.085, 0.255, 0.025), P["shoe2"], smooth=False)
-        part(rig, "sph", f"upperarm.{s}", V((a0, 0, 1.37)), (DELT_R, DELT_R, DELT_R * 1.1), SK)
-        part(rig, "cyl", f"upperarm.{s}", V(((a0 + a1) / 2, 0, 1.255)), (UPPER_R, UPPER_R, 0.27), SK)
-        part(rig, "cyl", f"forearm.{s}", V(((a1 + a2) / 2, 0, 0.98)), (FORE_R, FORE_R, 0.25), SK)
-        part(rig, "cyl", f"forearm.{s}", V((a2, 0, 0.88)), (FORE_R + 0.005, FORE_R + 0.005, 0.05), D)
+        if A.sleeves == "long":   # long-sleeved warm-up shirt: the arms down to the wrist in the shirt key colour
+            sl = 0.004
+            part(rig, "sph", f"upperarm.{s}", V((a0, 0, 1.37)), (DELT_R + sl, DELT_R + sl, (DELT_R + sl) * 1.1), J)
+            part(rig, "cyl", f"upperarm.{s}", V(((a0 + a1) / 2, 0, 1.255)), (UPPER_R + sl, UPPER_R + sl, 0.27), J)
+            part(rig, "sph", f"forearm.{s}", V((a1, 0, 1.11)), (UPPER_R + sl, UPPER_R + sl, UPPER_R + sl), J)   # elbow
+            part(rig, "cyl", f"forearm.{s}", V(((a1 + a2) / 2, 0, 0.98)), (FORE_R + sl, FORE_R + sl, 0.25), J)
+            part(rig, "cyl", f"forearm.{s}", V((a2, 0, 0.865)), (FORE_R + sl + 0.003, FORE_R + sl + 0.003, 0.03), J)   # cuff
+        else:
+            part(rig, "sph", f"upperarm.{s}", V((a0, 0, 1.37)), (DELT_R, DELT_R, DELT_R * 1.1), SK)
+            part(rig, "cyl", f"upperarm.{s}", V(((a0 + a1) / 2, 0, 1.255)), (UPPER_R, UPPER_R, 0.27), SK)
+            part(rig, "cyl", f"forearm.{s}", V(((a1 + a2) / 2, 0, 0.98)), (FORE_R, FORE_R, 0.25), SK)
+            part(rig, "cyl", f"forearm.{s}", V((a2, 0, 0.88)), (FORE_R + 0.005, FORE_R + 0.005, 0.05), D)
         part(rig, "sph", f"hand.{s}", V((a2, 0, 0.79)), (0.032, 0.024, 0.055), SK)
     rig.parent = root
     return rig
