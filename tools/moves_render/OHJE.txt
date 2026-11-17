@@ -1,0 +1,32 @@
+MOVES RENDER 2 - 3D-hahmosta 8-suuntaiset sprite-animaatiot (Vintage Basket)
+=============================================================================
+
+Tarvitset: Blender 4.2 tai uudempi (ilmainen, blender.org).
+make_game_assets.py tarvitsee lisäksi Pythonin + Pillow + numpy (pip install pillow numpy).
+
+1) TESTINUKKE: render_testinukke.bat
+   26 pelin liikettä x 8 suuntaa, 7 hiustyyliä. Kesto n. 1 h (riippuu koneesta).
+   Kuvat ovat avainväreissä, jotta pelissä voi vaihtaa ihon, hiukset ja joukkuevärit:
+     renders/body/<liike>_<SUUNTA>/...      vartalo ilman hiuksia
+     renders/hair_<tyyli>/<liike>_<SUUNTA>/ pelkät hiukset (peittyvät oikein käsien taakse)
+     renders/moves.json                     fps, toisto, jalkapiste, pallon paikka joka ruudussa
+   Pallo ei ole kuvissa: peli piirtää oman pallonsa, ja moves.json kertoo mihin.
+
+2) PELIIN: python make_game_assets.py renders out
+   -> out/game/<liike>/body.webp ja hair_<tyyli>.webp (rivit S,SE,E,NE,N,NW,W,SW), out/game/vb_sprites.json
+   -> out/preview/ = väritetyt kuvat pallon kanssa Moves-ohjelmaan
+
+3) VALMIIKSI VÄRITETTY (ilman avainvärejä): render_luonnollinen.bat
+
+4) OMA HAHMO MIXAMOSTA: render_mixamo.bat (katso tiedoston kommentit)
+
+ASETUKSET: blender -b -P moves_render.py -- --out kansio [asetukset]
+   --frames 48         walk/jog/run/backpedal/dribble_run
+   --frames-other 24   muut liikkeet (heitot, donkki ja lay-up 1.25x)
+   --moves walk run    vain nämä
+   --hair all | none | messy spiky crew long ponytail curly shaved
+   --size 256 --elev 35 --palette key|natural
+
+AVAINVÄRIT (sävy eli hue asteina): pallo 5-32 | iho 36-72 | kengän raita 88-152 |
+   reunus/numero 165-220 | hiukset 223-262 | paita+shortsit 266-345 | harmaat/mustat/valkoiset ennallaan
+   Uusi väri = kohdeväri x (kirkkaus / avainvärin kirkkaus), kuten pelin nykyinen sprTint.
