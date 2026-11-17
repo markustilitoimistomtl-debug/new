@@ -113,16 +113,24 @@ def mat(col):
     return m
 
 # ----------------------------------------------------------------------------- mannequin
+# MITAT (vaihe 2A, measure.py): NBA-pelaaja, ei sarjakuvahahmo. Muuta naita ja aja measure.py uudelleen.
+HEAD_S = (0.76, 0.85, 1.00)     # paan (ja hiusten) skaalaus leveys, syvyys, korkeus paan keskipisteesta
+HEAD_TOP = 1.76                 # paalaki (pienempi paa: lyhyempi kaula, pituus 1,76 m)
+ARM_X = (0.146, 0.161, 0.166)   # olkapaa, kyynarpaa, ranne (keskelta sivulle, m)
+LEG_X = 0.075                   # jalkojen etaisyys keskelta
+UPPER_R, FORE_R, DELT_R = 0.034, 0.028, 0.040      # olkavarsi, kyynarvarsi, olkapaan pallo
+THIGH_R, SHORTS_R, SHIN_R, KNEE_R = 0.050, 0.066, 0.040, 0.045
 BONES = {"hips": ((0, 0, 0.92), (0, 0, 1.08), None), "spine": ((0, 0, 1.08), (0, 0, 1.42), "hips"),
          "neck": ((0, 0, 1.42), (0, 0, 1.55), "spine"), "head": ((0, 0, 1.55), (0, 0, 1.80), "neck")}
 for s, x in (("L", 1), ("R", -1)):
+    a0, a1, a2 = ARM_X; lx = LEG_X
     BONES.update({
-        f"thigh.{s}": ((0.10 * x, 0, 0.95), (0.10 * x, 0, 0.53), "hips"),
-        f"shin.{s}": ((0.10 * x, 0, 0.53), (0.10 * x, 0, 0.10), f"thigh.{s}"),
-        f"foot.{s}": ((0.10 * x, 0, 0.10), (0.10 * x, -0.17, 0.035), f"shin.{s}"),
-        f"upperarm.{s}": ((0.21 * x, 0, 1.40), (0.23 * x, 0, 1.12), "spine"),
-        f"forearm.{s}": ((0.23 * x, 0, 1.12), (0.23 * x, 0, 0.88), f"upperarm.{s}"),
-        f"hand.{s}": ((0.23 * x, 0, 0.88), (0.23 * x, 0, 0.79), f"forearm.{s}")})
+        f"thigh.{s}": ((lx * x, 0, 0.95), (lx * x, 0, 0.53), "hips"),
+        f"shin.{s}": ((lx * x, 0, 0.53), (lx * x, 0, 0.10), f"thigh.{s}"),
+        f"foot.{s}": ((lx * x, 0, 0.10), (lx * x, -0.17, 0.035), f"shin.{s}"),
+        f"upperarm.{s}": ((a0 * x, 0, 1.40), (a1 * x, 0, 1.11), "spine"),
+        f"forearm.{s}": ((a1 * x, 0, 1.11), (a2 * x, 0, 0.85), f"upperarm.{s}"),
+        f"hand.{s}": ((a2 * x, 0, 0.85), (a2 * x, 0, 0.745), f"forearm.{s}")})
 
 def _attach(o, rig, bone, loc):
     bh = rig.data.bones[bone]
@@ -140,6 +148,10 @@ def part(rig, prim, bone, loc, scale, col, rot=(0, 0, 0), smooth=True, seg=16, e
     o = bpy.context.object; o.scale = scale; o.rotation_euler = rot
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
     if edit: edit(o, Vector(loc))
+    if bone == "head" and HEAD_S != (1, 1, 1):   # smaller head, the hair and face scaled with it
+        for v in o.data.vertices: v.co = Vector((v.co.x * HEAD_S[0], v.co.y * HEAD_S[1], v.co.z * HEAD_S[2]))
+        c0 = Vector(HC); c1 = Vector((HC[0], HC[1], HEAD_TOP - (1.79 - HC[2]) * HEAD_S[2]))   # old top 1.79
+        d = Vector(loc) - c0; loc = c1 + Vector((d.x * HEAD_S[0], d.y * HEAD_S[1], d.z * HEAD_S[2]))
     if smooth: bpy.ops.object.shade_smooth()
     else: bpy.ops.object.shade_flat()
     o.data.materials.append(mat(col)); _attach(o, rig, bone, Vector(loc))
@@ -156,14 +168,14 @@ def build_mannequin(root):
     for pb in rig.pose.bones: pb.rotation_mode = "YXZ"
     P = PAL; V = Vector
     J, T, SK, D = P["jersey"], P["trim"], P["skin"], P["dark"]
-    part(rig, "cyl", "spine", V((0, 0, 1.25)), (0.19, 0.12, 0.36), J)
-    part(rig, "cyl", "spine", V((0, 0, 1.40)), (0.22, 0.12, 0.06), J)
+    part(rig, "cyl", "spine", V((0, 0, 1.25)), (0.115, 0.11, 0.36), J)
+    part(rig, "cyl", "spine", V((0, 0, 1.40)), (0.15, 0.11, 0.06), J)
     part(rig, "cyl", "spine", V((0, -0.115, 1.24)), (0.07, 0.01, 0.10), T)
     part(rig, "cyl", "spine", V((0, 0.115, 1.25)), (0.09, 0.01, 0.12), T)
-    part(rig, "cyl", "spine", V((0, 0, 1.43)), (0.12, 0.10, 0.012), T)          # collar trim
-    part(rig, "cyl", "hips", V((0, 0, 1.02)), (0.185, 0.115, 0.14), J)
-    part(rig, "cyl", "hips", V((0, 0, 0.91)), (0.19, 0.12, 0.05), T)            # waistband
-    part(rig, "cyl", "neck", V((0, 0, 1.49)), (0.055, 0.055, 0.12), SK)
+    part(rig, "cyl", "spine", V((0, 0, 1.43)), (0.09, 0.09, 0.012), T)          # collar trim
+    part(rig, "cyl", "hips", V((0, 0, 1.02)), (0.13, 0.11, 0.14), J)
+    part(rig, "cyl", "hips", V((0, 0, 0.91)), (0.135, 0.115, 0.05), T)          # waistband
+    part(rig, "cyl", "neck", V((0, 0, 1.49)), (0.045, 0.045, 0.12), SK)
     part(rig, "sph", "head", V((0, -0.01, 1.66)), (0.105, 0.115, 0.13), SK)
     part(rig, "sph", "head", V((0.105, 0.0, 1.655)), (0.02, 0.03, 0.035), SK)  # ears
     part(rig, "sph", "head", V((-0.105, 0.0, 1.655)), (0.02, 0.03, 0.035), SK)
@@ -171,19 +183,20 @@ def build_mannequin(root):
     part(rig, "cube", "head", V((-0.042, -0.112, 1.668)), (0.032, 0.012, 0.018), P["eye"], smooth=False)
     part(rig, "cube", "head", V((0, -0.118, 1.695)), (0.11, 0.008, 0.008), P["eye"], smooth=False)  # brows
     for s, x in (("L", 1), ("R", -1)):
-        part(rig, "cyl", f"thigh.{s}", V((0.10 * x, 0, 0.80)), (0.095, 0.095, 0.30), J)
-        part(rig, "cyl", f"thigh.{s}", V((0.10 * x, 0, 0.655)), (0.097, 0.097, 0.03), T)
-        part(rig, "cyl", f"thigh.{s}", V((0.10 * x, 0, 0.58)), (0.065, 0.065, 0.16), SK)
-        part(rig, "sph", f"shin.{s}", V((0.10 * x, 0, 0.53)), (0.065, 0.065, 0.065), SK)
-        part(rig, "cyl", f"shin.{s}", V((0.10 * x, 0.005, 0.36)), (0.055, 0.058, 0.30), SK)
-        part(rig, "cyl", f"shin.{s}", V((0.10 * x, 0, 0.18)), (0.052, 0.052, 0.14), P["sock"])
-        part(rig, "cube", f"foot.{s}", V((0.10 * x, -0.045, 0.065)), (0.10, 0.25, 0.10), P["shoe"], smooth=False)
-        part(rig, "cube", f"foot.{s}", V((0.10 * x, -0.045, 0.012)), (0.105, 0.255, 0.025), P["shoe2"], smooth=False)
-        part(rig, "sph", f"upperarm.{s}", V((0.215 * x, 0, 1.37)), (0.075, 0.075, 0.075), SK)
-        part(rig, "cyl", f"upperarm.{s}", V((0.22 * x, 0, 1.26)), (0.052, 0.052, 0.26), SK)
-        part(rig, "cyl", f"forearm.{s}", V((0.23 * x, 0, 1.00)), (0.045, 0.045, 0.24), SK)
-        part(rig, "cyl", f"forearm.{s}", V((0.23 * x, 0, 0.91)), (0.05, 0.05, 0.05), D)
-        part(rig, "sph", f"hand.{s}", V((0.23 * x, 0, 0.84)), (0.045, 0.03, 0.06), SK)
+        lx = LEG_X * x; a0, a1, a2 = (q * x for q in ARM_X)
+        part(rig, "cyl", f"thigh.{s}", V((lx, 0, 0.80)), (SHORTS_R, SHORTS_R, 0.30), J)
+        part(rig, "cyl", f"thigh.{s}", V((lx, 0, 0.655)), (SHORTS_R + 0.002, SHORTS_R + 0.002, 0.03), T)
+        part(rig, "cyl", f"thigh.{s}", V((lx, 0, 0.58)), (THIGH_R, THIGH_R, 0.16), SK)
+        part(rig, "sph", f"shin.{s}", V((lx, 0, 0.53)), (KNEE_R, KNEE_R, KNEE_R), SK)
+        part(rig, "cyl", f"shin.{s}", V((lx, 0.005, 0.36)), (SHIN_R, SHIN_R * 1.05, 0.30), SK)
+        part(rig, "cyl", f"shin.{s}", V((lx, 0, 0.18)), (SHIN_R * 0.95, SHIN_R * 0.95, 0.14), P["sock"])
+        part(rig, "cube", f"foot.{s}", V((lx, -0.045, 0.065)), (0.08, 0.25, 0.10), P["shoe"], smooth=False)
+        part(rig, "cube", f"foot.{s}", V((lx, -0.045, 0.012)), (0.085, 0.255, 0.025), P["shoe2"], smooth=False)
+        part(rig, "sph", f"upperarm.{s}", V((a0, 0, 1.37)), (DELT_R, DELT_R, DELT_R * 1.1), SK)
+        part(rig, "cyl", f"upperarm.{s}", V(((a0 + a1) / 2, 0, 1.255)), (UPPER_R, UPPER_R, 0.27), SK)
+        part(rig, "cyl", f"forearm.{s}", V(((a1 + a2) / 2, 0, 0.98)), (FORE_R, FORE_R, 0.25), SK)
+        part(rig, "cyl", f"forearm.{s}", V((a2, 0, 0.88)), (FORE_R + 0.005, FORE_R + 0.005, 0.05), D)
+        part(rig, "sph", f"hand.{s}", V((a2, 0, 0.79)), (0.032, 0.024, 0.055), SK)
     rig.parent = root
     return rig
 
