@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lip Sync</title>
+<style>
+:root{
+  --bg:#f3efe6; --panel:#fffdf8; --ink:#231a12; --muted:#6f6457; --line:#ddd4c5;
+  --accent:#b8562c; --accent-ink:#fff; --stage:#e8e0d0; --chip:#efe8db;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1b1815; --panel:#24201c; --ink:#f1ebe1; --muted:#a99d8e; --line:#3a332c;
+    --accent:#e07a4a; --accent-ink:#1b1815; --stage:#2d2823; --chip:#302a24;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1b1815; --panel:#24201c; --ink:#f1ebe1; --muted:#a99d8e; --line:#3a332c;
+  --accent:#e07a4a; --accent-ink:#1b1815; --stage:#2d2823; --chip:#302a24;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px}
+@media (max-width:760px){.wrap{grid-template-columns:1fr}}
+h1{font-size:20px;margin:0 0 2px}
+.sub{color:var(--muted);margin:0 0 14px;font-size:13.5px}
+.stage{background:var(--stage);border-radius:14px;height:340px;padding-top:20px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;position:relative}
+#face{width:min(92%,340px);aspect-ratio:128/124;image-rendering:auto;transform-origin:50% 100%}
+.caption{margin-top:12px;font-size:15px;min-height:1.4em;color:var(--muted)}
+.caption .w{transition:color .08s}
+.caption .w.on{color:var(--ink);font-weight:600}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+label{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 4px}
+textarea{width:100%;min-height:140px;resize:vertical;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
+select,input[type=range]{width:100%}
+select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+button{font:inherit;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:9px;padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button:disabled{opacity:.5;cursor:default}
+.hint{font-size:12.5px;color:var(--muted);margin-top:12px}
+code{background:var(--chip);padding:1px 5px;border-radius:5px;font-size:12.5px}
+.status{font-size:12.5px;color:var(--muted);margin-top:8px;min-height:1.2em}
+.vis{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.vis span{font-size:11.5px;padding:2px 7px;border-radius:20px;background:var(--chip);color:var(--muted)}
+.vis span.on{background:var(--accent);color:var(--accent-ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <h1>Lip Sync</h1>
+    <p class="sub">The character's mouth follows the English text as it is spoken.</p>
+    <div class="stage">
+      <canvas id="face" width="256" height="248"></canvas>
+    </div>
+    <div class="caption" id="caption"></div>
+    <div class="vis" id="vis"></div>
+  </div>
+  <div class="panel">
+    <label for="text">Text (English)</label>
+    <textarea id="text">Hello everyone, and welcome to tonight's game! [happy] What a crowd we have here. [sad] Sadly, our star player is out with an injury. [neutral] But the bench looks ready, so let's see what they can do.</textarea>
+    <div class="row">
+      <div>
+        <label for="mood">Mood</label>
+        <select id="mood">
+          <option value="auto">Auto (from text)</option>
+          <option value="neutral">Neutral</option>
+          <option value="excited">Excited</option>
+          <option value="happy">Happy</option>
+          <option value="sad">Sad</option>
+          <option value="angry">Angry</option>
+        </select>
+      </div>
+      <div>
+        <label for="voice">Voice</label>
+        <select id="voice"></select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label for="rate">Rate <span id="rateV">1.0</span></label><input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="1"></div>
+      <div><label for="pitch">Pitch <span id="pitchV">1.0</span></label><input id="pitch" type="range" min="0.5" max="1.5" step="0.1" value="1"></div>
+    </div>
+    <div class="btns">
+      <button class="primary" id="speak">▶ Speak</button>
+      <button id="silent">Animate without sound</button>
+      <button id="stop">■ Stop</button>
+    </div>
+    <div class="status" id="status"></div>
+    <p class="hint">Mood tags in the text switch the expression mid-speech: <code>[neutral]</code> <code>[excited]</code> <code>[happy]</code> <code>[sad]</code> <code>[angry]</code>. With mood on Auto, each sentence gets a mood from its words and punctuation.</p>
+  </div>
+</div>
+<script>
+const SPRITE_SRC = "__SPRITES__";
+const CW = 128, CH = 124, GUT = 4; // cells sit in a 132x128 grid with a 2px transparent gutter
+
+// ---- Frame tables: [row, col] in the sprite sheet ----
+// Visemes: rest, mbp (lips closed), small (slightly open / consonants), ah (open),
+// aa (wide open), ee (teeth, spread), o (round open), oo (small round), fv (teeth)
+const MOODS = {
+  neutral: {rest:[1,0], mbp:[1,7], small:[1,1], ah:[1,2], aa:[1,3], ee:[1,4], o:[1,5], oo:[1,6], fv:[1,4]},
+  excited: {rest:[2,0], mbp:[2,7], small:[2,1], ah:[2,2], aa:[2,3], ee:[2,4], o:[2,5], oo:[2,6], fv:[2,4]},
+  happy:   {rest:[3,0], mbp:[3,1], small:[3,7], ah:[3,2], aa:[3,4], ee:[3,2], o:[3,6], oo:[3,7], fv:[3,2]},
+  sad:     {rest:[4,4], mbp:[4,5], small:[4,7], ah:[4,6], aa:[5,2], ee:[5,2], o:[4,6], oo:[4,7], fv:[5,2]},
+  angry:   {rest:[1,8], mbp:[1,8], small:[2,8], ah:[1,9], aa:[2,9], ee:[1,9], o:[2,9], oo:[2,8], fv:[1,9]},
+};
+// Occasional idle expressions per mood (shown while not speaking)
+const IDLE = {
+  neutral:[[0,0],[0,1],[0,6],[0,7]], excited:[[2,0],[2,1]], happy:[[3,0],[3,1],[3,7],[0,9]],
+  sad:[[4,4],[4,0],[5,0],[5,1]], angry:[[1,8],[2,8]],
+};
+const LAUGH = [[3,3],[3,4],[3,5],[3,4]];
+
+// ---- English text -> visemes (rule based, Preston Blair style) ----
+const WORDS = { // irregular common words
+  the:"th ah", a:"ah", i:"aa ee", you:"ee oo", your:"ee o", one:"oo ah n", two:"t oo", to:"t oo", do:"d oo",
+  of:"ah fv", are:"aa", our:"aa oo", was:"oo ah s", what:"oo ah t", who:"oo", is:"ee s", be:"b ee", we:"oo ee",
+  he:"ee", she:"sh ee", me:"m ee", my:"m aa", by:"b aa", hi:"aa ee", hello:"h ah l o", they:"th ee",
+  there:"th ee", their:"th ee", where:"oo ee", said:"s ee d", says:"s ee s", have:"h ah fv", give:"g ee fv",
+  love:"l ah fv", come:"k ah m", some:"s ah m", done:"d ah n", does:"d ah s", great:"g ee t", eye:"aa ee",
+  people:"p ee p l", could:"k oo d", would:"oo d", should:"sh oo d", through:"th oo", though:"th o",
+  enough:"ee n ah fv", laugh:"l ah fv", tonight:"t oo n aa t", night:"n aa t", right:"r aa t", light:"l aa t",
+  game:"g ee m", team:"t ee m", ok:"o k ee", okay:"o k ee", wow:"oo ah oo", oh:"o", yes:"ee ee s", no:"n o",
+  go:"g o", so:"s o", now:"n ah oo", how:"h ah oo", out:"ah oo t", about:"ah b ah oo t",
+};
+const VOWEL_GROUPS = [
+  ["eau","o"],["igh","aa"],["ough","o"],["augh","ah"],
+  ["ee","ee"],["ea","ee"],["ie","ee"],["ei","ee"],["ey","ee"],["ai","ee"],["ay","ee"],
+  ["oo","oo"],["ou","ah oo"],["ow","o"],["oa","o"],["oe","o"],["oi","o ee"],["oy","o ee"],
+  ["au","ah"],["aw","ah"],["ew","oo"],["ue","oo"],["ui","oo"],
+  ["er","small"],["ir","small"],["ur","small"],["ar","aa"],["or","o"],
+];
+const CONS_GROUPS = [
+  ["tch","sh"],["sch","s"],["ch","sh"],["sh","sh"],["th","th"],["ph","fv"],["wh","oo"],["ck","k"],["ng","k"],
+  ["qu","k oo"],["gh",""],["kn","n"],["wr","r"],
+];
+const SINGLE = {
+  a:"ah", e:"ee", i:"ee", o:"o", u:"ah", y:"ee",
+  b:"mbp", m:"mbp", p:"mbp", f:"fv", v:"fv", w:"oo", q:"k oo",
+  c:"k", d:"t", g:"k", h:"", j:"sh", k:"k", l:"l", n:"n", r:"r", s:"s", t:"t", x:"k s", z:"s",
+};
+// phone -> viseme key
+const PH2VIS = { mbp:"mbp", fv:"fv", oo:"oo", o:"o", ee:"ee", ah:"ah", aa:"aa", small:"small",
+  th:"small", sh:"oo", k:"small", n:"small", t:"small", d:"small", s:"ee", l:"ah", r:"small", g:"small", b:"mbp", m:"mbp", p:"mbp", h:"" };
+const VOWELISH = new Set(["oo","o","ee","ah","aa","small"]);
+
+function wordToPhones(word){
+  let w = word.toLowerCase().replace(/[^a-z']/g,"").replace(/'/g,"");
+  if(!w) return [];
+  if(WORDS[w]) return WORDS[w].split(" ");
+  if(/^\d+$/.test(word)) return ["n","ah","mbp","ah"];
+  // silent final e (make, time) -> long vowel feel
+  if(w.length>3 && w.endsWith("e") && !/[aeiou]e$/.test(w) && !w.endsWith("le")) w = w.slice(0,-1);
+  if(w.endsWith("ed") && w.length>3) w = w.slice(0,-2)+"d";
+  const out=[]; let i=0;
+  while(i<w.length){
+    let hit=false;
+    for(const [g,ph] of [...VOWEL_GROUPS,...CONS_GROUPS]){
+      if(w.startsWith(g,i)){ if(ph) out.push(...ph.split(" ")); i+=g.length; hit=true; break; }
+    }
+    if(hit) continue;
+    const ch=w[i];
+    if(i>0 && w[i-1]===ch){ i++; continue; } // double letters
+    // "y" at word start is a consonant glide
+    if(ch==="y" && i===0){ out.push("ee"); i++; continue; }
+    const ph=SINGLE[ch]; if(ph) out.push(...ph.split(" "));
+    i++;
+  }
+  return out;
+}
+function phonesToVisemes(phones){
+  const v=[];
+  for(const p of phones){
+    const key=PH2VIS[p]!==undefined?PH2VIS[p]:"small";
+    if(!key) continue;
+    const vowel=VOWELISH.has(p);
+    if(v.length && v[v.length-1].k===key){ v[v.length-1].w += vowel?1:0.6; continue; }
+    v.push({k:key, w: vowel?1:0.6});
+  }
+  return v;
+}
+
+// ---- Mood detection ----
+const MOOD_WORDS = {
+  happy:/\b(great|love|happy|glad|wonderful|amazing|fantastic|awesome|fun|haha|ha|nice|beautiful|congrat\w*|win|wins|won|victory|celebrat\w*|lol|joy|excellent|perfect|thanks?|thank)\b/i,
+  sad:/\b(sad|sadly|sorry|unfortunately|injur\w*|lost|lose|loses|miss\w*|cry|tears?|bad|terrible|awful|tragic|pain|hurt|alone|disappoint\w*|worried|worry|afraid|regret)\b/i,
+  angry:/\b(angry|mad|furious|hate|stupid|ridiculous|unacceptable|outrage\w*|terrible call|robbed|cheat\w*|damn|annoy\w*)\b/i,
+};
+function detectMood(sentence){
+  if(MOOD_WORDS.angry.test(sentence)) return "angry";
+  if(MOOD_WORDS.sad.test(sentence)) return "sad";
+  if(MOOD_WORDS.happy.test(sentence)) return "happy";
+  if(/!/.test(sentence)) return "excited";
+  return "neutral";
+}
+
+// ---- Parse text into words with moods, char offsets in the spoken (tag-free) text ----
+function parse(raw, moodSel){
+  const tokens=[]; let spoken=""; let tagMood=null;
+  const parts=raw.split(/(\[[a-z]+\])/i);
+  const sentenceMood=[];
+  for(const part of parts){
+    const m=part.match(/^\[([a-z]+)\]$/i);
+    if(m){ const k=m[1].toLowerCase(); if(MOODS[k]){ tagMood=k; } continue; }
+    // split into sentences to assign auto mood
+    const sentences=part.match(/[^.!?]+[.!?]*\s*|\s+/g)||[];
+    for(const s of sentences){
+      const mood = moodSel!=="auto" ? moodSel : (tagMood || detectMood(s));
+      const re=/[A-Za-z0-9']+|[.,!?;:—–-]+/g; let mm;
+      while((mm=re.exec(s))){
+        const t=mm[0], start=spoken.length+mm.index;
+        if(/^[A-Za-z0-9']+$/.test(t)){
+          tokens.push({type:"word", text:t, start, end:start+t.length, mood, vis:phonesToVisemes(wordToPhones(t))});
+        }else{
+          const pause = /[.!?]/.test(t)?380 : /[,;:—–-]/.test(t)?200:0;
+          tokens.push({type:"pause", text:t, start, ms:pause, mood});
+        }
+      }
+      spoken+=s;
+    }
+  }
+  return {tokens, spoken};
+}
+
+// ---- Rendering ----
+const canvas=document.getElementById("face"), ctx=canvas.getContext("2d");
+const sheet=new Image(); sheet.src=SPRITE_SRC;
+let current=[1,0];
+function draw(rc){
+  current=rc;
+  if(!sheet.complete) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality="high";
+  ctx.drawImage(sheet, rc[1]*(CW+GUT)+GUT/2, rc[0]*(CH+GUT)+GUT/2, CW, CH, 0, 0, canvas.width, canvas.height);
+}
+sheet.onload=()=>draw(current);
+function frameFor(mood, key){ return (MOODS[mood]||MOODS.neutral)[key]||MOODS[mood].rest; }
+
+// viseme chips
+const VKEYS=["rest","mbp","small","ah","aa","ee","o","oo","fv"];
+const visEl=document.getElementById("vis");
+visEl.innerHTML=VKEYS.map(k=>`<span data-k="${k}">${k}</span>`).join("");
+function showVis(k){ for(const s of visEl.children) s.classList.toggle("on", s.dataset.k===k); }
+
+// ---- Scheduler ----
+let plan=null, raf=0, mode="idle", idleMood="neutral", lastIdleSwap=0;
+const caption=document.getElementById("caption");
+function setStatus(t){ document.getElementById("status").textContent=t; }
+
+// Build an estimated schedule (ms offsets) for all tokens
+function estimate(tokens, rate){
+  const VOW=105/rate, CON=62/rate, GAP=35/rate;
+  let t=0;
+  for(const tok of tokens){
+    tok.t0=t;
+    if(tok.type==="word"){
+      const segs=[]; let tt=0;
+      for(const v of tok.vis){ const d=(v.w>=1?VOW*v.w:CON*(v.w/0.6)); segs.push({k:v.k, t:tt, d}); tt+=d; }
+      if(!segs.length){ segs.push({k:"small",t:0,d:CON}); tt=CON; }
+      tok.segs=segs; tok.dur=tt; t+=tt+GAP;
+    }else{ tok.dur=tok.ms/rate; t+=tok.dur; }
+  }
+  return t;
+}
+
+function renderCaption(tokens){
+  caption.innerHTML=tokens.filter(t=>t.type==="word").map((t,i)=>`<span class="w" data-i="${tokens.indexOf(t)}">${t.text}</span>`).join(" ");
+}
+function highlight(i){
+  for(const s of caption.children) s.classList.toggle("on", +s.dataset.i===i);
+}
+
+// Animation state for the speaking phase
+// anchors: when a boundary event arrives for word i at time T, we re-anchor the clock
+let anchor={idx:0, time:0}, lastFrameKey=null, lastSwitch=0;
+const MIN_HOLD=55;
+
+function tick(now){
+  raf=requestAnimationFrame(tick);
+  // subtle breathing / bob
+  const bob = mode==="speaking" ? Math.sin(now/170)*0.6 : Math.sin(now/900)*0.8;
+  canvas.style.transform=`translateY(${bob.toFixed(2)}px) rotate(${(Math.sin(now/1300)*0.4).toFixed(2)}deg)`;
+
+  if(mode!=="speaking"){
+    // idle: occasionally change idle expression
+    if(now-lastIdleSwap>2600+Math.random()*2500){
+      lastIdleSwap=now; const opts=IDLE[idleMood]||IDLE.neutral;
+      draw(opts[Math.floor(Math.random()*opts.length)]); showVis("rest");
+    }
+    return;
+  }
+  const toks=plan.tokens;
+  const a=toks[anchor.idx];
+  // elapsed in plan-time since anchor
+  const el=(now-anchor.time);
+  // find token at plan time a.t0+el, but never run past the next word when waiting on boundaries
+  let target=a.t0+el, i=anchor.idx;
+  while(i+1<toks.length && toks[i+1].t0<=target){
+    if(plan.useBoundaries && toks[i+1].type==="word" && i+1>plan.lastBoundary) break;
+    i++;
+  }
+  const tok=toks[i]; let key="rest", mood=tok.mood;
+  if(tok.type==="word"){
+    const local=target-tok.t0;
+    if(local<tok.dur){
+      const seg=tok.segs.find(s=>local>=s.t && local<s.t+s.d)||tok.segs[tok.segs.length-1];
+      key=seg.k;
+    }else{
+      key = plan.useBoundaries ? "rest" : "small"; // waiting for next word
+    }
+    highlight(i);
+  }else{
+    key="rest";
+  }
+  if(!plan.useBoundaries && i===toks.length-1 && target>tok.t0+tok.dur+200 && !plan.audio){ finish(); return; }
+  const fk=mood+":"+key;
+  if(fk!==lastFrameKey && now-lastSwitch>=MIN_HOLD){
+    lastFrameKey=fk; lastSwitch=now;
+    // a laugh flourish for happy sentences on wide-open vowels
+    let rc=frameFor(mood,key);
+    if(mood==="happy" && key==="aa" && Math.random()<0.25) rc=LAUGH[Math.floor(Math.random()*LAUGH.length)];
+    draw(rc); showVis(key);
+  }
+  idleMood=mood;
+}
+
+function start(useAudio){
+  stop(true);
+  const raw=document.getElementById("text").value;
+  const moodSel=document.getElementById("mood").value;
+  const rate=+document.getElementById("rate").value;
+  const parsed=parse(raw, moodSel);
+  if(!parsed.tokens.some(t=>t.type==="word")){ setStatus("Type some English text first."); return; }
+  estimate(parsed.tokens, rate);
+  plan={tokens:parsed.tokens, useBoundaries:false, lastBoundary:-1, audio:useAudio};
+  renderCaption(parsed.tokens);
+  lastFrameKey=null;
+
+  if(!useAudio || !("speechSynthesis" in window)){
+    if(useAudio) setStatus("This browser has no speech synthesis; animating without sound.");
+    else setStatus("Animating without sound (estimated timing).");
+    anchor={idx:0,time:performance.now()}; mode="speaking"; return;
+  }
+  const u=new SpeechSynthesisUtterance(parsed.spoken);
+  const v=voices.find(v=>v.name===document.getElementById("voice").value); if(v) u.voice=v;
+  u.lang=(v&&v.lang)||"en-US"; u.rate=rate; u.pitch=+document.getElementById("pitch").value;
+  // map spoken char offsets to token indices
+  const wordIdx=parsed.tokens.map((t,i)=>t.type==="word"?i:-1).filter(i=>i>=0);
+  u.onstart=()=>{ anchor={idx:0,time:performance.now()}; mode="speaking"; setStatus("Speaking…"); };
+  u.onboundary=(e)=>{
+    if(e.name && e.name!=="word") return;
+    const ci=e.charIndex;
+    // nearest word token starting at or before charIndex
+    let best=-1; for(const i of wordIdx){ if(plan.tokens[i].start<=ci+1) best=i; else break; }
+    if(best<0) return;
+    if(!plan.useBoundaries){ plan.useBoundaries=true; setStatus("Speaking… (synced to word timing from the voice)"); }
+    plan.lastBoundary=best;
+    anchor={idx:best,time:performance.now()};
+  };
+  u.onend=()=>finish();
+  u.onerror=(e)=>{ if(e.error!=="interrupted"&&e.error!=="canceled") setStatus("Speech error: "+e.error); finish(); };
+  speechSynthesis.speak(u);
+  setStatus("Starting voice…");
+}
+function finish(){
+  if(mode!=="speaking") return;
+  mode="idle"; lastIdleSwap=performance.now();
+  draw(frameFor(idleMood,"rest")); showVis("rest"); highlight(-1);
+  setStatus("Done.");
+}
+function stop(silent){
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+  if(mode==="speaking"){ mode="idle"; draw(frameFor(idleMood,"rest")); showVis("rest"); highlight(-1); }
+  if(!silent) setStatus("Stopped.");
+}
+
+// ---- Voices ----
+let voices=[];
+function loadVoices(){
+  if(!("speechSynthesis" in window)) return;
+  voices=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));
+  const sel=document.getElementById("voice"); const prev=sel.value;
+  sel.innerHTML=voices.map(v=>`<option value="${v.name.replace(/"/g,"&quot;")}">${v.name} (${v.lang})</option>`).join("")||"<option>Default</option>";
+  const pref=voices.find(v=>v.name===prev)||voices.find(v=>/male|david|daniel|guy|alex|fred|george/i.test(v.name)&&!/female/i.test(v.name))||voices.find(v=>v.localService)||voices[0];
+  if(pref) sel.value=pref.name;
+}
+if("speechSynthesis" in window){ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }
+
+for(const id of ["rate","pitch"]){
+  const el=document.getElementById(id), out=document.getElementById(id+"V");
+  el.oninput=()=>out.textContent=(+el.value).toFixed(1);
+}
+document.getElementById("speak").onclick=()=>start(true);
+document.getElementById("silent").onclick=()=>start(false);
+document.getElementById("stop").onclick=()=>stop(false);
+document.getElementById("mood").onchange=e=>{ if(e.target.value!=="auto"){ idleMood=e.target.value; if(mode!=="speaking") draw(frameFor(idleMood,"rest")); } };
+draw([1,0]); showVis("rest");
+requestAnimationFrame(tick);
+
+// expose for embedding elsewhere (e.g. the game's commentators)
+window.LipSync={ speak:(text,opts={})=>{ document.getElementById("text").value=text; if(opts.mood) document.getElementById("mood").value=opts.mood; start(opts.silent?false:true); }, stop:()=>stop(false), wordToPhones, parse };
+</script>
+</body>
+</html>
