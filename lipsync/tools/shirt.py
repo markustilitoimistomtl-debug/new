@@ -55,7 +55,7 @@ def body():
 
 B=body(); B.save('body.png')
 CUT=74
-os.makedirs('out',exist_ok=True)
+os.makedirs('out',exist_ok=True); os.makedirs('heads',exist_ok=True)
 for f in sorted(glob.glob('cells/*.png')):
     a=np.array(Image.open(f).convert('RGBA')).astype(int)
     r,g,b,al=a[...,0],a[...,1],a[...,2],a[...,3]
@@ -67,13 +67,15 @@ for f in sorted(glob.glob('cells/*.png')):
     face=ndimage.binary_fill_holes(face|( (yy<CUT)&(al>0) ))&(yy>=CUT-2)
     Z=4
     f4=ndimage.zoom(face.astype(float),Z,order=1)
-    f4=ndimage.gaussian_filter(f4,2.5)>0.5
+    f4=ndimage.gaussian_filter(f4,4.0)>0.5
+    # pull the cut ~1.5px inside the jaw so dark ring pixels at the edge are dropped
+    f4=ndimage.binary_erosion(f4,iterations=4)
     y4=np.arange(H*Z)[:,None]
     fm=f4.reshape(H,Z,W,Z).mean((1,3))
     fm[yy<CUT]=1.0
-    band=ndimage.binary_dilation(f4,iterations=3)&~ndimage.binary_erosion(f4,iterations=3)
-    band&=(y4>(CUT+3)*Z)
-    k=band.reshape(H,Z,W,Z).mean((1,3))*np.clip((yy-(CUT+3))/4.0,0,1)
+    band=ndimage.binary_dilation(f4,iterations=8)&~ndimage.binary_erosion(f4,iterations=4)
+    band&=(y4>=(CUT-2)*Z)
+    k=band.reshape(H,Z,W,Z).mean((1,3))
     out=np.array(B).astype(float); src=a.astype(float)
     sa=(src[...,3]/255.0*fm)[...,None]
     rgb=src[...,:3]*sa+out[...,:3]*(1-sa)
@@ -84,3 +86,9 @@ for f in sorted(glob.glob('cells/*.png')):
     alpha=np.maximum(alpha,255*k[...,None])
     res=np.concatenate([rgb,alpha],-1).clip(0,255).astype(np.uint8)
     Image.fromarray(res).save('out/'+os.path.basename(f))
+    # head-only layer (face + chin outline, transparent below) for drawing the shirt live in the browser
+    hs=src[...,3]*fm
+    ha=np.maximum(hs,255*k)
+    hrgb=src[...,:3]*(hs/np.maximum(ha,1e-6))[...,None]+ink*(1-hs/np.maximum(ha,1e-6))[...,None]
+    head=np.concatenate([hrgb,ha[...,None]],-1).clip(0,255).astype(np.uint8)
+    Image.fromarray(head).save('heads/'+os.path.basename(f))

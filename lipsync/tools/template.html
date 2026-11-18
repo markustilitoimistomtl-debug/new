@@ -46,6 +46,19 @@ code{background:var(--chip);padding:1px 5px;border-radius:5px;font-size:12.5px}
 .vis{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .vis span{font-size:11.5px;padding:2px 7px;border-radius:20px;background:var(--chip);color:var(--muted)}
 .vis span.on{background:var(--accent);color:var(--accent-ink)}
+.fsbtn{position:absolute;top:10px;right:10px;padding:6px 10px;font-size:13px;background:var(--panel);z-index:2}
+.subtitle{display:none}
+.stage.fs{position:fixed;inset:0;height:auto;border-radius:0;z-index:50;padding:0;align-items:flex-end}
+.stage.fs #face{width:auto;height:min(88vh,calc(92vw*124/128));max-width:none}
+.stage.fs .subtitle{display:block;position:absolute;left:16px;right:16px;bottom:max(16px,4vh);text-align:center;font-size:clamp(18px,3.2vw,34px);line-height:1.3;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.8),0 0 2px #000;pointer-events:none}
+.stage.fs .subtitle .w{opacity:.75}
+.stage.fs .subtitle .w.on{opacity:1;font-weight:700}
+.stage:fullscreen{width:100vw;height:100vh}
+.swatches{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.sw{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);padding:0;cursor:pointer}
+.sw.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:2px;cursor:pointer}
+.tiebox[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -53,8 +66,10 @@ code{background:var(--chip);padding:1px 5px;border-radius:5px;font-size:12.5px}
   <div>
     <h1>Lip Sync</h1>
     <p class="sub">The character's mouth follows the English text as it is spoken.</p>
-    <div class="stage">
+    <div class="stage" id="stage">
+      <button class="fsbtn" id="fs" title="Fullscreen (F)">⛶ Fullscreen</button>
       <canvas id="face" width="256" height="248"></canvas>
+      <div class="subtitle" id="subtitle"></div>
     </div>
     <div class="caption" id="caption"></div>
     <div class="vis" id="vis"></div>
@@ -78,6 +93,27 @@ code{background:var(--chip);padding:1px 5px;border-radius:5px;font-size:12.5px}
         <label for="voice">Voice</label>
         <select id="voice"></select>
       </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="outfit">Outfit</label>
+        <select id="outfit">
+          <option value="shirt">Dress shirt, open collar</option>
+          <option value="tie">Dress shirt and tie</option>
+          <option value="suit">Suit and tie</option>
+          <option value="polo">Polo shirt</option>
+          <option value="tshirt">T-shirt</option>
+          <option value="hoodie">Hoodie</option>
+        </select>
+      </div>
+      <div>
+        <label id="colorLabel">Shirt color</label>
+        <div class="swatches" id="colorSw"></div>
+      </div>
+    </div>
+    <div class="tiebox" id="tieBox" hidden>
+      <label>Tie color</label>
+      <div class="swatches" id="tieSw"></div>
     </div>
     <div class="row">
       <div><label for="rate">Rate <span id="rateV">1.0</span></label><input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="1"></div>
@@ -198,7 +234,7 @@ function detectMood(sentence){
 
 // ---- Parse text into words with moods, char offsets in the spoken (tag-free) text ----
 function parse(raw, moodSel){
-  const tokens=[]; let spoken=""; let tagMood=null;
+  const tokens=[]; let spoken=""; let tagMood=null; let sid=0;
   const parts=raw.split(/(\[[a-z]+\])/i);
   const sentenceMood=[];
   for(const part of parts){
@@ -207,12 +243,13 @@ function parse(raw, moodSel){
     // split into sentences to assign auto mood
     const sentences=part.match(/[^.!?]+[.!?]*\s*|\s+/g)||[];
     for(const s of sentences){
+      if(/\S/.test(s)) sid++;
       const mood = moodSel!=="auto" ? moodSel : (tagMood || detectMood(s));
       const re=/[A-Za-z0-9']+|[.,!?;:—–-]+/g; let mm;
       while((mm=re.exec(s))){
         const t=mm[0], start=spoken.length+mm.index;
         if(/^[A-Za-z0-9']+$/.test(t)){
-          tokens.push({type:"word", text:t, start, end:start+t.length, mood, vis:phonesToVisemes(wordToPhones(t))});
+          tokens.push({type:"word", text:t, start, end:start+t.length, mood, sid, vis:phonesToVisemes(wordToPhones(t))});
         }else{
           const pause = /[.!?]/.test(t)?380 : /[,;:—–-]/.test(t)?200:0;
           tokens.push({type:"pause", text:t, start, ms:pause, mood});
@@ -228,14 +265,197 @@ function parse(raw, moodSel){
 const canvas=document.getElementById("face"), ctx=canvas.getContext("2d");
 const sheet=new Image(); sheet.src=SPRITE_SRC;
 let current=[1,0];
+
+// ---- Outfit (drawn as vectors under the head layer, in 128x124 cell units) ----
+const INK="#18120c", SKIN="#e5d4b4", SKIN_SH="#c8b494";
+const P=s=>new Path2D(s);
+const SH={
+  torso:P("M40 86 Q24 94 12 102 Q6 112 4 127 L124 127 Q122 112 116 102 Q104 94 88 86 Z"),
+  band:P("M44 74 Q64 82 84 74 L90 84 Q64 94 38 84 Z"),
+  neck:P("M47 64 Q48 80 50 90 L64 106 L78 90 Q80 80 82 64 Z"),
+  neckLine:P("M47 64 Q48 80 51 92"),
+  neckShadow:P("M52 94 L64 106 L76 94 Q64 100 52 94 Z"),
+  wing:P("M45 72 Q44 80 36 88 Q42 100 50 112 Q57 106 64 104 Q54 92 45 72 Z"),
+  wingShade:P("M38 90 Q30 100 34 108 Q48 116 56 114 Q46 104 38 90 Z"),
+  crease:P("M42 90 Q46 98 50 106"),
+  seam:P("M24 96 Q20 108 18 127"),
+  closed:P("M49 84 L79 84 L64 110 Z"),
+  tieBlade:P("M60.5 103 L67.5 103 L71 121 L64 127 L57 121 Z"),
+  tieKnot:P("M58.5 95 L69.5 95 L67.5 104.5 L60.5 104.5 Z"),
+  suitV:P("M42 84 L86 84 L71 127 L57 127 Z"),
+  lapel:P("M41 85 Q47 106 57 127 L46 127 Q41 114 37 105 L28 99 L34 94 Q35 89 41 85 Z"),
+  poloNeck:P("M47 64 Q48 80 50 88 L64 100 L78 88 Q80 80 82 64 Z"),
+  poloWing:P("M46 74 Q44 80 37 88 Q43 96 50 103 Q57 99 64 100 Q55 90 46 74 Z"),
+  poloPlacket:P("M60 99 L68 99 L68 117 L60 117 Z"),
+  teeNeck:P("M47 64 Q48 80 49 86 Q64 101 79 86 Q80 80 82 64 Z"),
+  teeBand:P("M42 81 Q64 109 86 81 L81 79 Q64 101 47 79 Z"),
+  hood:P("M29 99 Q25 77 45 70 L83 70 Q103 77 99 99 Q64 113 29 99 Z"),
+  hoodNeck:P("M48 64 Q48 78 50 84 Q64 99 78 84 Q80 78 81 64 Z"),
+  hoodBand:P("M40 83 Q64 111 88 83 L83 79 Q64 102 45 79 Z"),
+};
+function hexToRgb(h){ h=h.replace("#",""); if(h.length===3) h=h.split("").map(c=>c+c).join(""); const n=parseInt(h,16); return [n>>16&255,n>>8&255,n&255]; }
+function mix(h,toward,amt){ const a=hexToRgb(h), b=hexToRgb(toward); return "rgb("+a.map((v,i)=>Math.round(v+(b[i]-v)*amt)).join(",")+")"; }
+function lum(h){ const [r,g,b]=hexToRgb(h); return (0.299*r+0.587*g+0.114*b)/255; }
+
+function drawOutfit(c, outfit, color, tie){
+  const shade=mix(color,"#000000",0.16), soft=mix(color,"#000000",0.09);
+  const fillStroke=(p,fill,w=2)=>{ if(fill){ c.fillStyle=fill; c.fill(p); } c.lineWidth=w; c.strokeStyle=INK; c.stroke(p); };
+  const fill=(p,f)=>{ c.fillStyle=f; c.fill(p); };
+  const line=(p,col,w)=>{ c.lineWidth=w; c.strokeStyle=col; c.stroke(p); };
+  const both=fn=>{ fn(); c.save(); c.translate(128,0); c.scale(-1,1); fn(); c.restore(); };
+  const neck=(p)=>{ fill(p,SKIN); both(()=>line(SH.neckLine,INK,1.8)); };
+  const button=(x,y,col)=>{ c.beginPath(); c.arc(x,y,1.6,0,Math.PI*2); c.fillStyle=col; c.fill(); c.lineWidth=0.8; c.strokeStyle=INK; c.stroke(); };
+  const seams=col=>both(()=>line(SH.seam,col,1));
+  c.lineJoin="round"; c.lineCap="round";
+
+  if(outfit==="suit"){
+    const shirt="#f7f5f0";
+    fillStroke(SH.torso,color); seams(soft);
+    fillStroke(SH.suitV,shirt,1.4);
+    fillStroke(SH.band,shirt); neck(SH.neck); fill(SH.closed,shirt);
+    fillStroke(SH.tieBlade,tie,1.5);
+    both(()=>fillStroke(SH.wing,shirt));
+    fillStroke(SH.tieKnot,tie,1.5);
+    both(()=>fillStroke(SH.lapel,shade,1.8));
+    button(64,122,mix(color,"#000000",0.35));
+    return;
+  }
+  if(outfit==="shirt"||outfit==="tie"){
+    fillStroke(SH.torso,color); seams(shade);
+    fillStroke(SH.band,color);
+    neck(SH.neck);
+    if(outfit==="shirt"){
+      fill(SH.neckShadow,SKIN_SH);
+      both(()=>fill(SH.wingShade,soft));
+      c.lineWidth=1.3; c.strokeStyle=INK; c.beginPath(); c.moveTo(64,104); c.lineTo(64,127); c.stroke();
+      c.lineWidth=1; c.strokeStyle=shade; c.beginPath(); c.moveTo(67,106); c.lineTo(67,127); c.stroke();
+      button(65.5,112,color); button(65.5,121,color);
+      both(()=>{ fillStroke(SH.wing,color); line(SH.crease,shade,1); });
+    }else{
+      fill(SH.closed,color);
+      both(()=>fill(SH.wingShade,soft));
+      fillStroke(SH.tieBlade,tie,1.5);
+      both(()=>{ fillStroke(SH.wing,color); line(SH.crease,shade,1); });
+      fillStroke(SH.tieKnot,tie,1.5);
+    }
+    return;
+  }
+  if(outfit==="polo"){
+    fillStroke(SH.torso,color); seams(shade);
+    fillStroke(SH.band,color);
+    neck(SH.poloNeck); fill(P("M54 92 L64 100 L74 92 Q64 96 54 92 Z"),SKIN_SH);
+    fillStroke(SH.poloPlacket,soft,1.3);
+    button(64,104,"#f4f2ec"); button(64,111.5,"#f4f2ec");
+    both(()=>fillStroke(SH.poloWing,color));
+    return;
+  }
+  if(outfit==="tshirt"){
+    fillStroke(SH.torso,color); seams(shade);
+    neck(SH.teeNeck);
+    fill(P("M51 88 Q64 98 77 88 Q64 94 51 88 Z"),SKIN_SH);
+    fillStroke(SH.teeBand,soft,1.6);
+    return;
+  }
+  if(outfit==="hoodie"){
+    fillStroke(SH.torso,color); seams(shade);
+    fillStroke(SH.hood,shade);
+    neck(SH.hoodNeck);
+    fillStroke(SH.hoodBand,soft,1.6);
+    const cord=lum(color)>0.6?"#5b5650":"#f2efe8";
+    for(const [x0,x1] of [[56,54],[72,74]]){
+      c.lineWidth=3.2; c.strokeStyle=INK; c.beginPath(); c.moveTo(x0,97); c.lineTo(x1,116); c.stroke();
+      c.lineWidth=1.6; c.strokeStyle=cord; c.beginPath(); c.moveTo(x0,97); c.lineTo(x1,116); c.stroke();
+      c.fillStyle=INK; c.fillRect(x1-1.6,115,3.2,4.5);
+    }
+    return;
+  }
+}
+
+const outfitCanvas=document.createElement("canvas");
+let outfitState={outfit:"shirt", color:"#f7f5f0", tie:"#2f4a7a"};
+try{ Object.assign(outfitState, JSON.parse(localStorage.getItem("lipsync.outfit")||"{}")); }catch(e){}
+function renderOutfit(){
+  outfitCanvas.width=canvas.width; outfitCanvas.height=canvas.height;
+  const c=outfitCanvas.getContext("2d");
+  c.setTransform(canvas.width/CW,0,0,canvas.height/CH,0,0);
+  drawOutfit(c, outfitState.outfit, outfitState.color, outfitState.tie);
+  try{ localStorage.setItem("lipsync.outfit", JSON.stringify(outfitState)); }catch(e){}
+  draw(current);
+}
+
 function draw(rc){
   current=rc;
   if(!sheet.complete) return;
   ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(outfitCanvas,0,0);
   ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality="high";
   ctx.drawImage(sheet, rc[1]*(CW+GUT)+GUT/2, rc[0]*(CH+GUT)+GUT/2, CW, CH, 0, 0, canvas.width, canvas.height);
 }
-sheet.onload=()=>draw(current);
+// keep the canvas backing store matched to its on-screen size so the outfit lines stay crisp
+function fitCanvas(){
+  const r=canvas.getBoundingClientRect(); if(!r.width) return;
+  const dpr=Math.min(window.devicePixelRatio||1,3);
+  const w=Math.round(r.width*dpr), h=Math.round(w*CH/CW);
+  if(w!==canvas.width){ canvas.width=w; canvas.height=h; renderOutfit(); }
+}
+sheet.onload=()=>{ fitCanvas(); renderOutfit(); };
+new ResizeObserver(fitCanvas).observe(canvas);
+
+// ---- Outfit controls ----
+const SHIRT_COLORS=["#f7f5f0","#cfe0f2","#f4d3d8","#e9dfc4","#a9c7a0","#2f4a7a","#8a2f35","#3b3b3f","#1e1e22"];
+const SUIT_COLORS=["#2a3550","#3b3b3f","#1e1e22","#5a5f66","#6b4a35","#2f4f3e","#7a2632","#c9bfa8","#e8e4da"];
+const TIE_COLORS=["#2f4a7a","#8a2f35","#c2462f","#2f5e46","#d9a83a","#5b3a7a","#1e1e22","#9aa3ad"];
+const DEFAULT_COLOR={shirt:"#f7f5f0",tie:"#f7f5f0",suit:"#2a3550",polo:"#2f4a7a",tshirt:"#3b3b3f",hoodie:"#8a2f35"};
+function swatchRow(el, colors, value, onPick){
+  el.innerHTML="";
+  for(const col of colors){
+    const b=document.createElement("button"); b.className="sw"+(col.toLowerCase()===value.toLowerCase()?" on":""); b.style.background=col; b.title=col; b.setAttribute("aria-label","Color "+col);
+    b.onclick=()=>onPick(col); el.appendChild(b);
+  }
+  const pick=document.createElement("input"); pick.type="color"; pick.value=value; pick.title="Custom color";
+  pick.oninput=()=>onPick(pick.value,true); el.appendChild(pick);
+}
+function refreshOutfitUI(){
+  const o=outfitState.outfit;
+  document.getElementById("outfit").value=o;
+  document.getElementById("colorLabel").textContent = o==="suit"?"Jacket color":o==="hoodie"?"Hoodie color":"Shirt color";
+  const pickMain=(col,live)=>{ outfitState.color=col; renderOutfit(); if(!live) refreshOutfitUI(); };
+  const pickTie=(col,live)=>{ outfitState.tie=col; renderOutfit(); if(!live) refreshOutfitUI(); };
+  swatchRow(document.getElementById("colorSw"), o==="suit"?SUIT_COLORS:SHIRT_COLORS, outfitState.color, pickMain);
+  const tb=document.getElementById("tieBox"); tb.hidden=!(o==="tie"||o==="suit");
+  swatchRow(document.getElementById("tieSw"), TIE_COLORS, outfitState.tie, pickTie);
+}
+document.getElementById("outfit").onchange=e=>{
+  outfitState.outfit=e.target.value; outfitState.color=DEFAULT_COLOR[e.target.value];
+  renderOutfit(); refreshOutfitUI();
+};
+refreshOutfitUI();
+
+// ---- Fullscreen ----
+const stage=document.getElementById("stage"), fsBtn=document.getElementById("fs");
+function isFs(){ return stage.classList.contains("fs"); }
+function setFs(on){
+  stage.classList.toggle("fs",on);
+  fsBtn.textContent=on?"✕ Exit":"⛶ Fullscreen";
+  requestAnimationFrame(fitCanvas);
+}
+fsBtn.onclick=async()=>{
+  if(isFs()){
+    if(document.fullscreenElement) await document.exitFullscreen().catch(()=>{});
+    setFs(false); return;
+  }
+  setFs(true);
+  // real fullscreen where supported; otherwise the stage just covers the window
+  if(stage.requestFullscreen) await stage.requestFullscreen().catch(()=>{});
+  else if(stage.webkitRequestFullscreen) stage.webkitRequestFullscreen();
+};
+document.addEventListener("fullscreenchange",()=>{ if(!document.fullscreenElement && isFs()) setFs(false); });
+document.addEventListener("keydown",e=>{
+  if(e.target.matches("textarea,input,select")) return;
+  if(e.key==="f"||e.key==="F") fsBtn.click();
+  if(e.key==="Escape" && isFs() && !document.fullscreenElement) setFs(false);
+  if(e.key===" " && isFs()){ e.preventDefault(); mode==="speaking"?stop(false):start(true); }
+});
 function frameFor(mood, key){ return (MOODS[mood]||MOODS.neutral)[key]||MOODS[mood].rest; }
 
 // viseme chips
@@ -268,8 +488,18 @@ function estimate(tokens, rate){
 function renderCaption(tokens){
   caption.innerHTML=tokens.filter(t=>t.type==="word").map((t,i)=>`<span class="w" data-i="${tokens.indexOf(t)}">${t.text}</span>`).join(" ");
 }
+let subSid=-1;
+const subtitle=document.getElementById("subtitle");
 function highlight(i){
   for(const s of caption.children) s.classList.toggle("on", +s.dataset.i===i);
+  // fullscreen subtitle: the sentence being spoken
+  const tok=plan&&plan.tokens[i];
+  if(!tok||tok.type!=="word"){ if(i<0){ subtitle.innerHTML=""; subSid=-1; } return; }
+  if(tok.sid!==subSid){
+    subSid=tok.sid;
+    subtitle.innerHTML=plan.tokens.map((t,j)=>t.type==="word"&&t.sid===subSid?`<span class="w" data-i="${j}">${t.text}</span>`:"").filter(Boolean).join(" ");
+  }
+  for(const s of subtitle.children) s.classList.toggle("on", +s.dataset.i===i);
 }
 
 // Animation state for the speaking phase
