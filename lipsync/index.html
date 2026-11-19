@@ -115,6 +115,8 @@ input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-rad
       <label>Tie color</label>
       <div class="swatches" id="tieSw"></div>
     </div>
+    <label>Background</label>
+    <div class="swatches" id="bgSw"></div>
     <div class="row">
       <div><label for="rate">Rate <span id="rateV">1.0</span></label><input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="1"></div>
       <div><label for="pitch">Pitch <span id="pitchV">1.0</span></label><input id="pitch" type="range" min="0.5" max="1.5" step="0.1" value="1"></div>
@@ -431,6 +433,31 @@ document.getElementById("outfit").onchange=e=>{
 };
 refreshOutfitUI();
 
+// ---- Background ----
+// "" = theme default; green and blue are chroma-key colors for cutting the character out of a screen recording
+const BG_COLORS=["","#ffffff","#f3e7c9","#cfe0f2","#2a3550","#1e1e22","#7a2632","#00b140","#0047bb"];
+let bgColor=""; try{ bgColor=localStorage.getItem("lipsync.bg")||""; }catch(e){}
+function applyBg(){
+  stage.style.background=bgColor||"";
+  try{ localStorage.setItem("lipsync.bg",bgColor); }catch(e){}
+}
+function refreshBgUI(){
+  const el=document.getElementById("bgSw"); el.innerHTML="";
+  for(const col of BG_COLORS){
+    const b=document.createElement("button");
+    b.className="sw"+(col===bgColor?" on":"");
+    b.style.background=col||"var(--stage)";
+    b.title=col||"Default"; b.setAttribute("aria-label", col?"Background "+col:"Default background");
+    if(!col) b.textContent="↺", b.style.fontSize="12px", b.style.color="var(--muted)";
+    b.onclick=()=>{ bgColor=col; applyBg(); refreshBgUI(); };
+    el.appendChild(b);
+  }
+  const pick=document.createElement("input"); pick.type="color"; pick.value=bgColor||"#e8e0d0"; pick.title="Custom background";
+  pick.oninput=()=>{ bgColor=pick.value; applyBg(); };
+  pick.onchange=()=>refreshBgUI();
+  el.appendChild(pick);
+}
+
 // ---- Fullscreen ----
 const stage=document.getElementById("stage"), fsBtn=document.getElementById("fs");
 function isFs(){ return stage.classList.contains("fs"); }
@@ -449,6 +476,7 @@ fsBtn.onclick=async()=>{
   if(stage.requestFullscreen) await stage.requestFullscreen().catch(()=>{});
   else if(stage.webkitRequestFullscreen) stage.webkitRequestFullscreen();
 };
+applyBg(); refreshBgUI();
 document.addEventListener("fullscreenchange",()=>{ if(!document.fullscreenElement && isFs()) setFs(false); });
 document.addEventListener("keydown",e=>{
   if(e.target.matches("textarea,input,select")) return;
