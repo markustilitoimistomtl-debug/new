@@ -99,6 +99,25 @@ input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-rad
       </div>
     </div>
     <div class="row">
+      <div>
+        <label for="gestures">Hand gestures</label>
+        <select id="gestures">
+          <option value="lively">Lively</option>
+          <option value="calm">Calm</option>
+          <option value="off">Off (hands at rest)</option>
+        </select>
+      </div>
+      <div>
+        <label for="ending">At the end</label>
+        <select id="ending">
+          <option value="none">Nothing</option>
+          <option value="smile">Wide smile</option>
+          <option value="laugh">Laugh</option>
+          <option value="wink">Wink and point</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
       <div><label for="rate">Rate <span id="rateV">1.0</span></label><input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="1"></div>
       <div><label for="pitch">Pitch <span id="pitchV">1.0</span></label><input id="pitch" type="range" min="0.5" max="1.5" step="0.1" value="1"></div>
     </div>
@@ -153,7 +172,7 @@ input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-rad
 </div>
 <script>
 const SPRITE_SRC = "__SPRITES__";
-const CW = 128, CH = 124, GUT = 4; // cells sit in a 132x128 grid with a 2px transparent gutter
+const CW = 128, CH = 124, GUT = 4, BH = 190; // BH: full figure height incl. torso below the head cell; // cells sit in a 132x128 grid with a 2px transparent gutter
 
 // ---- Frame tables: [row, col] in the sprite sheet ----
 // Visemes: rest, mbp (lips closed), small (slightly open / consonants), ah (open),
@@ -275,7 +294,7 @@ function parse(raw, moodSel){
           tokens.push({type:"word", text:t, start, end:start+t.length, mood, sid, vis:phonesToVisemes(wordToPhones(t))});
         }else{
           const pause = /[.!?]/.test(t)?380 : /[,;:—–-]/.test(t)?200:0;
-          tokens.push({type:"pause", text:t, start, ms:pause, mood});
+          tokens.push({type:"pause", text:t, start, ms:pause, mood, sid});
         }
       }
       spoken+=s;
@@ -293,7 +312,7 @@ let current=[1,0];
 const INK="#18120c", SKIN="#e5d4b4", SKIN_SH="#c8b494";
 const P=s=>new Path2D(s);
 const SH={
-  torso:P("M40 86 Q24 94 12 102 Q6 112 4 127 L124 127 Q122 112 116 102 Q104 94 88 86 Z"),
+  torso:P("M40 86 Q24 94 12 102 Q5 112 6 140 L9 192 L119 192 L122 140 Q123 112 116 102 Q104 94 88 86 Z"),
   band:P("M44 74 Q64 82 84 74 L90 84 Q64 94 38 84 Z"),
   neck:P("M47 64 Q48 80 50 90 L64 106 L78 90 Q80 80 82 64 Z"),
   neckLine:P("M47 64 Q48 80 51 92"),
@@ -303,10 +322,10 @@ const SH={
   crease:P("M42 90 Q46 98 50 106"),
   seam:P("M24 96 Q20 108 18 127"),
   closed:P("M49 84 L79 84 L64 110 Z"),
-  tieBlade:P("M60.5 103 L67.5 103 L71 121 L64 127 L57 121 Z"),
+  tieBlade:P("M60.5 103 L67.5 103 L72 152 L64 160 L56 152 Z"),
   tieKnot:P("M58.5 95 L69.5 95 L67.5 104.5 L60.5 104.5 Z"),
-  suitV:P("M42 84 L86 84 L71 127 L57 127 Z"),
-  lapel:P("M41 85 Q47 106 57 127 L46 127 Q41 114 37 105 L28 99 L34 94 Q35 89 41 85 Z"),
+  suitV:P("M42 84 L86 84 L67 152 L61 152 Z"),
+  lapel:P("M41 85 Q48 112 61.5 152 L54 152 Q42 124 37 105 L28 99 L34 94 Q35 89 41 85 Z"),
   poloNeck:P("M47 64 Q48 80 50 88 L64 100 L78 88 Q80 80 82 64 Z"),
   poloWing:P("M46 74 Q44 80 37 88 Q43 96 50 103 Q57 99 64 100 Q55 90 46 74 Z"),
   poloPlacket:P("M60 99 L68 99 L68 117 L60 117 Z"),
@@ -336,11 +355,12 @@ function drawOutfit(c, outfit, color, tie){
     fillStroke(SH.torso,color); seams(soft);
     fillStroke(SH.suitV,shirt,1.4);
     fillStroke(SH.band,shirt); neck(SH.neck); fill(SH.closed,shirt);
-    fillStroke(SH.tieBlade,tie,1.5);
+    c.save(); c.clip(SH.suitV); fillStroke(SH.tieBlade,tie,1.5); c.restore();
     both(()=>fillStroke(SH.wing,shirt));
     fillStroke(SH.tieKnot,tie,1.5);
     both(()=>fillStroke(SH.lapel,shade,1.8));
-    button(64,122,mix(color,"#000000",0.35));
+    c.lineWidth=1.4; c.strokeStyle=INK; c.beginPath(); c.moveTo(64,152); c.lineTo(64,192); c.stroke();
+    button(66.5,162,mix(color,"#000000",0.35)); button(66.5,178,mix(color,"#000000",0.35));
     return;
   }
   if(outfit==="shirt"||outfit==="tie"){
@@ -350,13 +370,15 @@ function drawOutfit(c, outfit, color, tie){
     if(outfit==="shirt"){
       fill(SH.neckShadow,SKIN_SH);
       both(()=>fill(SH.wingShade,soft));
-      c.lineWidth=1.3; c.strokeStyle=INK; c.beginPath(); c.moveTo(64,104); c.lineTo(64,127); c.stroke();
-      c.lineWidth=1; c.strokeStyle=shade; c.beginPath(); c.moveTo(67,106); c.lineTo(67,127); c.stroke();
-      button(65.5,112,color); button(65.5,121,color);
+      c.lineWidth=1.3; c.strokeStyle=INK; c.beginPath(); c.moveTo(64,104); c.lineTo(64,192); c.stroke();
+      c.lineWidth=1; c.strokeStyle=shade; c.beginPath(); c.moveTo(67,106); c.lineTo(67,192); c.stroke();
+      for(const by of [112,124,138,152,166,180]) button(65.5,by,color);
       both(()=>{ fillStroke(SH.wing,color); line(SH.crease,shade,1); });
     }else{
       fill(SH.closed,color);
       both(()=>fill(SH.wingShade,soft));
+      c.lineWidth=1.3; c.strokeStyle=INK; c.beginPath(); c.moveTo(64,158); c.lineTo(64,192); c.stroke();
+      button(65.5,170,color); button(65.5,184,color);
       fillStroke(SH.tieBlade,tie,1.5);
       both(()=>{ fillStroke(SH.wing,color); line(SH.crease,shade,1); });
       fillStroke(SH.tieKnot,tie,1.5);
@@ -390,7 +412,129 @@ function drawOutfit(c, outfit, color, tie){
       c.lineWidth=1.6; c.strokeStyle=cord; c.beginPath(); c.moveTo(x0,97); c.lineTo(x1,116); c.stroke();
       c.fillStyle=INK; c.fillRect(x1-1.6,115,3.2,4.5);
     }
+    fillStroke(P("M30 192 Q33 171 42 164 L86 164 Q95 171 98 192 Z"),soft,1.6);
     return;
+  }
+}
+
+// ---- Arms and hands (drawn live every frame, in body units) ----
+const SHOULDER={L:[15,111], R:[113,111]}, L1=36, L2=34;
+function solveElbow(S,T,side){
+  let dx=T[0]-S[0], dy=T[1]-S[1], d=Math.hypot(dx,dy);
+  const dd=Math.min(L1+L2-0.5, Math.max(Math.abs(L1-L2)+0.5, d));
+  const base=Math.atan2(dy,dx), a=Math.acos((L1*L1+dd*dd-L2*L2)/(2*L1*dd));
+  const e1=[S[0]+L1*Math.cos(base+a), S[1]+L1*Math.sin(base+a)];
+  const e2=[S[0]+L1*Math.cos(base-a), S[1]+L1*Math.sin(base-a)];
+  const E = side==="L" ? (e1[0]<e2[0]?e1:e2) : (e1[0]>e2[0]?e1:e2); // elbow points away from the body
+  const W=[E[0]+L2*Math.cos(Math.atan2(T[1]-E[1],T[0]-E[0])), E[1]+L2*Math.sin(Math.atan2(T[1]-E[1],T[0]-E[0]))];
+  return [E, d>L1+L2-0.5||d<Math.abs(L1-L2)+0.5 ? W : T];
+}
+function strokePath(c,pts,w,col){ c.beginPath(); c.moveTo(pts[0][0],pts[0][1]); for(const p of pts.slice(1)) c.lineTo(p[0],p[1]); c.lineWidth=w; c.strokeStyle=col; c.stroke(); }
+function drawHand(c,W,ang,open,point){
+  c.save(); c.translate(W[0],W[1]); c.rotate(ang); c.scale(1.35,1.35);
+  // thumb on the side facing the body centre
+  const s = (-Math.sin(ang)*(64-W[0]))>=0 ? 1 : -1;
+  const fingers=[];
+  for(let k=0;k<4;k++){
+    const off=(k-1.5)*2.9, spread=(k-1.5)*0.24*open;
+    const isIndex = point && (s>0 ? k===3 : k===0);
+    const len = (isIndex ? 9.5 : point ? 1.5 : 1.8+5.4*open) * (k===0||k===3 ? 0.85 : 1);
+    fingers.push([[7.5,off],[7.5+len*Math.cos(spread), off+len*Math.sin(spread)]]);
+  }
+  const th=0.85-0.6*open;
+  const thumb=[[3,s*3.6],[3+5.2*Math.cos(th), s*(3.6+5.2*Math.sin(th))]];
+  c.lineCap="round"; c.lineJoin="round";
+  const FW=3.3, TW=3.6, O=1.25;
+  for(const f of fingers) strokePath(c,f,FW+2*O,INK);
+  strokePath(c,thumb,TW+2*O,INK);
+  // palm: rounded mitten shape
+  const palm=new Path2D("M-0.5 -5 Q6 -6.6 9.5 -5.2 Q11 0 9.5 5.2 Q6 6.6 -0.5 5 Q-1.6 0 -0.5 -5 Z");
+  c.lineWidth=2*O; c.strokeStyle=INK; c.stroke(palm);
+  for(const f of fingers) strokePath(c,f,FW,SKIN);
+  strokePath(c,thumb,TW,SKIN);
+  c.fillStyle=SKIN; c.fill(palm);
+  // finger separation hints over the palm edge
+  c.lineWidth=0.7; c.strokeStyle=SKIN_SH;
+  for(let k=1;k<4;k++){ const y=(k-2)*2.9+1.45; c.beginPath(); c.moveTo(8,y); c.lineTo(10,y); c.stroke(); }
+  if(open<0.35&&!point){ c.beginPath(); c.moveTo(8.6,-4); c.quadraticCurveTo(10.4,0,8.6,4); c.lineWidth=0.9; c.strokeStyle=INK; c.stroke(); }
+  c.restore();
+}
+function drawArm(c, side, hand, outfit, color){
+  const S=SHOULDER[side], [E,W]=solveElbow(S,[hand.x,hand.y],side);
+  const fa=Math.atan2(W[1]-E[1],W[0]-E[0]);
+  const ha=Math.atan2(hand.hy,hand.hx), w=hand.hw;
+  const ang=Math.atan2((1-w)*Math.sin(fa)+w*Math.sin(ha), (1-w)*Math.cos(fa)+w*Math.cos(ha));
+  const shade=mix(color,"#000000",0.16);
+  c.lineJoin="round"; c.lineCap="round";
+  const short = outfit==="tshirt"||outfit==="polo";
+  if(short){
+    strokePath(c,[S,E,W],11+3.4,INK); strokePath(c,[S,E,W],11,SKIN);
+    const P2=[S[0]+(E[0]-S[0])*0.6, S[1]+(E[1]-S[1])*0.6];
+    strokePath(c,[S,P2],17+3.4,INK); strokePath(c,[S,P2],17,color);
+  }else{
+    strokePath(c,[S,E,W],15+3.4,INK); strokePath(c,[S,E,W],15,color);
+    // elbow crease
+    c.beginPath(); c.arc(E[0],E[1],3,fa+Math.PI*0.6,fa+Math.PI*1.1); c.lineWidth=1; c.strokeStyle=shade; c.stroke();
+    const cuffCol = outfit==="suit" ? "#f7f5f0" : outfit==="hoodie" ? mix(color,"#000000",0.09) : color;
+    const C0=[W[0]-Math.cos(fa)*4.5, W[1]-Math.sin(fa)*4.5];
+    strokePath(c,[C0,W],(outfit==="suit"?13:15.5)+3,INK); strokePath(c,[C0,W],outfit==="suit"?13:15.5,cuffCol);
+  }
+  drawHand(c,W,ang,hand.o,hand.pt>0.5);
+}
+// Gesture poses: wrist targets per hand in body units, o = openness 0..1, pt = pointing
+const POSES={ // ha = wrist direction on screen (radians, 0 = right, -PI/2 = up); omitted = follow the forearm
+  rest:     {L:{x:46,y:176,o:.3},           R:{x:82,y:176,o:.3}},
+  together: {L:{x:55,y:156,o:.6},           R:{x:73,y:156,o:.6}},
+  open:     {L:{x:26,y:130,o:1,ha:-2.3},    R:{x:102,y:130,o:1,ha:-0.85}},
+  explainR: {L:{x:46,y:176,o:.3},           R:{x:104,y:130,o:.9,ha:-0.9}},
+  explainL: {L:{x:24,y:130,o:.9,ha:-2.25},  R:{x:82,y:176,o:.3}},
+  point:    {L:{x:46,y:176,o:.3},           R:{x:108,y:124,o:0,pt:1,ha:-0.2}},
+  fist:     {L:{x:46,y:176,o:.3},           R:{x:100,y:118,o:0,ha:-1.35}},
+  shrug:    {L:{x:14,y:136,o:1,ha:-2.75},   R:{x:114,y:136,o:1,ha:-0.4}},
+  present:  {L:{x:28,y:138,o:1,ha:-2.5},    R:{x:100,y:138,o:1,ha:-0.65}},
+};
+const MOOD_GESTURES={
+  neutral:["explainR","explainL","open","together","present"],
+  excited:["open","fist","point","explainR","present"],
+  happy:["open","explainR","explainL","present"],
+  sad:["together","shrug","rest"],
+  angry:["point","fist","explainR"],
+};
+const hands={L:{x:46,y:176,o:.3,pt:0,hx:0,hy:-1,hw:0}, R:{x:82,y:176,o:.3,pt:0,hx:0,hy:-1,hw:0}};
+const gest={pose:"rest", beatT:-1e9, sid:-1, words:0, lastWord:-1, relax:false, last:0};
+function gestureLevel(){ return document.getElementById("gestures").value; }
+function pickPose(list){ const opts=list.filter(p=>p!==gest.pose); return opts[Math.floor(Math.random()*opts.length)]||list[0]; }
+function onWord(tok,i,now){
+  const lvl=gestureLevel(); if(lvl==="off"){ gest.pose="rest"; return; }
+  if(tok.sid!==gest.sid){
+    gest.sid=tok.sid; gest.words=0;
+    const question=plan.tokens.some(t=>t.sid===tok.sid&&t.type==="pause"&&t.text.includes("?"));
+    gest.pose = question ? pickPose(["shrug","open"]) : pickPose(MOOD_GESTURES[tok.mood]||MOOD_GESTURES.neutral);
+  }else if(++gest.words >= (lvl==="lively"?3:5) && Math.random()<0.55){
+    gest.words=0; gest.pose=pickPose(MOOD_GESTURES[tok.mood]||MOOD_GESTURES.neutral);
+  }
+  // beat on longer / stressed words
+  if((tok.text.length>=5 || /[A-Z]/.test(tok.text.slice(0,1)) && gest.words>0) && Math.random()<(lvl==="lively"?0.75:0.45)) gest.beatT=now;
+}
+function updateHands(now,dt){
+  const lvl=gestureLevel();
+  let pose=POSES[gest.pose]||POSES.rest, k = lvl==="calm"?0.5:1;
+  if(gest.relax){ k*=0.35; }
+  const tau = mode==="speaking"||mode==="ending" ? 0.14 : 0.35;
+  const a=1-Math.exp(-dt/tau);
+  const bp=(now-gest.beatT)/240, beat = bp>=0&&bp<=1 ? Math.sin(Math.PI*bp) : 0;
+  for(const side of ["L","R"]){
+    const t=pose[side], r=POSES.rest[side], h=hands[side];
+    const active = Math.hypot(t.x-r.x,t.y-r.y)>4;
+    const ph = side==="L"?0:1.7;
+    const tx=r.x+(t.x-r.x)*k + Math.sin(now/760+ph)*1.0;
+    const ty=r.y+(t.y-r.y)*k + Math.sin(now/930+ph)*1.4 + (active? beat*7*k : 0);
+    const to=r.o+(t.o-r.o)*k - (active? beat*0.15 : 0), tp=(t.pt||0)*(k>0.4?1:0);
+    h.x+=(tx-h.x)*a; h.y+=(ty-h.y)*a; h.o+=(to-h.o)*a; h.pt+=(tp-h.pt)*a;
+    // wrist direction: blend toward the pose's angle (as a vector, so it never spins the long way round)
+    const hw = t.ha!==undefined ? k : 0;
+    if(t.ha!==undefined){ h.hx+=(Math.cos(t.ha)-h.hx)*a; h.hy+=(Math.sin(t.ha)-h.hy)*a; }
+    h.hw+=(hw-h.hw)*a;
   }
 }
 
@@ -399,10 +543,10 @@ let outfitState={outfit:"shirt", color:"#f7f5f0", tie:"#2f4a7a"};
 try{ Object.assign(outfitState, JSON.parse(localStorage.getItem("lipsync.outfit")||"{}")); }catch(e){}
 // ---- Scene: 2560x1440, background + character placed anywhere at any size ----
 const SW=2560, SHT=1440;
-const DEFAULT_CHAR=()=>{ const h=1150, w=h*CW/CH; return {x:Math.round((SW-w)/2), y:SHT-h, h}; };
+const DEFAULT_CHAR=()=>{ const h=1400, w=h*CW/BH; return {x:Math.round((SW-w)/2), y:SHT-h, h}; }; // h = full figure height in scene px
 let charState=DEFAULT_CHAR();
-try{ const c=JSON.parse(localStorage.getItem("lipsync.char")||"null"); if(c&&isFinite(c.x)&&isFinite(c.y)&&c.h>0) charState=c; }catch(e){}
-const charW=()=>charState.h*CW/CH;
+try{ const c=JSON.parse(localStorage.getItem("lipsync.char2")||"null"); if(c&&isFinite(c.x)&&isFinite(c.y)&&c.h>0) charState=c; }catch(e){}
+const charW=()=>charState.h*CW/BH;
 let bgImg=null, bgFit="cover", bob={y:0,rot:0};
 try{ bgFit=localStorage.getItem("lipsync.bgfit")||"cover"; }catch(e){}
 
@@ -410,7 +554,7 @@ function renderOutfit(){
   const w=Math.max(1,Math.round(charW())), h=Math.max(1,Math.round(charState.h));
   outfitCanvas.width=w; outfitCanvas.height=h;
   const c=outfitCanvas.getContext("2d");
-  c.setTransform(w/CW,0,0,h/CH,0,0);
+  c.setTransform(w/CW,0,0,h/BH,0,0);
   drawOutfit(c, outfitState.outfit, outfitState.color, outfitState.tie);
   try{ localStorage.setItem("lipsync.outfit", JSON.stringify(outfitState)); }catch(e){}
   draw(current);
@@ -431,15 +575,17 @@ function draw(rc){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality="high";
   drawBackground(ctx);
-  const {x,y,h}=charState, w=charW(), s=h/330; // bob amplitude tuned for a ~330px tall figure
+  const {x,y,h}=charState, w=charW(), u=h/BH, s=u*2.6; // bob amplitude tuned for the old ~330px figure
   ctx.translate(x+w/2, y+h+bob.y*s); ctx.rotate(bob.rot*Math.PI/180); ctx.translate(-(x+w/2), -(y+h));
   ctx.drawImage(outfitCanvas,x,y,w,h);
-  ctx.drawImage(sheet, rc[1]*(CW+GUT)+GUT/2, rc[0]*(CH+GUT)+GUT/2, CW, CH, x, y, w, h);
+  ctx.drawImage(sheet, rc[1]*(CW+GUT)+GUT/2, rc[0]*(CH+GUT)+GUT/2, CW, CH, x, y, CW*u, CH*u);
+  ctx.translate(x,y); ctx.scale(u,u);
+  for(const side of ["L","R"]) drawArm(ctx, side, hands[side], outfitState.outfit, outfitState.color);
   ctx.setTransform(1,0,0,1,0,0);
 }
 sheet.onload=()=>renderOutfit();
 
-function saveChar(){ try{ localStorage.setItem("lipsync.char", JSON.stringify(charState)); }catch(e){} }
+function saveChar(){ try{ localStorage.setItem("lipsync.char2", JSON.stringify(charState)); }catch(e){} }
 function clampChar(){
   const w=charW(), h=charState.h;
   charState.x=Math.min(SW-w*0.15, Math.max(-w*0.85, charState.x));
@@ -455,7 +601,7 @@ function setCharSize(h, ax, ay){ // resize around an anchor point in scene px (d
 }
 function syncSizeUI(){
   document.getElementById("charSize").value=Math.round(charState.h);
-  document.getElementById("charSizeV").textContent=Math.round(charState.h)+" px tall";
+  document.getElementById("charSizeV").textContent=Math.round(charState.h)+" px tall (of 1440)";
 }
 function toScene(e){ const r=canvas.getBoundingClientRect(); return [(e.clientX-r.left)*SW/r.width, (e.clientY-r.top)*SHT/r.height]; }
 function hitChar(px,py){ return px>=charState.x && px<=charState.x+charW() && py>=charState.y && py<=charState.y+charState.h; }
@@ -565,6 +711,12 @@ fsBtn.onclick=async()=>{
   else if(stage.webkitRequestFullscreen) stage.webkitRequestFullscreen();
 };
 applyBg(); refreshBgUI();
+// remember gesture / ending choices
+for(const id of ["gestures","ending"]){
+  const el=document.getElementById(id);
+  try{ const v=localStorage.getItem("lipsync."+id); if(v&&[...el.options].some(o=>o.value===v)) el.value=v; }catch(e){}
+  el.addEventListener("change",()=>{ try{ localStorage.setItem("lipsync."+id,el.value); }catch(e){} });
+}
 document.addEventListener("fullscreenchange",()=>{ if(!document.fullscreenElement && isFs()) setFs(false); });
 document.addEventListener("keydown",e=>{
   if(e.target.matches("textarea,input,select")) return;
@@ -623,13 +775,28 @@ function highlight(i){
 let anchor={idx:0, time:0}, lastFrameKey=null, lastSwitch=0;
 const MIN_HOLD=55;
 
+let lastNow=0, endState=null;
+const ENDINGS={
+  smile:{frames:[[[3,7],140],[[1,3],2300]], pose:"present", after:[3,0]},
+  laugh:{frames:[[[3,2],140],[[3,4],200],[[3,5],200],[[3,4],200],[[3,5],200],[[3,4],220],[[3,2],600]], pose:"together", after:[3,0]},
+  wink:{frames:[[[3,7],160],[[3,2],1500],[[0,9],700]], pose:"point", after:[3,0]},
+};
 function tick(now){
   raf=requestAnimationFrame(tick);
+  const dt=Math.min(0.1,(now-(lastNow||now))/1000); lastNow=now;
+  updateHands(now,dt);
   // subtle breathing / bob
   bob.y = mode==="speaking" ? Math.sin(now/170)*0.6 : Math.sin(now/900)*0.8;
   bob.rot = Math.sin(now/1300)*0.4;
   draw(current);
 
+  if(mode==="ending"){
+    const e=ENDINGS[endState.kind]; let t=now-endState.t0, i=0;
+    while(i<e.frames.length && t>=e.frames[i][1]){ t-=e.frames[i][1]; i++; }
+    if(i>=e.frames.length){ mode="idle"; idleMood="happy"; gest.pose="rest"; lastIdleSwap=now; draw(e.after); return; }
+    if(current!==e.frames[i][0]) draw(e.frames[i][0]);
+    return;
+  }
   if(mode!=="speaking"){
     // idle: occasionally change idle expression
     if(now-lastIdleSwap>2600+Math.random()*2500){
@@ -658,8 +825,10 @@ function tick(now){
       key = plan.useBoundaries ? "rest" : "small"; // waiting for next word
     }
     highlight(i);
+    if(i!==gest.lastWord){ gest.lastWord=i; gest.relax=false; onWord(tok,i,now); }
   }else{
     key="rest";
+    gest.relax = tok.ms>=300; // let the hands sink a little between sentences
   }
   if(!plan.useBoundaries && i===toks.length-1 && target>tok.t0+tok.dur+200 && !plan.audio){ finish(); return; }
   const fk=mood+":"+key;
@@ -682,6 +851,7 @@ function start(useAudio){
   if(!parsed.tokens.some(t=>t.type==="word")){ setStatus("Type some English text first."); return; }
   estimate(parsed.tokens, rate);
   plan={tokens:parsed.tokens, useBoundaries:false, lastBoundary:-1, audio:useAudio};
+  Object.assign(gest,{pose:"rest",sid:-1,words:0,lastWord:-1,relax:false});
   renderCaption(parsed.tokens);
   lastFrameKey=null;
 
@@ -713,13 +883,20 @@ function start(useAudio){
 }
 function finish(){
   if(mode!=="speaking") return;
-  mode="idle"; lastIdleSwap=performance.now();
-  draw(frameFor(idleMood,"rest")); showVis("rest"); highlight(-1);
+  showVis("rest"); highlight(-1); gest.relax=false;
+  const kind=document.getElementById("ending").value;
+  if(ENDINGS[kind]){
+    mode="ending"; endState={kind,t0:performance.now()};
+    gest.pose = gestureLevel()==="off" ? "rest" : ENDINGS[kind].pose;
+  }else{
+    mode="idle"; lastIdleSwap=performance.now(); gest.pose="rest";
+    draw(frameFor(idleMood,"rest"));
+  }
   setStatus("Done.");
 }
 function stop(silent){
   if("speechSynthesis" in window) speechSynthesis.cancel();
-  if(mode==="speaking"){ mode="idle"; draw(frameFor(idleMood,"rest")); showVis("rest"); highlight(-1); }
+  if(mode==="speaking"||mode==="ending"){ mode="idle"; gest.pose="rest"; draw(frameFor(idleMood,"rest")); showVis("rest"); highlight(-1); }
   if(!silent) setStatus("Stopped.");
 }
 
