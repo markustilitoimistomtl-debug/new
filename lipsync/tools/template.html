@@ -21,12 +21,14 @@
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
-.wrap{max-width:980px;margin:0 auto;padding:24px 16px 48px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px}
-@media (max-width:760px){.wrap{grid-template-columns:1fr}}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 48px;display:grid;grid-template-columns:1fr;gap:20px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
 h1{font-size:20px;margin:0 0 2px}
 .sub{color:var(--muted);margin:0 0 14px;font-size:13.5px}
-.stage{background:var(--stage);border-radius:14px;height:340px;padding-top:20px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;position:relative}
-#face{width:min(92%,340px);aspect-ratio:128/124;image-rendering:auto;transform-origin:50% 100%}
+.stage{background:#000;border-radius:14px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
+#face{width:100%;height:auto;aspect-ratio:16/9;display:block;touch-action:none;cursor:grab}
+#face.dragging{cursor:grabbing}
 .caption{margin-top:12px;font-size:15px;min-height:1.4em;color:var(--muted)}
 .caption .w{transition:color .08s}
 .caption .w.on{color:var(--ink);font-weight:600}
@@ -48,8 +50,8 @@ code{background:var(--chip);padding:1px 5px;border-radius:5px;font-size:12.5px}
 .vis span.on{background:var(--accent);color:var(--accent-ink)}
 .fsbtn{position:absolute;top:10px;right:10px;padding:6px 10px;font-size:13px;background:var(--panel);z-index:2}
 .subtitle{display:none}
-.stage.fs{position:fixed;inset:0;height:auto;border-radius:0;z-index:50;padding:0;align-items:flex-end}
-.stage.fs #face{width:auto;height:min(88vh,calc(92vw*124/128));max-width:none}
+.stage.fs{position:fixed;inset:0;border-radius:0;z-index:50}
+.stage.fs #face{width:min(100vw,calc(100vh*16/9));height:auto}
 .stage.fs .subtitle{display:block;position:absolute;left:16px;right:16px;bottom:max(16px,4vh);text-align:center;font-size:clamp(18px,3.2vw,34px);line-height:1.3;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.8),0 0 2px #000;pointer-events:none}
 .stage.fs .subtitle .w{opacity:.75}
 .stage.fs .subtitle .w.on{opacity:1;font-weight:700}
@@ -68,13 +70,15 @@ input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-rad
     <p class="sub">The character's mouth follows the English text as it is spoken.</p>
     <div class="stage" id="stage">
       <button class="fsbtn" id="fs" title="Fullscreen (F)">⛶ Fullscreen</button>
-      <canvas id="face" width="256" height="248"></canvas>
+      <canvas id="face" width="2560" height="1440"></canvas>
       <div class="subtitle" id="subtitle"></div>
     </div>
     <div class="caption" id="caption"></div>
     <div class="vis" id="vis"></div>
   </div>
   <div class="panel">
+   <div class="cols">
+   <div>
     <label for="text">Text (English)</label>
     <textarea id="text">Hello everyone, and welcome to tonight's game! [happy] What a crowd we have here. [sad] Sadly, our star player is out with an injury. [neutral] But the bench looks ready, so let's see what they can do.</textarea>
     <div class="row">
@@ -94,6 +98,19 @@ input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-rad
         <select id="voice"></select>
       </div>
     </div>
+    <div class="row">
+      <div><label for="rate">Rate <span id="rateV">1.0</span></label><input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="1"></div>
+      <div><label for="pitch">Pitch <span id="pitchV">1.0</span></label><input id="pitch" type="range" min="0.5" max="1.5" step="0.1" value="1"></div>
+    </div>
+    <div class="btns">
+      <button class="primary" id="speak">▶ Speak</button>
+      <button id="silent">Animate without sound</button>
+      <button id="stop">■ Stop</button>
+    </div>
+    <div class="status" id="status"></div>
+    <p class="hint">Mood tags in the text switch the expression mid-speech: <code>[neutral]</code> <code>[excited]</code> <code>[happy]</code> <code>[sad]</code> <code>[angry]</code>. With mood on Auto, each sentence gets a mood from its words and punctuation.</p>
+   </div>
+   <div>
     <div class="row">
       <div>
         <label for="outfit">Outfit</label>
@@ -117,17 +134,21 @@ input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-rad
     </div>
     <label>Background</label>
     <div class="swatches" id="bgSw"></div>
-    <div class="row">
-      <div><label for="rate">Rate <span id="rateV">1.0</span></label><input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="1"></div>
-      <div><label for="pitch">Pitch <span id="pitchV">1.0</span></label><input id="pitch" type="range" min="0.5" max="1.5" step="0.1" value="1"></div>
+    <label>Background image (scene is 2560×1440)</label>
+    <div class="btns" style="margin-top:0;align-items:center">
+      <input type="file" id="bgFile" accept="image/*" style="max-width:220px">
+      <select id="bgFit" style="width:auto"><option value="cover">Fill (crop)</option><option value="contain">Fit (whole image)</option><option value="stretch">Stretch</option></select>
+      <button id="bgClear">Remove image</button>
     </div>
-    <div class="btns">
-      <button class="primary" id="speak">▶ Speak</button>
-      <button id="silent">Animate without sound</button>
-      <button id="stop">■ Stop</button>
+    <label for="charSize">Character size <span id="charSizeV"></span></label>
+    <input id="charSize" type="range" min="200" max="2880" step="10">
+    <div class="btns" style="margin-top:8px">
+      <button id="charReset">Reset position and size</button>
+      <button id="savePng">Save frame as PNG</button>
     </div>
-    <div class="status" id="status"></div>
-    <p class="hint">Mood tags in the text switch the expression mid-speech: <code>[neutral]</code> <code>[excited]</code> <code>[happy]</code> <code>[sad]</code> <code>[angry]</code>. With mood on Auto, each sentence gets a mood from its words and punctuation.</p>
+    <p class="hint" style="margin-top:6px">Drag the character on the stage to move it. Scroll over it to resize.</p>
+   </div>
+   </div>
   </div>
 </div>
 <script>
@@ -376,32 +397,100 @@ function drawOutfit(c, outfit, color, tie){
 const outfitCanvas=document.createElement("canvas");
 let outfitState={outfit:"shirt", color:"#f7f5f0", tie:"#2f4a7a"};
 try{ Object.assign(outfitState, JSON.parse(localStorage.getItem("lipsync.outfit")||"{}")); }catch(e){}
+// ---- Scene: 2560x1440, background + character placed anywhere at any size ----
+const SW=2560, SHT=1440;
+const DEFAULT_CHAR=()=>{ const h=1150, w=h*CW/CH; return {x:Math.round((SW-w)/2), y:SHT-h, h}; };
+let charState=DEFAULT_CHAR();
+try{ const c=JSON.parse(localStorage.getItem("lipsync.char")||"null"); if(c&&isFinite(c.x)&&isFinite(c.y)&&c.h>0) charState=c; }catch(e){}
+const charW=()=>charState.h*CW/CH;
+let bgImg=null, bgFit="cover", bob={y:0,rot:0};
+try{ bgFit=localStorage.getItem("lipsync.bgfit")||"cover"; }catch(e){}
+
 function renderOutfit(){
-  outfitCanvas.width=canvas.width; outfitCanvas.height=canvas.height;
+  const w=Math.max(1,Math.round(charW())), h=Math.max(1,Math.round(charState.h));
+  outfitCanvas.width=w; outfitCanvas.height=h;
   const c=outfitCanvas.getContext("2d");
-  c.setTransform(canvas.width/CW,0,0,canvas.height/CH,0,0);
+  c.setTransform(w/CW,0,0,h/CH,0,0);
   drawOutfit(c, outfitState.outfit, outfitState.color, outfitState.tie);
   try{ localStorage.setItem("lipsync.outfit", JSON.stringify(outfitState)); }catch(e){}
   draw(current);
 }
 
+function stageColor(){ return bgColor || getComputedStyle(document.documentElement).getPropertyValue("--stage").trim() || "#e8e0d0"; }
+function drawBackground(c){
+  c.fillStyle=stageColor(); c.fillRect(0,0,SW,SHT);
+  if(!bgImg) return;
+  const iw=bgImg.naturalWidth, ih=bgImg.naturalHeight;
+  if(bgFit==="stretch"){ c.drawImage(bgImg,0,0,SW,SHT); return; }
+  const k=bgFit==="cover"?Math.max(SW/iw,SHT/ih):Math.min(SW/iw,SHT/ih);
+  const w=iw*k, h=ih*k; c.drawImage(bgImg,(SW-w)/2,(SHT-h)/2,w,h);
+}
 function draw(rc){
   current=rc;
   if(!sheet.complete) return;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.drawImage(outfitCanvas,0,0);
+  ctx.setTransform(1,0,0,1,0,0);
   ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality="high";
-  ctx.drawImage(sheet, rc[1]*(CW+GUT)+GUT/2, rc[0]*(CH+GUT)+GUT/2, CW, CH, 0, 0, canvas.width, canvas.height);
+  drawBackground(ctx);
+  const {x,y,h}=charState, w=charW(), s=h/330; // bob amplitude tuned for a ~330px tall figure
+  ctx.translate(x+w/2, y+h+bob.y*s); ctx.rotate(bob.rot*Math.PI/180); ctx.translate(-(x+w/2), -(y+h));
+  ctx.drawImage(outfitCanvas,x,y,w,h);
+  ctx.drawImage(sheet, rc[1]*(CW+GUT)+GUT/2, rc[0]*(CH+GUT)+GUT/2, CW, CH, x, y, w, h);
+  ctx.setTransform(1,0,0,1,0,0);
 }
-// keep the canvas backing store matched to its on-screen size so the outfit lines stay crisp
-function fitCanvas(){
-  const r=canvas.getBoundingClientRect(); if(!r.width) return;
-  const dpr=Math.min(window.devicePixelRatio||1,3);
-  const w=Math.round(r.width*dpr), h=Math.round(w*CH/CW);
-  if(w!==canvas.width){ canvas.width=w; canvas.height=h; renderOutfit(); }
+sheet.onload=()=>renderOutfit();
+
+function saveChar(){ try{ localStorage.setItem("lipsync.char", JSON.stringify(charState)); }catch(e){} }
+function clampChar(){
+  const w=charW(), h=charState.h;
+  charState.x=Math.min(SW-w*0.15, Math.max(-w*0.85, charState.x));
+  charState.y=Math.min(SHT-h*0.15, Math.max(-h*0.85, charState.y));
 }
-sheet.onload=()=>{ fitCanvas(); renderOutfit(); };
-new ResizeObserver(fitCanvas).observe(canvas);
+function setCharSize(h, ax, ay){ // resize around an anchor point in scene px (default: bottom centre)
+  h=Math.min(2880, Math.max(200, h));
+  const w0=charW(), h0=charState.h;
+  if(ax===undefined){ ax=charState.x+w0/2; ay=charState.y+h0; }
+  const f=h/h0;
+  charState.x=ax-(ax-charState.x)*f; charState.y=ay-(ay-charState.y)*f; charState.h=h;
+  clampChar(); syncSizeUI(); renderOutfit(); saveChar();
+}
+function syncSizeUI(){
+  document.getElementById("charSize").value=Math.round(charState.h);
+  document.getElementById("charSizeV").textContent=Math.round(charState.h)+" px tall";
+}
+function toScene(e){ const r=canvas.getBoundingClientRect(); return [(e.clientX-r.left)*SW/r.width, (e.clientY-r.top)*SHT/r.height]; }
+function hitChar(px,py){ return px>=charState.x && px<=charState.x+charW() && py>=charState.y && py<=charState.y+charState.h; }
+let drag=null;
+canvas.addEventListener("pointerdown",e=>{
+  const [px,py]=toScene(e); if(!hitChar(px,py)) return;
+  drag={dx:px-charState.x, dy:py-charState.y}; canvas.setPointerCapture(e.pointerId); canvas.classList.add("dragging");
+});
+canvas.addEventListener("pointermove",e=>{
+  if(!drag) return; const [px,py]=toScene(e);
+  charState.x=px-drag.dx; charState.y=py-drag.dy; clampChar(); draw(current);
+});
+const endDrag=()=>{ if(drag){ drag=null; canvas.classList.remove("dragging"); saveChar(); } };
+canvas.addEventListener("pointerup",endDrag); canvas.addEventListener("pointercancel",endDrag);
+canvas.addEventListener("wheel",e=>{
+  const [px,py]=toScene(e); if(!hitChar(px,py)) return;
+  e.preventDefault(); setCharSize(charState.h*Math.exp(-e.deltaY*0.0015), px, py);
+},{passive:false});
+document.getElementById("charSize").oninput=e=>setCharSize(+e.target.value);
+document.getElementById("charReset").onclick=()=>{ charState=DEFAULT_CHAR(); syncSizeUI(); renderOutfit(); saveChar(); };
+syncSizeUI();
+
+document.getElementById("bgFile").onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const url=URL.createObjectURL(f), img=new Image();
+  img.onload=()=>{ if(bgImg&&bgImg.src.startsWith("blob:")) URL.revokeObjectURL(bgImg.src); bgImg=img; draw(current); setStatus(`Background: ${f.name} (${img.naturalWidth}×${img.naturalHeight})`); };
+  img.onerror=()=>setStatus("Could not read that image.");
+  img.src=url;
+};
+document.getElementById("bgClear").onclick=()=>{ bgImg=null; document.getElementById("bgFile").value=""; draw(current); };
+const fitSel=document.getElementById("bgFit"); fitSel.value=bgFit;
+fitSel.onchange=()=>{ bgFit=fitSel.value; try{ localStorage.setItem("lipsync.bgfit",bgFit); }catch(e){} draw(current); };
+document.getElementById("savePng").onclick=()=>{
+  canvas.toBlob(b=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="lipsync-frame.png"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); },"image/png");
+};
 
 // ---- Outfit controls ----
 const SHIRT_COLORS=["#f7f5f0","#cfe0f2","#f4d3d8","#e9dfc4","#a9c7a0","#2f4a7a","#8a2f35","#3b3b3f","#1e1e22"];
@@ -438,7 +527,7 @@ refreshOutfitUI();
 const BG_COLORS=["","#ffffff","#f3e7c9","#cfe0f2","#2a3550","#1e1e22","#7a2632","#00b140","#0047bb"];
 let bgColor=""; try{ bgColor=localStorage.getItem("lipsync.bg")||""; }catch(e){}
 function applyBg(){
-  stage.style.background=bgColor||"";
+  draw(current);
   try{ localStorage.setItem("lipsync.bg",bgColor); }catch(e){}
 }
 function refreshBgUI(){
@@ -464,7 +553,6 @@ function isFs(){ return stage.classList.contains("fs"); }
 function setFs(on){
   stage.classList.toggle("fs",on);
   fsBtn.textContent=on?"✕ Exit":"⛶ Fullscreen";
-  requestAnimationFrame(fitCanvas);
 }
 fsBtn.onclick=async()=>{
   if(isFs()){
@@ -538,8 +626,9 @@ const MIN_HOLD=55;
 function tick(now){
   raf=requestAnimationFrame(tick);
   // subtle breathing / bob
-  const bob = mode==="speaking" ? Math.sin(now/170)*0.6 : Math.sin(now/900)*0.8;
-  canvas.style.transform=`translateY(${bob.toFixed(2)}px) rotate(${(Math.sin(now/1300)*0.4).toFixed(2)}deg)`;
+  bob.y = mode==="speaking" ? Math.sin(now/170)*0.6 : Math.sin(now/900)*0.8;
+  bob.rot = Math.sin(now/1300)*0.4;
+  draw(current);
 
   if(mode!=="speaking"){
     // idle: occasionally change idle expression
