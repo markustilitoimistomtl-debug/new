@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TabRec",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Records a browser tab (video and audio, or MP3 audio only) and takes JPG screenshots at a selectable resolution (default 1440p).",
   "minimum_chrome_version": "116",
   "permissions": ["tabCapture", "offscreen", "downloads", "storage", "activeTab"],
@@ -20,6 +20,10 @@
     "cancel-recording": {
       "suggested_key": { "default": "Alt+Shift+X" },
       "description": "Cancel recording (nothing is saved)"
+    },
+    "quick-record": {
+      "suggested_key": { "default": "Alt+Shift+J" },
+      "description": "Quick MP4 recording: press twice in a row to start / stop (file hotkeyMMSS.mp4)"
     },
     "screenshot": {
       "suggested_key": { "default": "Alt+Shift+S" },

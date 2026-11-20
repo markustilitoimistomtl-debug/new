@@ -33,6 +33,29 @@ Keep the folder: Chrome runs the extension from it. Requires Chrome 116 or newer
 5. **Stop and save**, or **Alt+Shift+R** (also starts).
 6. **Cancel (don't save)** or **Alt+Shift+X** stops at once and throws the recording away.
 
+## Quick MP4 recording (hotkey)
+
+Press **Alt+Shift+J twice in a row** (within 0.8 s): recording of the active tab starts at once as MP4,
+without opening the popup and without a project name. The icon shows `J?` after the first press.
+Press it twice again (or Alt+Shift+R) to stop. The file is named after the recording's length:
+`hotkeyMMSS.mp4`, e.g. `hotkey0512.mp4` = 5 min 12 s. Resolution, frame rate and audio follow the
+popup settings (default 1440p60); the format is always MP4.
+
+### Win+J, J on Windows
+
+Windows does not let browsers use the Win key in shortcuts, so Win+J is done with
+[AutoHotkey v2](https://www.autohotkey.com):
+
+1. Install AutoHotkey v2.
+2. Double-click `windows/TabRec-WinJJ.ahk` (it then runs in the tray).
+3. To start it with Windows: press Win+R, type `shell:startup`, and put a shortcut to the file there.
+
+Now **Win+J twice** starts (and stops) a quick recording in Chrome and Edge. If the browser is not in
+front, the latest Chrome/Edge window is activated first.
+
+Shortcuts can be checked or changed at `chrome://extensions/shortcuts` / `edge://extensions/shortcuts`.
+The Win+J script needs TabRec's quick-record shortcut to stay Alt+Shift+J.
+
 ## Screenshot (JPG)
 
 - **📷 Take screenshot (JPG)** or **Alt+Shift+S**.

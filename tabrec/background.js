@@ -28,19 +28,19 @@ async function ensureOffscreen() {
   });
 }
 
-async function start(tab, streamId) {
+async function start(tab, streamId, overrides) {
   const state = await getState();
   if (state.recording) return { ok: false, error: 'A recording is already running.' };
   if (!tab || !tab.id) return { ok: false, error: 'No active tab found.' };
   if (/^(chrome|edge|about|chrome-extension):/.test(tab.url || '')) {
     return { ok: false, error: 'Browser pages can\'t be recorded.' };
   }
-  const settings = await getSettings();
+  const settings = Object.assign(await getSettings(), overrides || {});
   if (!streamId) streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id });
   await ensureOffscreen();
   const res = await chrome.runtime.sendMessage({ target: 'offscreen', type: 'start', streamId, settings, title: tab.title || '', tabId: tab.id });
   if (!res || !res.ok) return res || { ok: false, error: 'Could not start recording.' };
-  await setState({ recording: true, startedAt: Date.now(), tabId: tab.id, res: settings.res, audioOnly: !!res.audioOnly, jobName: (settings.jobName || '').trim(), actual: res.actual, mime: res.mime });
+  await setState({ recording: true, startedAt: Date.now(), tabId: tab.id, res: settings.res, audioOnly: !!res.audioOnly, jobName: settings.quick ? 'hotkey' : (settings.jobName || '').trim(), actual: res.actual, mime: res.mime });
   return res;
 }
 
@@ -151,7 +151,35 @@ chrome.downloads.onChanged.addListener(async d => {
   await closeOffscreenIfIdle();
 });
 
+// Quick recording: the shortcut has to be pressed twice in a row (within DOUBLE_MS).
+// Starts an MP4 recording with the current resolution settings, ignoring the format and project name;
+// the file is named hotkeyMMSS.mp4 after the recording's length. Pressed twice again, it stops and saves.
+const DOUBLE_MS = 800;
+let lastQuick = 0;
+
+async function quickPress(tab) {
+  const now = Date.now();
+  if (now - lastQuick > DOUBLE_MS) {
+    lastQuick = now;
+    // brief hint on the icon that one more press is needed
+    const st = await getState();
+    if (!st.recording) {
+      await chrome.action.setBadgeBackgroundColor({ color: '#5f6368' });
+      await chrome.action.setBadgeText({ text: 'J?' });
+      setTimeout(async () => { if (!(await getState()).recording) chrome.action.setBadgeText({ text: '' }); }, DOUBLE_MS + 100);
+    }
+    return;
+  }
+  lastQuick = 0;
+  const state = await getState();
+  if (state.recording) return stop();
+  if (!tab) [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const r = await start(tab, null, { format: 'mp4', quick: true, jobName: '' });
+  if (!r.ok) { console.warn(r.error); await setState({ recording: false, error: r.error }); }
+}
+
 chrome.commands.onCommand.addListener(async (command, tab) => {
+  if (command === 'quick-record') { await quickPress(tab); return; }
   if (command === 'cancel-recording') { await cancel(); return; }
   if (command === 'screenshot') {
     if (!tab) [tab] = await chrome.tabs.query({ active: true, currentWindow: true });

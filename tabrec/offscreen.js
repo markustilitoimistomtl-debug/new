@@ -115,6 +115,12 @@ async function startMp3({ streamId, settings, title, tabId }) {
   return { ok: true, actual: `${audioCtx.sampleRate} Hz stereo`, mime: `audio/mpeg; ${kbps} kbps`, audioOnly: true };
 }
 
+// Quick recording: "hotkey" + length as MMSS, e.g. hotkey0512.mp4 = 5 min 12 s
+function quickName(startedAt, ext) {
+  const s = Math.max(0, Math.round((Date.now() - startedAt) / 1000)), p = n => String(n).padStart(2, '0');
+  return `TabRec/hotkey${p(Math.floor(s / 60))}${p(s % 60)}.${ext}`;
+}
+
 async function start({ streamId, settings, title, tabId }) {
   if (recorder) return { ok: false, error: 'A recording is already running.' };
   if (settings.format === 'mp3') return startMp3({ streamId, settings, title, tabId });
@@ -144,7 +150,7 @@ async function start({ streamId, settings, title, tabId }) {
   }
 
   const vs = stream.getVideoTracks()[0].getSettings();
-  meta = { res: settings.res, title, job: (settings.jobName || '').trim(), ext: (recorder.mimeType || mime).includes('mp4') ? 'mp4' : 'webm' };
+  meta = { res: settings.res, title, job: (settings.jobName || '').trim(), quick: !!settings.quick, startedAt: Date.now(), ext: (recorder.mimeType || mime).includes('mp4') ? 'mp4' : 'webm' };
   chunks = [];
   recTabId = tabId;
   recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
@@ -162,7 +168,7 @@ function finish() {
   const blob = new Blob(chunks, { type });
   chunks = [];
   const url = URL.createObjectURL(blob);
-  const filename = fileName(meta.job, meta.title, meta.res, meta.ext);
+  const filename = meta.quick ? quickName(meta.startedAt, meta.ext) : fileName(meta.job, meta.title, meta.res, meta.ext);
   cleanup();
   chrome.runtime.sendMessage({ target: 'background', type: 'saved', url, filename, size: blob.size });
 }
