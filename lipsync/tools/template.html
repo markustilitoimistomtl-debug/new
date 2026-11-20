@@ -29,6 +29,9 @@ h1{font-size:20px;margin:0 0 2px}
 .stage{background:#000;border-radius:14px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
 #face{width:100%;height:auto;aspect-ratio:16/9;display:block;touch-action:none;cursor:grab}
 #face.dragging{cursor:grabbing}
+body.nosubs .caption, body.nosubs .stage.fs .subtitle{display:none}
+.check{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink);margin:12px 0 0;cursor:pointer}
+.check input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
 .caption{margin-top:12px;font-size:15px;min-height:1.4em;color:var(--muted)}
 .caption .w{transition:color .08s}
 .caption .w.on{color:var(--ink);font-weight:600}
@@ -119,6 +122,7 @@ input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-rad
         </select>
       </div>
     </div>
+    <label class="check"><input type="checkbox" id="subs" checked> Show subtitles (below the stage, and over the picture in fullscreen)</label>
     <label for="gestFreq">Gesture frequency <span id="gestFreqV"></span></label>
     <input id="gestFreq" type="range" min="0" max="100" step="5" value="50">
     <div class="row">
@@ -723,6 +727,11 @@ fsBtn.onclick=async()=>{
 };
 applyBg(); refreshBgUI();
 // remember gesture / ending choices
+// subtitles on/off (remembered)
+const subsEl=document.getElementById("subs");
+try{ const v=localStorage.getItem("lipsync.subs"); if(v!==null) subsEl.checked = v==="1"; }catch(e){}
+const applySubs=()=>{ document.body.classList.toggle("nosubs",!subsEl.checked); try{ localStorage.setItem("lipsync.subs",subsEl.checked?"1":"0"); }catch(e){} };
+subsEl.addEventListener("change",applySubs); applySubs();
 const freqEl=document.getElementById("gestFreq"), freqOut=document.getElementById("gestFreqV");
 const freqName=v=>v<=15?"rarely":v<=40?"now and then":v<=70?"often":"almost constantly";
 freqEl.addEventListener("input",()=>freqOut.textContent="— "+freqName(+freqEl.value));
