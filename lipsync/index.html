@@ -47,6 +47,7 @@ code{background:var(--chip);padding:1px 5px;border-radius:5px;font-size:12.5px}
 .status{font-size:12.5px;color:var(--muted);margin-top:8px;min-height:1.2em}
 .vis{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .vis span{font-size:11.5px;padding:2px 7px;border-radius:20px;background:var(--chip);color:var(--muted)}
+.vis .vlab{font-size:11.5px;color:var(--muted);font-style:normal;align-self:center}
 .vis span.on{background:var(--accent);color:var(--accent-ink)}
 .fsbtn{position:absolute;top:10px;right:10px;padding:6px 10px;font-size:13px;background:var(--panel);z-index:2}
 .subtitle{display:none}
@@ -104,7 +105,7 @@ input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-rad
         <select id="gestures">
           <option value="lively">Lively</option>
           <option value="calm">Calm</option>
-          <option value="off">Off (hands at rest)</option>
+          <option value="off">At the sides (still)</option>
         </select>
       </div>
       <div>
@@ -117,6 +118,8 @@ input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-rad
         </select>
       </div>
     </div>
+    <label for="gestFreq">Gesture frequency <span id="gestFreqV"></span></label>
+    <input id="gestFreq" type="range" min="0" max="100" step="5" value="50">
     <div class="row">
       <div><label for="rate">Rate <span id="rateV">1.0</span></label><input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="1"></div>
       <div><label for="pitch">Pitch <span id="pitchV">1.0</span></label><input id="pitch" type="range" min="0.5" max="1.5" step="0.1" value="1"></div>
@@ -483,13 +486,13 @@ function drawArm(c, side, hand, outfit, color){
 }
 // Gesture poses: wrist targets per hand in body units, o = openness 0..1, pt = pointing
 const POSES={ // ha = wrist direction on screen (radians, 0 = right, -PI/2 = up); omitted = follow the forearm
-  rest:     {L:{x:46,y:176,o:.3},           R:{x:82,y:176,o:.3}},
+  rest:     {L:{x:12,y:177,o:.8,ha:1.62},  R:{x:116,y:177,o:.8,ha:1.52}}, // arms hanging relaxed at the sides
   together: {L:{x:55,y:156,o:.6},           R:{x:73,y:156,o:.6}},
   open:     {L:{x:26,y:130,o:1,ha:-2.3},    R:{x:102,y:130,o:1,ha:-0.85}},
-  explainR: {L:{x:46,y:176,o:.3},           R:{x:104,y:130,o:.9,ha:-0.9}},
-  explainL: {L:{x:24,y:130,o:.9,ha:-2.25},  R:{x:82,y:176,o:.3}},
-  point:    {L:{x:46,y:176,o:.3},           R:{x:108,y:124,o:0,pt:1,ha:-0.2}},
-  fist:     {L:{x:46,y:176,o:.3},           R:{x:100,y:118,o:0,ha:-1.35}},
+  explainR: {L:{x:12,y:177,o:.8,ha:1.62},  R:{x:104,y:130,o:.9,ha:-0.9}},
+  explainL: {L:{x:24,y:130,o:.9,ha:-2.25},  R:{x:116,y:177,o:.8,ha:1.52}},
+  point:    {L:{x:12,y:177,o:.8,ha:1.62},  R:{x:108,y:124,o:0,pt:1,ha:-0.2}},
+  fist:     {L:{x:12,y:177,o:.8,ha:1.62},  R:{x:100,y:118,o:0,ha:-1.35}},
   shrug:    {L:{x:14,y:136,o:1,ha:-2.75},   R:{x:114,y:136,o:1,ha:-0.4}},
   present:  {L:{x:28,y:138,o:1,ha:-2.5},    R:{x:100,y:138,o:1,ha:-0.65}},
 };
@@ -500,21 +503,25 @@ const MOOD_GESTURES={
   sad:["together","shrug","rest"],
   angry:["point","fist","explainR"],
 };
-const hands={L:{x:46,y:176,o:.3,pt:0,hx:0,hy:-1,hw:0}, R:{x:82,y:176,o:.3,pt:0,hx:0,hy:-1,hw:0}};
+const hands={L:{x:12,y:177,o:.8,pt:0,hx:Math.cos(1.62),hy:Math.sin(1.62),hw:1}, R:{x:116,y:177,o:.8,pt:0,hx:Math.cos(1.52),hy:Math.sin(1.52),hw:1}};
 const gest={pose:"rest", beatT:-1e9, sid:-1, words:0, lastWord:-1, relax:false, last:0};
 function gestureLevel(){ return document.getElementById("gestures").value; }
 function pickPose(list){ const opts=list.filter(p=>p!==gest.pose); return opts[Math.floor(Math.random()*opts.length)]||list[0]; }
+function gestureFreq(){ return (+document.getElementById("gestFreq").value)/100; }
 function onWord(tok,i,now){
   const lvl=gestureLevel(); if(lvl==="off"){ gest.pose="rest"; return; }
+  const f=gestureFreq(), moods=MOOD_GESTURES[tok.mood]||MOOD_GESTURES.neutral;
   if(tok.sid!==gest.sid){
     gest.sid=tok.sid; gest.words=0;
     const question=plan.tokens.some(t=>t.sid===tok.sid&&t.type==="pause"&&t.text.includes("?"));
-    gest.pose = question ? pickPose(["shrug","open"]) : pickPose(MOOD_GESTURES[tok.mood]||MOOD_GESTURES.neutral);
-  }else if(++gest.words >= (lvl==="lively"?3:5) && Math.random()<0.55){
-    gest.words=0; gest.pose=pickPose(MOOD_GESTURES[tok.mood]||MOOD_GESTURES.neutral);
+    // low frequency: many sentences are spoken with the hands left at the sides
+    gest.pose = Math.random() > 0.1+0.9*f ? "rest" : question ? pickPose(["shrug","open"]) : pickPose(moods);
+  }else if(++gest.words >= Math.round(9-7*f) && Math.random()<0.25+0.55*f){
+    gest.words=0;
+    gest.pose = gest.pose!=="rest" && Math.random()>0.25+0.75*f ? "rest" : pickPose(moods);
   }
   // beat on longer / stressed words
-  if((tok.text.length>=5 || /[A-Z]/.test(tok.text.slice(0,1)) && gest.words>0) && Math.random()<(lvl==="lively"?0.75:0.45)) gest.beatT=now;
+  if(gest.pose!=="rest" && (tok.text.length>=5 || /[A-Z]/.test(tok.text.slice(0,1)) && gest.words>0) && Math.random()<(0.15+0.7*f)*(lvl==="lively"?1:0.6)) gest.beatT=now;
 }
 function updateHands(now,dt){
   const lvl=gestureLevel();
@@ -527,14 +534,17 @@ function updateHands(now,dt){
     const t=pose[side], r=POSES.rest[side], h=hands[side];
     const active = Math.hypot(t.x-r.x,t.y-r.y)>4;
     const ph = side==="L"?0:1.7;
-    const tx=r.x+(t.x-r.x)*k + Math.sin(now/760+ph)*1.0;
-    const ty=r.y+(t.y-r.y)*k + Math.sin(now/930+ph)*1.4 + (active? beat*7*k : 0);
+    const sway = lvl==="off" ? 0 : 1;
+    const tx=r.x+(t.x-r.x)*k + Math.sin(now/760+ph)*1.0*sway;
+    const ty=r.y+(t.y-r.y)*k + Math.sin(now/930+ph)*1.4*sway + (active? beat*7*k : 0);
     const to=r.o+(t.o-r.o)*k - (active? beat*0.15 : 0), tp=(t.pt||0)*(k>0.4?1:0);
     h.x+=(tx-h.x)*a; h.y+=(ty-h.y)*a; h.o+=(to-h.o)*a; h.pt+=(tp-h.pt)*a;
     // wrist direction: blend toward the pose's angle (as a vector, so it never spins the long way round)
-    const hw = t.ha!==undefined ? k : 0;
-    if(t.ha!==undefined){ h.hx+=(Math.cos(t.ha)-h.hx)*a; h.hy+=(Math.sin(t.ha)-h.hy)*a; }
-    h.hw+=(hw-h.hw)*a;
+    const tha = t.ha!==undefined ? t.ha : null;
+    let vx=Math.cos(r.ha)*(1-k), vy=Math.sin(r.ha)*(1-k), hw=1-k;
+    if(tha!==null){ vx+=Math.cos(tha)*k; vy+=Math.sin(tha)*k; hw=1; }
+    const vl=Math.hypot(vx,vy)||1;
+    h.hx+=(vx/vl-h.hx)*a; h.hy+=(vy/vl-h.hy)*a; h.hw+=(hw-h.hw)*a;
   }
 }
 
@@ -712,11 +722,17 @@ fsBtn.onclick=async()=>{
 };
 applyBg(); refreshBgUI();
 // remember gesture / ending choices
-for(const id of ["gestures","ending"]){
+const freqEl=document.getElementById("gestFreq"), freqOut=document.getElementById("gestFreqV");
+const freqName=v=>v<=15?"rarely":v<=40?"now and then":v<=70?"often":"almost constantly";
+freqEl.addEventListener("input",()=>freqOut.textContent="— "+freqName(+freqEl.value));
+for(const id of ["gestures","ending","gestFreq"]){
   const el=document.getElementById(id);
-  try{ const v=localStorage.getItem("lipsync."+id); if(v&&[...el.options].some(o=>o.value===v)) el.value=v; }catch(e){}
+  try{ const v=localStorage.getItem("lipsync."+id); if(v&&(!el.options||[...el.options].some(o=>o.value===v))) el.value=v; }catch(e){}
   el.addEventListener("change",()=>{ try{ localStorage.setItem("lipsync."+id,el.value); }catch(e){} });
 }
+freqOut.textContent="— "+freqName(+freqEl.value);
+document.getElementById("gestFreq").disabled = gestureLevel()==="off";
+document.getElementById("gestures").addEventListener("change",e=>{ document.getElementById("gestFreq").disabled=e.target.value==="off"; if(e.target.value==="off") gest.pose="rest"; });
 document.addEventListener("fullscreenchange",()=>{ if(!document.fullscreenElement && isFs()) setFs(false); });
 document.addEventListener("keydown",e=>{
   if(e.target.matches("textarea,input,select")) return;
@@ -728,9 +744,10 @@ function frameFor(mood, key){ return (MOODS[mood]||MOODS.neutral)[key]||MOODS[mo
 
 // viseme chips
 const VKEYS=["rest","mbp","small","ah","aa","ee","o","oo","fv"];
+const VTIPS={rest:"Mouth at rest (pauses)",mbp:"Lips pressed together: M, B, P",small:"Slightly open: T, D, K, N, R, TH",ah:"Open: 'u' in cut, L",aa:"Wide open: 'a' in father, 'I'",ee:"Spread, teeth showing: 'ee' in see, S, Z",o:"Round open: 'o' in go",oo:"Small and round: 'oo' in you, W, SH, CH",fv:"Teeth on lip: F, V"};
 const visEl=document.getElementById("vis");
-visEl.innerHTML=VKEYS.map(k=>`<span data-k="${k}">${k}</span>`).join("");
-function showVis(k){ for(const s of visEl.children) s.classList.toggle("on", s.dataset.k===k); }
+visEl.innerHTML=`<em class="vlab">Mouth shape:</em>`+VKEYS.map(k=>`<span data-k="${k}" title="${VTIPS[k]}">${k}</span>`).join("");
+function showVis(k){ for(const s of visEl.querySelectorAll("span")) s.classList.toggle("on", s.dataset.k===k); }
 
 // ---- Scheduler ----
 let plan=null, raf=0, mode="idle", idleMood="neutral", lastIdleSwap=0;
