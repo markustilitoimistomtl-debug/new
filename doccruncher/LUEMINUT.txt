@@ -60,17 +60,14 @@ Valmis asetustiedosto: doccruncher-mirocapital-asetukset.json sisältää Fillar
 kirjausohjeen ja tilikartan Miro Capitalin pohjaksi (valitse Miro Capital Oy ja
 "Lataa asetukset (.json)").
 
-Asetukset ohjelman kansioon (Chrome / Edge)
-- Paina aloitussivulla "Tallenna asetukset ohjelman kansioon…" ja valitse kansio,
-  jossa doccruncher.html on. Salli selaimen kysymä muokkausoikeus.
-- Kaikkien asiakkaiden asetukset tallentuvat tiedostoon
-  doccruncher-asetukset.json jokaisen muutoksen jälkeen, ja ne luetaan siitä
-  joka käynnistyksellä.
-- Selain voi kysyä luvan uudelleen käynnistettäessä: paina "Ota kansion
-  asetukset käyttöön" (Chromessa voi valita "Salli joka käynnillä").
-- Jos kansiossa on jo doccruncher-asetukset.json (esim. toiselta koneelta tai
-  USB-tikulta), asetukset luetaan siitä.
-- Firefox ei tue tätä: siinä asetukset ovat selaimen muistissa.
+Asetusten tallennus koneelle
+- Asetukset säilyvät selaimen muistissa.
+- Ruksi aloitussivulla "Tallenna asetukset myös koneelle", niin tiedosto
+  doccruncher-asetukset.json latautuu Lataukset-kansioon aina, kun asetuksia on
+  muutettu ja tallennat CSV:n tai palaat alkuun (ja heti ruksattaessa).
+  Tiedostossa ovat kaikkien asiakkaiden asetukset.
+- Palautus (esim. toisella koneella): Kirjausohje (säännöt) → "Lataa asetukset
+  (.json)" ja valitse uusin doccruncher-asetukset.json.
 
 Projektit – jatka kirjaamista myöhemmin
 - Valitse PDF ja CSV klikkaamalla laatikkoa (tai vedä ne laatikkoon), niin
@@ -81,9 +78,7 @@ Projektit – jatka kirjaamista myöhemmin
   PDF:n ja CSV:n entisistä sijainneistaan ja palauttaa tiliöinnit, ohitukset,
   käsin korjatut tiedot ja yhdistetyt sivut. Selain voi kysyä lukulupaa.
 - Jos tiedosto on siirretty tai nimetty uudelleen, ohjelma pyytää valitsemaan sen.
-- Kun asetukset tallentuvat ohjelman kansioon, projektit tallentuvat myös
-  alikansioon projektit/. Jos PDF ja CSV ovat ohjelman kansiossa (tai sen
-  alikansiossa), projekti löytää ne myös toisella koneella.
+- Projektit tallentuvat selaimen muistiin.
 
 Varmuuskopio: yhteenvedon painike "Tallenna asetukset (.json)" tallentaa valitun
 asiakkaan asetukset. Ne voi ladata takaisin aloitussivulta, myös toisella koneella.
