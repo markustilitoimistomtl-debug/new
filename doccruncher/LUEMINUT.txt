@@ -41,8 +41,14 @@ Sääntöjen muokkaus
 - Tositteen sivupaneelissa näkyvät kirjausohjeen säännöt, jotka koskevat sen
   toimittajaa tai maksajaa: ✎ muokkaa (nimi, tili, ehto), × poistaa säännön.
 - Kirjausohje-välilehdellä koko ohjetta voi muokata vapaasti kesken läpikäynnin.
-- Jos ladatussa CSV:ssä ei ole asiakkaan oletustilin rivejä, aloitussivu ehdottaa
-  CSV:n yleisintä tiliä oletustiliksi (esim. Miro Capital: 1910).
+
+Kirjaus-CSV
+- Pankkitilin rivit (Fillarivelho 1920, Miro Capital 1910) pysyvät aina ennallaan.
+- Fillarivelho: vain tilin 2350 rivit tiliöidään uudelleen.
+- Miro Capital: jokaiselle riville ehdotetaan kirjausohjeen kulutiliä, myös
+  tositteettomille (Tositteettomat-välilehti). Saapuvat 1700 / Verohallinto 2935.
+  Jos toimittajalle ei ole sääntöä, rivi jää nykyiselle tilille.
+- Asetukset löytyvät kohdasta Asiakkaan asetukset (pankkitili, CSV:n oletustili).
 
 PDF
 - Holvin tositekooste luetaan maksu kerrallaan (Maksutunniste-lohkot).

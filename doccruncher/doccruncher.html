@@ -200,8 +200,9 @@ header.top h2{font-size:15px;margin:0;white-space:nowrap}
     <div id="profForm" class="hidden">
       <span class="small">Nimi</span><input id="pfName">
       <span class="small">Vastatili</span><input id="pfCounter" inputmode="numeric" maxlength="6" placeholder="esim. 2880 – tyhjä = CSV pakollinen">
-      <span class="small">CSV:n oletustili</span><input id="pfDefault" inputmode="numeric" maxlength="6" placeholder="esim. 2350">
-      <div class="small" style="grid-column:1/-1">Vastatili: kun kirjaus-CSV:tä ei ladata, jokaisesta tositteesta tehdään kaksi vientiä: kulutili ja vastatili (esim. 2880 Ostovelat). CSV:n oletustili: ladatun CSV:n rivit, joita oletuksena tiliöidään uudelleen (esim. 2350). Jokaisella asiakkaalla on oma kirjausohje, tilikartta ja toimittajasäännöt.</div>
+      <span class="small">Pankkitili</span><input id="pfBank" inputmode="numeric" maxlength="6" placeholder="esim. 1920">
+      <span class="small">CSV:n oletustili</span><input id="pfDefault" inputmode="numeric" maxlength="6" placeholder="tyhjä = kirjausohjeen tili kaikille riveille">
+      <div class="small" style="grid-column:1/-1">Vastatili: kun kirjaus-CSV:tä ei ladata, jokaisesta tositteesta tehdään kaksi vientiä: kulutili ja vastatili (esim. 2880 Ostovelat). Pankkitili: CSV:n pankkirivit, joihin ei kosketa. CSV:n oletustili: jos annettu (Fillarivelho 2350), vain sen tilin rivit tiliöidään uudelleen; tyhjänä (Miro Capital) kaikille riveille ehdotetaan kirjausohjeen tiliä. Jokaisella asiakkaalla on oma kirjausohje, tilikartta ja toimittajasäännöt.</div>
       <div class="acts"><button class="btn primary" id="pfSave">Tallenna</button><button class="btn" id="pfCancel">Peruuta</button><button class="btn" id="pfDel" style="margin-left:auto;color:var(--bad)">Poista asiakas</button></div>
     </div>
   </div>
@@ -394,8 +395,8 @@ const NEW_RULES = `# Kirjausohje laaditaan kirjattaessa.
 # niin toimittaja lisätään tänne ja seuraavat saman toimittajan tositteet saavat ehdotuksen.
 `;
 const CLIENTS_DEF = [
-  {id:"fillarivelho", name:"Fillarivelho Tmi", counterAcc:"", defaultAcc:"2350"},
-  {id:"mirocapital", name:"Miro Capital Oy", counterAcc:"2880", defaultAcc:"2350"},
+  {id:"fillarivelho", name:"Fillarivelho Tmi", counterAcc:"", defaultAcc:"2350", bankAcc:"1920"},
+  {id:"mirocapital", name:"Miro Capital Oy", counterAcc:"2880", defaultAcc:"", bankAcc:"1910"},
 ];
 // other clients start from a copy of Fillarivelho's rules (as saved in this browser), then edited separately
 const defaultRulesFor = id => id==="fillarivelho" ? DEFAULT_RULES : (store("doccruncher.p.fillarivelho.rules") || DEFAULT_RULES);
@@ -416,6 +417,11 @@ function migrateOld(){
 }
 migrateOld();
 let CLIENTS = loadJson("doccruncher.clients", null) || CLIENTS_DEF.map(c=>({...c}));
+// v2: bank account per client; Miro Capital has no "2350" default (rule account suggested for every row)
+if(store("doccruncher.clientsVer")!=="2"){
+  for(const c of CLIENTS){ if(c.id==="mirocapital"){ c.defaultAcc=""; c.bankAcc="1910"; } if(!c.bankAcc) c.bankAcc="1920"; }
+  store("doccruncher.clients", JSON.stringify(CLIENTS)); store("doccruncher.clientsVer","2");
+}
 for(const d of CLIENTS_DEF) if(!CLIENTS.some(c=>c.id===d.id) && !(loadJson("doccruncher.removed",[])).includes(d.id)) CLIENTS.push({...d});
 let PID = store("doccruncher.active"); if(!CLIENTS.some(c=>c.id===PID)) PID=CLIENTS[0].id;
 const P = () => CLIENTS.find(c=>c.id===PID) || CLIENTS[0];
@@ -523,7 +529,7 @@ function suggest(r){
 
   let pick, reason;
   if(!r.csv){ pick = order[0]?.acc || null; reason="nomatch"; }
-  else if(cur!==DEFAULT_ACC){ pick=cur; reason = order.length ? "already" : "none"; }
+  else if(DEFAULT_ACC && cur!==DEFAULT_ACC){ pick=cur; reason = order.length ? "already" : "none"; }
   else if(r.dir==="In"){
     if(!opts.some(o=>o.acc===IN_ACC)) opts.push({acc:IN_ACC, desc:"saapuvat maksut (oletus)", conds:[], items:[]});
     const tax = /\b(verohallinto|skatteforvaltningen)\b/.test(norm(r.counterparty));
@@ -570,7 +576,11 @@ function isExpense(acc){ const n=+String(acc).trim(); return /^\d+$/.test(String
 function noAttKey(r){ return core(ruleName(r)); }
 function noAttRule(r){ const k=noAttKey(r); return S.noAttRules.find(x=>core(x.name)===k); }
 // default account of a payment without attachment: incoming payments go to IN_ACC or to the payer's rule account
-function naDefault(r){ return (r.dir==="In" && r.csv && r.csv.acc===DEFAULT_ACC) ? suggest(r).pick : ""; }
+function naDefault(r){
+  if(!r.csv) return "";
+  if(!DEFAULT_ACC){ const p=suggest(r).pick; return p && p!==r.csv.acc ? p : ""; } // rule account / incoming default for every row
+  return (r.dir==="In" && r.csv.acc===DEFAULT_ACC) ? suggest(r).pick : "";
+}
 function naTarget(r){ const ru=noAttRule(r); return (ru && ru.acc) || naDefault(r); }
 function finalChanges(){
   const changes = new Map();
@@ -617,7 +627,7 @@ function buildCsv(){
   return {bytes:enc1252(lines.join(S.csvNl||"\r\n")), count:changes.size, changes};
 }
 function matchCsv(r, used){
-  const cands = S.csvLines.filter(L => L.acc && L.acc!=="1920" && !used.has(L.i) && Math.abs(L.amt)===r.amount);
+  const cands = S.csvLines.filter(L => L.acc && L.acc!==(P().bankAcc||"1920") && !used.has(L.i) && Math.abs(L.amt)===r.amount);
   const nm = norm(r.counterparty).slice(0,6);
   const dist = L => L.date && r.bookDate ? Math.abs((new Date(L.date)-new Date(r.bookDate))/864e5) : 99;
   let best=null, bs=1e9;
@@ -1045,7 +1055,7 @@ function showNoAtt(){
   const groups=new Map();
   for(const r of S.noAtt){ if(!r.csv) continue; const k=noAttKey(r); if(!groups.has(k)) groups.set(k,{key:k, name:ruleName(r), items:[]}); groups.get(k).items.push(r); }
   let list=[...groups.values()];
-  const visible = g => S.showAllNoAtt || g.items.some(r=>r.csv.acc===DEFAULT_ACC) || naSaved(g.key) || S.naDraft.has(g.key);
+  const visible = g => S.showAllNoAtt || (!DEFAULT_ACC ? g.items.some(r=>naDefault(r)) : g.items.some(r=>r.csv.acc===DEFAULT_ACC)) || naSaved(g.key) || S.naDraft.has(g.key);
   const hidden = list.filter(g=>!visible(g)).length;
   list = list.filter(visible).sort((a,b)=>a.name.localeCompare(b.name,"fi"));
   const rows = list.map(g=>{
@@ -1144,7 +1154,7 @@ function showCoa(){
   $("#coaAdd").onclick=()=>{ D.unshift({acc:"",name:"",vat:""}); showCoa(); $("#coa").querySelector('input[data-f="acc"]')?.focus(); };
   $("#coaReset").onclick=()=>{ S.coaDraft=DEFAULT_COA.map(x=>({...x})); showCoa(); toast("Oletukset palautettu – tallenna, jos haluat ottaa ne käyttöön."); };
 }
-function updateBadges(){ const cb=$("#coaN"); if(cb){ cb.classList.toggle("hidden", !coaDirty()); cb.style.background="var(--warn-soft)"; cb.title="Tallentamattomia muutoksia"; } const n=S.noAtt.filter(r=>r.csv && r.csv.acc===DEFAULT_ACC && !naTarget(r)).length; const b=$("#noattN"); b.textContent=(n||"")+(S.naDraft.size?" •":""); b.title=S.naDraft.size?"Tallentamattomia muutoksia":""; b.style.background=S.naDraft.size?"var(--warn-soft)":""; }
+function updateBadges(){ const cb=$("#coaN"); if(cb){ cb.classList.toggle("hidden", !coaDirty()); cb.style.background="var(--warn-soft)"; cb.title="Tallentamattomia muutoksia"; } const n=DEFAULT_ACC ? S.noAtt.filter(r=>r.csv && r.csv.acc===DEFAULT_ACC && !naTarget(r)).length : 0; const b=$("#noattN"); b.textContent=(n||"")+(S.naDraft.size?" •":""); b.title=S.naDraft.size?"Tallentamattomia muutoksia":""; b.style.background=S.naDraft.size?"var(--warn-soft)":""; }
 
 async function saveCsv(){ const {bytes}=buildCsv(); return saveFile(S.csvName || ("viennit-"+PID+".csv"), new Blob([bytes],{type:"text/csv"})); }
 async function saveFile(name, blob){
@@ -1250,7 +1260,8 @@ function loadClient(){
   const c=P();
   $("#rulesWho").textContent = c.name;
   $("#profInfo").textContent = (c.counterAcc ? `Vastatili ${c.counterAcc}: ilman CSV:tä jokaisesta tositteesta tehdään vienti kulutilille ja vastatilille ${c.counterAcc}.` : "Kirjaus-CSV vaaditaan (vastatiliä ei ole asetettu).")
-    + (c.defaultAcc ? ` CSV:n oletustili ${c.defaultAcc}.` : "") + ` Tilikartassa ${S.coa.length} tiliä.`;
+    + ` Pankkitili ${c.bankAcc||"1920"}.` + (c.defaultAcc ? ` CSV:stä tiliöidään uudelleen tilin ${c.defaultAcc} rivit.` : " CSV:n riveille ehdotetaan kirjausohjeen tiliä.")
+    + ` Saapuvat ${IN_ACC} (Verohallinto ${TAX_ACC}). Tilikartassa ${S.coa.length} tiliä.`;
   $("#csvTitle").textContent = c.counterAcc ? "2. Kirjaus-CSV (valinnainen)" : "2. Kirjaus-CSV";
   rulesInfo(); csvHint(); ready();
 }
@@ -1260,30 +1271,27 @@ function csvHint(){
     : (c.counterAcc ? `Ilman CSV:tä viennit muodostetaan PDF:n tositteista: kulutili / vastatili ${esc(c.counterAcc)}.` : "");
   if(S.csvBytes){
     const cnt=new Map(); for(const L of S.csvLines) if(L.acc) cnt.set(L.acc,(cnt.get(L.acc)||0)+1);
-    const da=c.defaultAcc||"2350";
-    if(!cnt.get(da) && cnt.size){
-      const [top,n]=[...cnt.entries()].filter(([a])=>a!=="1920").sort((a,b)=>b[1]-a[1])[0]||[];
-      if(top) $("#csvHint").innerHTML += `<div class="flag warn" style="margin-top:8px">CSV:ssä ei ole yhtään tilin ${esc(da)} riviä, joten ohjelma ei ehdota niille uutta tiliä (rivit "on jo tiliöity"). Yleisin tili on <b>${esc(top)}</b> (${n} riviä). Jos ne ovat tiliöitäviä rivejä, ota ${esc(top)} tämän asiakkaan CSV:n oletustiliksi: <button class="btn" id="useTop" style="margin-left:6px;padding:3px 10px">Käytä ${esc(top)}</button></div>`;
-      $("#useTop")?.addEventListener("click",()=>{ c.defaultAcc=top; saveClients(); loadClient(); toast(`${c.name}: CSV:n oletustili ${top}.`); });
-    }
+    const bank=c.bankAcc||"1920", nb=cnt.get(bank)||0, all=S.csvLines.filter(L=>L.acc).length;
+    if(!nb) $("#csvHint").innerHTML += `<div class="flag warn" style="margin-top:8px">CSV:ssä ei ole yhtään pankkitilin ${esc(bank)} riviä. Tarkista pankkitili kohdasta Asiakkaan asetukset – pankkirivejä ei saa tiliöidä uudelleen.</div>`;
+    else $("#csvHint").innerHTML += `<div class="small" style="margin-top:4px">Pankkitilin ${esc(bank)} rivejä ${nb} (pysyvät ennallaan), tiliöitäviä rivejä ${all-nb}${c.defaultAcc?`, joista tilillä ${esc(c.defaultAcc)} ${cnt.get(c.defaultAcc)||0}`:""}.</div>`;
   }
   $("#csvClear")?.addEventListener("click",()=>{ S.csvBytes=null; S.csvLines=[]; S.csvName=""; $("#csvName").textContent="Valitse tai pudota tiedosto"; $("#dropCsv").classList.remove("done"); $("#csvIn").value=""; csvHint(); ready(); });
 }
 $("#profSel").onchange=e=>{ PID=e.target.value; $("#profForm").classList.add("hidden"); loadClient(); };
 let pfNew=false;
 function openProfForm(isNew){
-  pfNew=isNew; const c=isNew?{name:"",counterAcc:"2880",defaultAcc:"2350"}:P();
-  $("#pfName").value=c.name; $("#pfCounter").value=c.counterAcc||""; $("#pfDefault").value=c.defaultAcc||"";
+  pfNew=isNew; const c=isNew?{name:"",counterAcc:"2880",defaultAcc:"",bankAcc:"1920"}:P();
+  $("#pfName").value=c.name; $("#pfCounter").value=c.counterAcc||""; $("#pfDefault").value=c.defaultAcc||""; $("#pfBank").value=c.bankAcc||"1920";
   $("#pfDel").style.display = (!isNew && CLIENTS.length>1) ? "" : "none";
   $("#profForm").classList.remove("hidden"); $("#pfName").focus();
 }
 $("#profEditB").onclick=()=>openProfForm(false);
 $("#profNewB").onclick=()=>openProfForm(true);
 $("#pfCancel").onclick=()=>$("#profForm").classList.add("hidden");
-["#pfCounter","#pfDefault"].forEach(id=>$(id).oninput=e=>e.target.value=e.target.value.replace(/\D/g,""));
+["#pfCounter","#pfDefault","#pfBank"].forEach(id=>$(id).oninput=e=>e.target.value=e.target.value.replace(/\D/g,""));
 $("#pfSave").onclick=()=>{
   const name=$("#pfName").value.trim(); if(!name){ $("#pfName").focus(); return; }
-  const data={name, counterAcc:$("#pfCounter").value.trim(), defaultAcc:$("#pfDefault").value.trim()};
+  const data={name, counterAcc:$("#pfCounter").value.trim(), defaultAcc:$("#pfDefault").value.trim(), bankAcc:$("#pfBank").value.trim()||"1920"};
   if(pfNew){
     let id=norm(name).replace(/ /g,"")||"asiakas"; while(CLIENTS.some(c=>c.id===id)) id+="2";
     CLIENTS.push({id,...data}); PID=id;
@@ -1349,7 +1357,7 @@ $("#go").onclick=async()=>{
   try{
     S.rules = parseRules(rulesTxt.value);
     S.synthetic = !S.csvBytes;
-    DEFAULT_ACC = S.synthetic ? UNASSIGNED : (P().defaultAcc || "2350");
+    DEFAULT_ACC = S.synthetic ? UNASSIGNED : (P().defaultAcc || ""); // "" = suggest rule account for every row
     const {all, pageMode} = await parsePdf();
     S.pageMode = !!pageMode;
     const used=new Set();
