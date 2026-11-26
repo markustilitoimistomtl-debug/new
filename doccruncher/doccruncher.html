@@ -390,7 +390,8 @@ const CLIENTS_DEF = [
   {id:"fillarivelho", name:"Fillarivelho Tmi", counterAcc:"", defaultAcc:"2350"},
   {id:"mirocapital", name:"Miro Capital Oy", counterAcc:"2880", defaultAcc:"2350"},
 ];
-const defaultRulesFor = id => id==="fillarivelho" ? DEFAULT_RULES : NEW_RULES;
+// other clients start from a copy of Fillarivelho's rules (as saved in this browser), then edited separately
+const defaultRulesFor = id => id==="fillarivelho" ? DEFAULT_RULES : (store("doccruncher.p.fillarivelho.rules") || DEFAULT_RULES);
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmtEur = c => (c/100).toLocaleString("fi-FI",{minimumFractionDigits:2,maximumFractionDigits:2}) + " €";
@@ -1173,7 +1174,8 @@ $("#rulesIn").onchange=async e=>{ const f=e.target.files[0]; if(!f) return; rule
 /* ---------- Client selection ---------- */
 function loadClient(){
   store("doccruncher.active", PID);
-  rulesTxt.value = store(pk("rules")) ?? defaultRulesFor(PID);
+  let rv = store(pk("rules")); if(rv==null || rv===NEW_RULES){ rv=defaultRulesFor(PID); store(pk("rules"), rv); }
+  rulesTxt.value = rv;
   if(!store(pk("coa")) && PID!=="fillarivelho") store(pk("coa"), JSON.stringify(baseCoa()));
   S.coa = loadJson(pk("coa"), null) || DEFAULT_COA.map(x=>({...x})); S.coaDraft=null;
   S.noAttRules = loadJson(pk("noatt"), []); S.naDraft.clear();
@@ -1210,7 +1212,7 @@ $("#pfSave").onclick=()=>{
     let id=norm(name).replace(/ /g,"")||"asiakas"; while(CLIENTS.some(c=>c.id===id)) id+="2";
     CLIENTS.push({id,...data}); PID=id;
     // new client starts from the Fillarivelho chart of accounts, can be edited separately
-    store(pk("coa"), JSON.stringify(baseCoa())); store(pk("rules"), NEW_RULES);
+    store(pk("coa"), JSON.stringify(baseCoa())); store(pk("rules"), defaultRulesFor(id));
   } else Object.assign(P(), data);
   saveClients(); $("#profForm").classList.add("hidden"); loadClient(); toast(pfNew?"Asiakas lisätty: "+name:"Asiakkaan asetukset tallennettu.");
 };

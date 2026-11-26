@@ -1,0 +1,102 @@
+{
+  "asiakas": {
+    "id": "mirocapital",
+    "name": "Miro Capital Oy",
+    "counterAcc": "2880",
+    "defaultAcc": "2350"
+  },
+  "kirjausohje": "Tilille 4000:\n* CLAS OHLSON (pyörän osat yms)\n* Classic Bike Stadion\n* Cycle Service Nordic OY\n* Duell Bike-Center Oy\n* Foxcomp Finland Oy\n* Haagan Pyörähuolto\n* Hogu Industries OY\n* IKH KONALA\n* Ju-Ka Trading Oy\n* Kevra Oy\n* Kilon Osuus-Auto\n* KORJA-KUMI OY\n* Kristian Salikoski OP\n* Laakeri-Center Oy\n* MOTONET OY jos pyörän osia yms\n* Nordic Sports Brands Oy\n* Orelo Oy\n* Oy Duell Bike-Center Ab\n* Oy Velotrade Finland Ltd\n* Parmax Oy\n* PTL*Bikeimport Finland\n* Puuilo Espoo\n* Puuilo Nummela\n* Shimano Nordic AB\n* SMHJ Investment Oy\n* Suomi Trading Oy\n* Tarmin Oy\n* Verkkokauppa.com Oyj\n* VFI*Kevra Oy\n* Viabar Oy\n\nTilille 4004\n* Tarmin Oy / Fun Bowling\n* Cycle Service Nordic OY\n\nTilille 4110\n* BAFANG (POLAND)\n* BAFANG\n* BV. Vlechtservice.nl\n* Shimano Nordic AB\n* Hebie GmbH & Co. KG\n* Promovec A/S\n* KidsCab BV\n* Alligt b.v.\n* Ebikesets B.V.\n* VanMoof Netherlands B.V.\n* Additive Sportartikel GmbH\n\nTilille 4490\n* Hogu Industries Oy\n\nTilille 6100\n* Ilmarinen YEL\n\nTilille 6130\n* Ilmarinen TyEL\n\nTilille 1805\n* Fennia jos tapaturma- ryhmähenkivakuutus\n\nTilille 7390\n* Helen Oy\n\nTilille 7530 (jos polttoainekuluja, ei bensiini)\n* Neste\n* ST1\n...ja muut huoltoasemat\n\nTilille 7534 bensiini\n\nTilile 7540\n* E-Autohuolto/Eskeli Momentum OyFl\n* Motonet, jos auton osia tai huoltotarvikkeita\n\nTilille 7564\n* Traficom\n\nTilille 7574\n* Fennia jos autovakuutus\n\nTilille 7750\n* CLAS OHLSON (muut tarvikkeet)\n* Motonet, jos muut tarvikkeet\n\nTilille 7844\n* Fennia jos matkavakuutus\n\nTilille 7850\n* Itä-pasilan pysäköinti\n\nTilille 8380\n* Tilitoimisto MTL Oy\n\nTilille 8484\n* Enviolo\n\nTilille 8500\n* DNA Oyj\n\nTilille 7844\n* Fennia jos yritys\n\nTilille 7844\n* Fennia jos matkavakuutus/vastuuvakuutus\n\nMuut tililtä maksut jäävät tilille 2350\nMuut tilille tulleet maksut jäävät tilille 1700",
+  "tilikartta": [
+    {
+      "acc": "4000",
+      "name": "Ostot (pyörän osat ja tarvikkeet)",
+      "vat": "25,5"
+    },
+    {
+      "acc": "4004",
+      "name": "Ostot",
+      "vat": "25,5"
+    },
+    {
+      "acc": "4110",
+      "name": "EU-ostot",
+      "vat": ""
+    },
+    {
+      "acc": "4490",
+      "name": "Ostot (Hogu)",
+      "vat": ""
+    },
+    {
+      "acc": "6100",
+      "name": "YEL-vakuutusmaksut",
+      "vat": "0"
+    },
+    {
+      "acc": "6130",
+      "name": "TyEL-vakuutusmaksut",
+      "vat": "0"
+    },
+    {
+      "acc": "7390",
+      "name": "Sähkö",
+      "vat": "25,5"
+    },
+    {
+      "acc": "7530",
+      "name": "Polttoaineet (ei bensiini)",
+      "vat": "25,5"
+    },
+    {
+      "acc": "7534",
+      "name": "Bensiini",
+      "vat": "25,5"
+    },
+    {
+      "acc": "7540",
+      "name": "Auton huolto ja osat",
+      "vat": "25,5"
+    },
+    {
+      "acc": "7564",
+      "name": "Ajoneuvovero (Traficom)",
+      "vat": "0"
+    },
+    {
+      "acc": "7574",
+      "name": "Autovakuutukset",
+      "vat": "0"
+    },
+    {
+      "acc": "7750",
+      "name": "Pientarvikkeet",
+      "vat": "25,5"
+    },
+    {
+      "acc": "7844",
+      "name": "Vakuutukset",
+      "vat": "0"
+    },
+    {
+      "acc": "7850",
+      "name": "Pysäköinti",
+      "vat": "25,5"
+    },
+    {
+      "acc": "8380",
+      "name": "Kirjanpito",
+      "vat": "25,5"
+    },
+    {
+      "acc": "8484",
+      "name": "Enviolo",
+      "vat": ""
+    },
+    {
+      "acc": "8500",
+      "name": "Puhelin ja tietoliikenne",
+      "vat": "25,5"
+    }
+  ],
+  "tositteettomat": []
+}

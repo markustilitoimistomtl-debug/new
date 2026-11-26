@@ -34,6 +34,10 @@ PDF
   summa ja toimittaja arvataan tekstistä, ja niitä voi korjata sivupaneelissa.
   "Tämä sivu kuuluu edelliseen tositteeseen" yhdistää monisivuisen laskun.
 
+Valmis asetustiedosto: doccruncher-mirocapital-asetukset.json sisältää Fillarivelhon
+kirjausohjeen ja tilikartan Miro Capitalin pohjaksi (valitse Miro Capital Oy ja
+"Lataa asetukset (.json)").
+
 Varmuuskopio: yhteenvedon painike "Tallenna asetukset (.json)" tallentaa valitun
 asiakkaan asetukset. Ne voi ladata takaisin aloitussivulta, myös toisella koneella.
 
