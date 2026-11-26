@@ -122,6 +122,10 @@ header.top h2{font-size:15px;margin:0;white-space:nowrap}
 .nav .saverule{border-color:var(--accent);color:var(--accent);font-weight:600}
 .linkbtn{border:0;background:none;color:var(--accent);padding:6px 0 0;font-size:13px;font-weight:600}
 .linkbtn:hover{text-decoration:underline}
+.rlist{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
+.rrow{display:grid;grid-template-columns:48px 1fr auto auto;gap:4px;align-items:center;font-size:12.5px;padding:2px 0}
+.rrow .ra{font:700 12.5px var(--mono)}
+.rrow i{color:var(--warn);font-style:normal}
 .ruleform{display:grid;grid-template-columns:auto 1fr;gap:6px 8px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
 .ruleform input{font:inherit;padding:6px 8px;border:1.5px solid var(--line);border-radius:7px;min-width:0}
 .ruleform input:focus{outline:none;border-color:var(--accent)}
@@ -179,7 +183,7 @@ header.top h2{font-size:15px;margin:0;white-space:nowrap}
   #app{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto;height:auto;min-height:100vh}
   #list{max-height:180px;border-right:0;border-bottom:1px solid var(--line)}
   #side{border-left:0;border-top:1px solid var(--line)}
-  #summary,#noatt,#coa{grid-column:1}
+  #summary,#noatt,#coa,#rulesP{grid-column:1}
 }
 </style>
 </head>
@@ -233,6 +237,7 @@ header.top h2{font-size:15px;margin:0;white-space:nowrap}
       <button data-v="browse">Tositteet</button>
       <button data-v="noatt">Tositteettomat<span class="badge" id="noattN"></span></button>
       <button data-v="coa">Tilikartta<span class="badge hidden" id="coaN">•</span></button>
+      <button data-v="rules">Kirjausohje</button>
       <button data-v="summary">Yhteenveto ja CSV</button>
     </nav>
   </header>
@@ -247,6 +252,7 @@ header.top h2{font-size:15px;margin:0;white-space:nowrap}
   <section id="summary" class="panel hidden"></section>
   <section id="noatt" class="panel hidden"></section>
   <section id="coa" class="panel hidden"></section>
+  <section id="rulesP" class="panel hidden"></section>
 </section>
 
 <script>
@@ -381,7 +387,7 @@ const DEFAULT_COA = [
   ["8500","Puhelin ja tietoliikenne","25,5"],
 ].map(([acc,name,vat])=>({acc,name,vat}));
 const UNASSIGNED = "????";
-const IN_ACC = "1700"; // incoming payments by default (all clients); payer exceptions come from the rules, e.g. Tilille 2935 * Verohallinto // account of a generated entry that has not been booked yet
+const IN_ACC = "1700", TAX_ACC = "2935"; // incoming payments by default (all clients); payer exceptions come from the rules, e.g. Tilille 2935 * Verohallinto // account of a generated entry that has not been booked yet
 let DEFAULT_ACC = "2350"; // only these lines are changed by default (per client, set at start)
 const NEW_RULES = `# Kirjausohje laaditaan kirjattaessa.
 # Valitse tositteelle tili ja paina S (tallenna sääntö ja seuraava),
@@ -429,8 +435,9 @@ function core(s){ return norm(s).split(" ").filter(w => w && !STOP.has(w)).join(
 
 function parseRules(txt){
   const groups=[]; let cur=null;
-  for(const raw of txt.split(/\r?\n/)){
-    const l = raw.trim(); if(!l) continue;
+  const RL = txt.split(/\r?\n/);
+  for(let li=0; li<RL.length; li++){
+    const l = RL[li].trim(); if(!l) continue;
     let m = l.match(/^til+ill?e\s+(\d{3,5})\s*:?\s*(.*)$/i);
     if(m){ cur={acc:m[1], note:m[2].replace(/^[(\s:]+|[)\s]+$/g,""), items:[]}; groups.push(cur); continue; }
     m = l.match(/^[*\-•]\s*(.+)$/);
@@ -440,7 +447,7 @@ function parseRules(txt){
       const jm = name.match(/^(.*?)(?:\s*,\s*|\s+)jos\s+(.*)$/i); if(jm){ name=jm[1]; cond=(jm[2]+" "+cond).trim(); }
       for(const alt of name.split("/")){
         const c = core(alt); if(!c) continue;
-        cur.items.push({name:alt.trim(), full:t, cond, core:c});
+        cur.items.push({name:alt.trim(), full:t, base:name.trim(), cond, core:c, line:li});
       }
     }
   }
@@ -479,7 +486,8 @@ function suggest(r){
     const s = matchStrength(it, cp); if(s) hits.push({acc:g.acc, note:g.note, item:it, s});
   }
   const strong = hits.filter(h=>h.s===2);
-  hits = strong.length ? strong : hits;
+  // incoming payments: only exact payer matches (a shared first word such as "Nordic" is not enough)
+  hits = strong.length || r.dir==="In" ? strong : hits;
   // group per account
   const byAcc = new Map();
   for(const h of hits){
@@ -518,7 +526,9 @@ function suggest(r){
   else if(cur!==DEFAULT_ACC){ pick=cur; reason = order.length ? "already" : "none"; }
   else if(r.dir==="In"){
     if(!opts.some(o=>o.acc===IN_ACC)) opts.push({acc:IN_ACC, desc:"saapuvat maksut (oletus)", conds:[], items:[]});
-    if(order.length){ pick=order[0].acc; reason="inRule"; } else { pick=IN_ACC; reason="incoming"; }
+    const tax = /\b(verohallinto|skatteforvaltningen)\b/.test(norm(r.counterparty));
+    if(tax && !opts.some(o=>o.acc===TAX_ACC)) opts.push({acc:TAX_ACC, desc:"Verohallinto (oletus)", conds:[], items:[]});
+    if(order.length){ pick=order[0].acc; reason="inRule"; } else if(tax){ pick=TAX_ACC; reason="inTax"; } else { pick=IN_ACC; reason="incoming"; }
   }
   else if(order.length){ pick=order[0].acc; reason = order.length>1 ? "ambiguous" : "rule"; }
   else { pick=cur; reason="none"; }
@@ -749,6 +759,7 @@ function reasonFlag(r){
     already:["ok",`Rivi on jo tiliöity tilille ${r.csv?.acc}. Oletuksena ei muutosta.`],
     incoming:["ok",`Saapuva maksu – oletuksena tilille ${IN_ACC}. Maksajakohtaisen poikkeuksen voi tallentaa sääntönä (S).`],
     inRule:["ok","Saapuva maksu – maksajan tili kirjausohjeen mukaan."],
+    inTax:["ok",`Saapuva maksu Verohallinnolta – oletuksena tilille ${TAX_ACC}.`],
     none: S.synthetic ? ["warn","Toimittajaa ei löydy vielä kirjausohjeesta – valitse tili (T) ja tallenna se sääntönä (S), niin seuraavat saman toimittajan tositteet saavat ehdotuksen."]
       : ["warn","Toimittajaa ei löydy kirjausohjeesta – jää tilille "+(r.csv?.acc||DEFAULT_ACC)+", ellei toisin valita."],
     nomatch:["bad","Vastaavaa riviä ei löytynyt CSV:stä (päivä + summa). Tiliöintiä ei voi viedä."],
@@ -800,6 +811,7 @@ function renderSide(){
       <div class="opts">${opts || '<span class="small">Ei ehdotusta – kirjoita tili alle.</span>'}</div>
       <div class="manual" style="margin-top:10px"><span class="small"><b>Oma tili</b> (<kbd>T</kbd>):</span><input id="manAcc" inputmode="numeric" maxlength="6" placeholder="esim. 7750" value="${r.sug.opts.some(o=>o.acc===r.acc)||r.acc===UNASSIGNED?"":esc(r.acc||"")}"></div>
       <div id="vatInfo"></div>
+      ${rulesForHtml(r)}
       <button class="linkbtn" id="ruleOpenB">+ Lisää toimittaja kirjausohjeeseen…</button>
       <div class="ruleform hidden" id="ruleForm">
         ${existingAccs(r).length?`<div class="prev" style="color:var(--ink)">Toimittajalla on jo ohjeessa tili(t): <b>${existingAccs(r).map(o=>esc(o.acc)).join(", ")}</b>. Uusi tili lisätään valittavien joukkoon.</div>`:`<div class="prev" style="color:var(--ink)">Uusi toimittaja – lisätään ohjeeseen.</div>`}
@@ -828,11 +840,22 @@ function renderSide(){
   const form=$("#ruleForm"), upd=()=>{ $("#rfPrev").textContent = `Tilille ${$("#rfAcc").value||"?"}  →  * ${$("#rfName").value.trim()}${$("#rfCond").value.trim()?" jos "+$("#rfCond").value.trim():""}`; };
   $("#ruleOpenB").onclick=()=>{ $("#rfAcc").value=r.acc||""; if(!$("#rfCond").value) $("#rfCond").value=autoCond(r, r.acc); form.classList.toggle("hidden"); upd(); if(!form.classList.contains("hidden")) $("#rfName").focus(); };
   ["#rfName","#rfAcc","#rfCond"].forEach(id=>{ $(id).oninput=upd; $(id).onkeydown=e=>{ if(e.key==="Enter"){e.preventDefault();$("#rfSave").click();} if(e.key==="Escape") $("#rfCancel").click(); }; });
-  $("#rfCancel").onclick=()=>form.classList.add("hidden");
+  $("#rfCancel").onclick=()=>{ form.classList.add("hidden"); delete form.dataset.edit; $("#rfSave").textContent="Tallenna sääntö"; };
+  $("#side").querySelectorAll("[data-rdel]").forEach(b=>b.onclick=()=>{
+    const it=ruleItemByLine(+b.dataset.rdel); if(!it) return;
+    const n=applyRules(removeRuleLine(rulesTxt.value, it.line), true);
+    toast(`Sääntö poistettu: Tilille ${it.acc} * ${it.full}`+(n?` · ${n} muuta tositetta sai uuden ehdotuksen`:"")); renderSide(); renderList();
+  });
+  $("#side").querySelectorAll("[data-redit]").forEach(b=>b.onclick=()=>{
+    const it=ruleItemByLine(+b.dataset.redit); if(!it) return;
+    form.classList.remove("hidden"); form.dataset.edit=it.line;
+    $("#rfName").value=it.base; $("#rfAcc").value=it.acc; $("#rfCond").value=it.cond; $("#rfSave").textContent="Tallenna muutos"; upd(); $("#rfCond").focus();
+  });
   $("#rfSave").onclick=()=>{
     const acc=$("#rfAcc").value.replace(/\D/g,""), name=$("#rfName").value.trim(), cond=$("#rfCond").value.trim();
     if(!acc||!name){ toast("Anna toimittaja ja tili."); return; }
-    const res=addRule(name,acc,cond); r.sug=suggest(r); r.acc=acc; toast(res); renderSide(); renderList();
+    if(form.dataset.edit){ const li=+form.dataset.edit; delete form.dataset.edit; rulesTxt.value=removeRuleLine(rulesTxt.value, li); S.rules=parseRules(rulesTxt.value); }
+    const res=addRule(name,acc,cond).replace(/^Lisätty kirjausohjeeseen/,"Kirjausohje päivitetty"); r.sug=suggest(r); r.acc=acc; toast(res); renderSide(); renderList();
   };
 }
 function wireEdit(r){
@@ -849,6 +872,13 @@ function wireEdit(r){
     toast("Sivu liitetty edelliseen tositteeseen."); show(S.idx-1);
   });
 }
+function ruleItemByLine(li){ for(const g of S.rules) for(const it of g.items) if(it.line===li) return {...it, acc:g.acc}; return null; }
+function rulesForHtml(r){
+  const seen=new Set(), rows=[];
+  for(const o of existingAccs(r)) for(const it of o.items){ if(seen.has(it.line)) continue; seen.add(it.line);
+    rows.push(`<div class="rrow"><span class="ra">${esc(o.acc)}</span><span class="rn">${esc(it.base)}${it.cond?` <i>jos ${esc(it.cond)}</i>`:""}</span><button class="x" data-redit="${it.line}" title="Muokkaa sääntöä (myös ehtoa)">✎</button><button class="x" data-rdel="${it.line}" title="Poista sääntö">×</button></div>`); }
+  return rows.length ? `<div class="rlist"><div class="small">Kirjausohjeen säännöt tälle ${r.dir==="In"?"maksajalle":"toimittajalle"}:</div>${rows.join("")}</div>` : "";
+}
 function existingAccs(r){ return r.sug.opts.filter(o=>o.items && o.items.length); }
 function ruleNameFor(r){
   const items = existingAccs(r).flatMap(o=>o.items);
@@ -858,6 +888,30 @@ function ruleNameFor(r){
 function autoCond(r, acc){ return ""; } // new supplier rules have no condition by default
 function ruleName(r){
   return r.counterparty.replace(/\s+-\s+\d+\s*$/,"").replace(/^\d+\s+/,"").replace(/(\s+\d+)+\s*$/,"").replace(/\s+(AUTOMA|AUTOMAATTI)$/i,"").trim();
+}
+const ruleHdr = l => { const m=String(l).trim().match(/^til+ill?e\s+(\d{3,5})/i); return m?m[1]:null; };
+// take a new rules text into use: save, re-parse and refresh suggestions of receipts not handled yet
+function applyRules(txt, includeCurrent){
+  rulesTxt.value=txt; store(pk("rules"), txt); rulesInfo();
+  S.rules=parseRules(txt);
+  let n=0; const curR=S.receipts[S.idx];
+  for(const x of S.receipts){
+    const old=x.acc, oldPick=x.sug?.pick; x.sug=suggest(x);
+    if(x.state==="pending" && (x!==curR || (includeCurrent && (old===oldPick || !x.sug.opts.some(o=>o.acc===old))))){ x.acc=x.sug.pick; if(x.acc!==old && x!==curR) n++; }
+  }
+  updateBadges?.();
+  return n;
+}
+// remove one supplier line; an account header left without suppliers is removed too
+function removeRuleLine(txt, li){
+  const L=txt.split(/\r?\n/); L.splice(li,1);
+  let h=li-1; while(h>=0 && !ruleHdr(L[h]) && !/^muut\s/i.test(L[h].trim())) h--;
+  if(h>=0 && ruleHdr(L[h])){
+    let e=h+1, any=false; for(; e<L.length && !ruleHdr(L[e]) && !/^muut\s/i.test(L[e].trim()); e++) if(/^[*\-•]/.test(L[e].trim()) || /^\.\.\./.test(L[e].trim())) any=true;
+    const hadOwn = parseRules(txt).some(g=>g.acc===ruleHdr(L[h]) && g.items.length);
+    if(!any && hadOwn){ L.splice(h, (L[h+1]!==undefined && !L[h+1].trim()) ? 2 : 1); }
+  }
+  return L.join("\n");
 }
 function addRule(name, acc, cond){
   const line = "* "+name+(cond?" jos "+cond:"");
@@ -874,11 +928,7 @@ function addRule(name, acc, cond){
     const block=["Tilille "+acc, line, ""];
     if(mi>=0) L.splice(mi,0,...block); else L.push("", ...block);
   }
-  rulesTxt.value=L.join("\n"); store(pk("rules"), rulesTxt.value); rulesInfo();
-  S.rules=parseRules(rulesTxt.value);
-  // refresh suggestions for receipts not handled yet
-  let n=0;
-  for(const x of S.receipts){ const old=x.acc; x.sug=suggest(x); if(x.state==="pending" && x!==S.receipts[S.idx]){ x.acc=x.sug.pick; if(x.acc!==old) n++; } }
+  const n = applyRules(L.join("\n"), false);
   return `Lisätty kirjausohjeeseen: Tilille ${acc} ${line}`+(n?` · ${n} muuta tositetta sai uuden ehdotuksen`:"");
 }
 function saveRuleAndNext(){
@@ -900,6 +950,7 @@ function setView(v){
   S.view=v;
   ["#list","#viewer","#side"].forEach(x=>$(x).classList.toggle("hidden", v!=="browse"));
   ["summary","noatt","coa"].forEach(x=>$("#"+x).classList.toggle("hidden", v!==x));
+  $("#rulesP").classList.toggle("hidden", v!=="rules");
   document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on", b.dataset.v===v));
 }
 function show(i){
@@ -1033,6 +1084,18 @@ function showNoAtt(){
   $("#noatt").querySelectorAll(".chip").forEach(c=>c.onclick=()=>{ const inp=$(`#noatt input.cell[data-k="${CSS.escape(c.dataset.k)}"]`); setDraft(c.dataset.k, inp.dataset.name, c.dataset.acc); showNoAtt(); });
 }
 
+function showRules(){
+  setView("rules");
+  $("#rulesP").innerHTML = `<div class="wrap"><h3>Kirjausohje – ${esc(P().name)}</h3>
+    <div class="small">Muokkaa sääntöjä vapaasti: rivi <code>Tilille 4000</code> aloittaa tilin, ja sen alle tulevat <code>* Toimittaja</code> -rivit. Ehto kirjoitetaan sanan <code>jos</code> perään – poista se, jos sääntö koskee kaikkia toimittajan tositteita. Poista koko rivi, jos säännön ei pidä olla voimassa. Saapuvat maksut menevät oletuksena tilille ${IN_ACC} (Verohallinto ${TAX_ACC}), ellei maksajalle ole sääntöä.</div>
+    <div class="savebar" id="rbar"><button class="btn primary" id="rSave" disabled>Tallenna kirjausohje</button><button class="btn" id="rCancel" disabled>Peruuta muutokset</button><span class="small" id="rInfo"></span></div>
+    <textarea id="rEdit" spellcheck="false" style="width:100%;height:60vh;font:12.5px/1.5 var(--mono);border:1px solid var(--line);border-radius:8px;padding:10px">${esc(rulesTxt.value)}</textarea></div>`;
+  const ta=$("#rEdit"), dirty=()=>ta.value!==rulesTxt.value;
+  const bar=()=>{ const d=dirty(); $("#rSave").disabled=!d; $("#rCancel").disabled=!d; $("#rbar").classList.toggle("dirty",d); const g=parseRules(ta.value); $("#rInfo").textContent=(d?"Tallentamattomia muutoksia · ":"")+`${g.length} tiliä, ${g.reduce((n,x)=>n+x.items.length,0)} toimittajariviä`; };
+  ta.oninput=bar; bar();
+  $("#rCancel").onclick=()=>{ ta.value=rulesTxt.value; bar(); };
+  $("#rSave").onclick=()=>{ const n=applyRules(ta.value, true); toast("Kirjausohje tallennettu"+(n?` · ${n} tositetta sai uuden ehdotuksen`:"")+"."); bar(); };
+}
 function coaDirty(){ return !!S.coaDraft && JSON.stringify(S.coaDraft)!==JSON.stringify(S.coa); }
 function saveCoaDraft(){ if(!coaDirty()) return false; S.coa=S.coaDraft.filter(c=>c.acc||c.name||c.vat).map(c=>({...c})); S.coaDraft=null; saveCoa(); updateBadges(); return true; }
 function coaBarHtml(){
@@ -1165,7 +1228,7 @@ $("#homeB").onclick=()=>{
 $("#modal").addEventListener("click",e=>{ if(e.target.id==="modal") $("#modal").classList.add("hidden"); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("#modal").classList.contains("hidden")) $("#modal").classList.add("hidden"); }, true);
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
-  const v=b.dataset.v; if(v==="browse") show(S.idx); else if(v==="summary") showSummary(); else if(v==="noatt") showNoAtt(); else showCoa();
+  const v=b.dataset.v; if(v==="browse") show(S.idx); else if(v==="summary") showSummary(); else if(v==="noatt") showNoAtt(); else if(v==="rules") showRules(); else showCoa();
 });
 
 /* ---------- Start screen ---------- */
@@ -1195,6 +1258,15 @@ function csvHint(){
   const c=P();
   $("#csvHint").innerHTML = S.csvBytes ? `<button class="btn" id="csvClear" style="padding:4px 10px;font-size:12.5px">Poista ladattu CSV</button> ${c.counterAcc?"– ilman CSV:tä viennit muodostetaan PDF:stä vastatilille "+esc(c.counterAcc)+".":""}`
     : (c.counterAcc ? `Ilman CSV:tä viennit muodostetaan PDF:n tositteista: kulutili / vastatili ${esc(c.counterAcc)}.` : "");
+  if(S.csvBytes){
+    const cnt=new Map(); for(const L of S.csvLines) if(L.acc) cnt.set(L.acc,(cnt.get(L.acc)||0)+1);
+    const da=c.defaultAcc||"2350";
+    if(!cnt.get(da) && cnt.size){
+      const [top,n]=[...cnt.entries()].filter(([a])=>a!=="1920").sort((a,b)=>b[1]-a[1])[0]||[];
+      if(top) $("#csvHint").innerHTML += `<div class="flag warn" style="margin-top:8px">CSV:ssä ei ole yhtään tilin ${esc(da)} riviä, joten ohjelma ei ehdota niille uutta tiliä (rivit "on jo tiliöity"). Yleisin tili on <b>${esc(top)}</b> (${n} riviä). Jos ne ovat tiliöitäviä rivejä, ota ${esc(top)} tämän asiakkaan CSV:n oletustiliksi: <button class="btn" id="useTop" style="margin-left:6px;padding:3px 10px">Käytä ${esc(top)}</button></div>`;
+      $("#useTop")?.addEventListener("click",()=>{ c.defaultAcc=top; saveClients(); loadClient(); toast(`${c.name}: CSV:n oletustili ${top}.`); });
+    }
+  }
   $("#csvClear")?.addEventListener("click",()=>{ S.csvBytes=null; S.csvLines=[]; S.csvName=""; $("#csvName").textContent="Valitse tai pudota tiedosto"; $("#dropCsv").classList.remove("done"); $("#csvIn").value=""; csvHint(); ready(); });
 }
 $("#profSel").onchange=e=>{ PID=e.target.value; $("#profForm").classList.add("hidden"); loadClient(); };

@@ -32,9 +32,17 @@ Oletukset (molemmat asiakkaat)
 - Uusi toimittajasääntö tallentuu ilman ehtoa. Ehdon voi kirjoittaa itse
   "+ Lisää toimittaja kirjausohjeeseen…" -lomakkeella.
 - Saapuvat maksut kirjataan oletuksena tilille 1700, myös tositteettomat.
-  Maksajakohtaiset poikkeukset kirjausohjeeseen, esim.
-      Tilille 2935
-      * Verohallinto
+  Verohallinnolta saapuvat oletuksena tilille 2935. Muut maksajakohtaiset
+  poikkeukset kirjausohjeeseen, esim.
+      Tilille 3000
+      * Asiakas Oy
+
+Sääntöjen muokkaus
+- Tositteen sivupaneelissa näkyvät kirjausohjeen säännöt, jotka koskevat sen
+  toimittajaa tai maksajaa: ✎ muokkaa (nimi, tili, ehto), × poistaa säännön.
+- Kirjausohje-välilehdellä koko ohjetta voi muokata vapaasti kesken läpikäynnin.
+- Jos ladatussa CSV:ssä ei ole asiakkaan oletustilin rivejä, aloitussivu ehdottaa
+  CSV:n yleisintä tiliä oletustiliksi (esim. Miro Capital: 1910).
 
 PDF
 - Holvin tositekooste luetaan maksu kerrallaan (Maksutunniste-lohkot).
