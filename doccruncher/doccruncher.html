@@ -421,6 +421,8 @@ function migrateOld(){
   for(const k of ["rules","coa","noatt"]){ const v=store("tositeselain."+k); if(v) store("doccruncher.p.fillarivelho."+k, v); }
   const z=store("tositeselain.zoom"); if(z) store("doccruncher.zoom", z);
 }
+// nothing in the browser memory (first start or cleared): offer to restore from the downloaded settings file
+const FRESH = (()=>{ try{ return !localStorage.getItem("doccruncher.clients") && !localStorage.getItem("tositeselain.rules"); }catch(e){ return false; } })();
 migrateOld();
 let CLIENTS = loadJson("doccruncher.clients", null) || CLIENTS_DEF.map(c=>({...c}));
 // v2: bank account per client; Miro Capital has no "2350" default (rule account suggested for every row)
@@ -1223,8 +1225,8 @@ function modal(title, text, actions){
   $("#modal").classList.remove("hidden"); box.lastChild?.focus();
 }
 async function goHome(){
-  downloadSettings(false);
   if(S.project){ clearTimeout(PJ.t); await saveProject(); S.project=null; } projBtn(); renderProjects();
+  downloadSettings(false);
   renderToken++; S.receipts=[]; S.noAtt=[]; S.idx=0; S.naDraft.clear(); S.coaDraft=null; updateBadges(); S.pageCache.clear(); S.view="browse";
   $("#sheet").innerHTML=""; $("#list").innerHTML="";
   $("#app").classList.add("hidden"); $("#start").classList.remove("hidden");
@@ -1346,6 +1348,7 @@ function applySettings(j){
     PID = CLIENTS.some(c=>c.id===j.valittu) ? j.valittu : CLIENTS[0].id;
   } finally { FS.applying=false; }
   loadClient();
+  if(Array.isArray(j.projektit)) restoreProjects(j.projektit);
 }
 const FS = { dir:null, ok:false, applying:false, t:null, last:null, name:"doccruncher-asetukset.json",
   supported: typeof window.showDirectoryPicker==="function",
@@ -1382,12 +1385,29 @@ window.__fs = FS;
 // after settings have changed, when the CSV is saved or when returning to the start page.
 const DL = { on: (()=>{ try{ return localStorage.getItem("doccruncher.dlsettings")==="1"; }catch(e){ return false; } })() };
 function dlDirty(){ try{ return +(localStorage.getItem("doccruncher.modified")||0) > +(localStorage.getItem("doccruncher.dlAt")||0); }catch(e){ return false; } }
-function downloadSettings(force){
+async function downloadSettings(force){
   if(!force && (!DL.on || !dlDirty())) return false;
-  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify(collectSettings(),null,2)],{type:"application/json"}));
-  a.download="doccruncher-asetukset.json"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
   try{ localStorage.setItem("doccruncher.dlAt", String(Date.now())); }catch(e){}
+  // saved projects go along (without file handles: the files are asked for if they cannot be found)
+  let projs=[]; try{ projs=((await idb("readonly", st=>st.getAll(), "p"))||[]).map(p=>({...p, pdf:p.pdf?{...p.pdf,handle:null}:null, csv:p.csv?{...p.csv,handle:null}:null})); }catch(e){}
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify({...collectSettings(), projektit:projs},null,2)],{type:"application/json"}));
+  a.download="doccruncher-asetukset.json"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
   fsInfo(); return true;
+}
+async function restoreProjects(list){
+  for(const p of list||[]){
+    try{ const o=await idb("readonly", st=>st.get(p.id), "p"); if(!o || (p.savedAt||"")>(o.savedAt||"")) await idb("readwrite", st=>st.put({...p, pdf:p.pdf?{...p.pdf, handle:o?.pdf?.handle||null}:null, csv:p.csv?{...p.csv, handle:o?.csv?.handle||null}:null}, p.id), "p"); }catch(e){}
+  }
+  renderProjects();
+}
+async function restoreFromDownloads(){
+  try{
+    let file;
+    if(window.showOpenFilePicker){ const [h]=await window.showOpenFilePicker({startIn:"downloads", types:[{description:"Doccruncher-asetukset",accept:{"application/json":[".json"]}}]}); file=await h.getFile(); }
+    else file=await new Promise((res,rej)=>{ const i=document.createElement("input"); i.type="file"; i.accept=".json,application/json"; i.onchange=()=>i.files[0]?res(i.files[0]):rej(new DOMException("","AbortError")); i.click(); });
+    const j=JSON.parse(await file.text()); applySettings(j); DL.restored=true; fsInfo();
+    toast(`Asetukset palautettu: ${CLIENTS.map(c=>c.name).join(", ")}`+(j.projektit?.length?` · ${j.projektit.length} projektia`:""));
+  }catch(e){ if(e.name!=="AbortError") toast("Asetusten palautus epäonnistui: "+e.message); }
 }
 function fsInfo(){
   const el=$("#fsInfo"); if(!el) return;
@@ -1395,6 +1415,8 @@ function fsInfo(){
   el.innerHTML = `<label style="font-weight:400;display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="dlSet" ${DL.on?"checked":""}> Tallenna asetukset myös koneelle</label>
     <span> – tiedosto <b>doccruncher-asetukset.json</b> latautuu Lataukset-kansioon, kun asetuksia on muutettu ja tallennat CSV:n tai palaat alkuun.${at?` Viimeksi ${new Date(at).toLocaleString("fi-FI",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})}.`:""}
     Palautus: Kirjausohje → Lataa asetukset (.json).</span>`;
+  if(FRESH && !DL.restored){ el.innerHTML = `<div class="flag warn" style="margin:4px 0 8px">Selaimen muistissa ei ole asetuksia (ensimmäinen käynnistys tai muisti tyhjennetty). Jos olet tallentanut ne koneelle, hae uusin <b>doccruncher-asetukset.json</b> Lataukset-kansiosta:
+    <button class="btn" id="dlRestore" style="margin-left:6px;padding:3px 10px">Hae asetukset Lataukset-kansiosta…</button></div>` + el.innerHTML; $("#dlRestore").onclick=restoreFromDownloads; }
   $("#dlSet").onchange=e=>{ DL.on=e.target.checked; try{ localStorage.setItem("doccruncher.dlsettings", DL.on?"1":"0"); }catch(x){} if(DL.on) downloadSettings(true); fsInfo(); };
 }
 function fsInfoFolder(msg){
@@ -1412,8 +1434,7 @@ function fsInfoFolder(msg){
   $("#fsOff")?.addEventListener("click", async()=>{ FS.ok=false; FS.dir=null; try{ await idb("readwrite", st=>st.delete("dir")); }catch(e){} fsInfo(); });
 }
 (async()=>{
-  if(FS.supported){ try{ FS.dir = await idb("readonly", st=>st.get("dir")) || null; if(FS.dir) await FS.connect(false); }catch(e){ FS.dir=null; FS.ok=false; } }
-  if(!FS.ok || !FS.dir) fsInfo();
+  fsInfo();
   renderProjects();
 })();
 /* ---------- Projects: save the review and continue it later ---------- */
@@ -1450,6 +1471,7 @@ async function saveProject(){
       }catch(e){}
     }
     S.project.savedAt=new Date(); projBtn();
+    try{ localStorage.setItem("doccruncher.modified", String(Date.now())); }catch(e){}
   }catch(e){ toast("Projektin tallennus epäonnistui: "+e.message); }
   finally{ PJ.saving=false; if(PJ.again){ PJ.again=false; scheduleProject(); } }
 }

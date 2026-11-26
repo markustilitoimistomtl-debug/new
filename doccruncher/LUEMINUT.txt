@@ -65,9 +65,11 @@ Asetusten tallennus koneelle
 - Ruksi aloitussivulla "Tallenna asetukset myös koneelle", niin tiedosto
   doccruncher-asetukset.json latautuu Lataukset-kansioon aina, kun asetuksia on
   muutettu ja tallennat CSV:n tai palaat alkuun (ja heti ruksattaessa).
-  Tiedostossa ovat kaikkien asiakkaiden asetukset.
-- Palautus (esim. toisella koneella): Kirjausohje (säännöt) → "Lataa asetukset
-  (.json)" ja valitse uusin doccruncher-asetukset.json.
+  Tiedostossa ovat kaikkien asiakkaiden asetukset ja tallennetut projektit.
+- Jos selaimen muisti on tyhjä (tyhjennetty tai toinen kone), aloitussivulla
+  näkyy painike "Hae asetukset Lataukset-kansiosta…": valitse uusin
+  doccruncher-asetukset.json. Projektin PDF ja CSV kysytään avattaessa.
+- Palautuksen voi tehdä myös: Kirjausohje (säännöt) → "Lataa asetukset (.json)".
 
 Projektit – jatka kirjaamista myöhemmin
 - Valitse PDF ja CSV klikkaamalla laatikkoa (tai vedä ne laatikkoon), niin
