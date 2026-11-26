@@ -43,6 +43,9 @@ details.rules textarea{width:100%;height:280px;margin-top:10px;font:12.5px/1.45 
 .btn.primary:disabled{opacity:.45;cursor:default}
 #go{margin-top:20px;padding:11px 22px;font-size:15px}
 #startMsg{margin-top:12px;color:var(--muted)}
+.projbox{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.prow{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid #f0eee8;margin-top:8px}
+.prow .pn{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .profbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
 .profbar label{font-weight:600;display:flex;gap:8px;align-items:center}
 .profbar select{font:inherit;font-weight:600;padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;min-width:200px}
@@ -212,6 +215,7 @@ header.top h2{font-size:15px;margin:0;white-space:nowrap}
     <label class="drop" id="dropCsv"><input type="file" id="csvIn" accept=".csv,text/csv,text/plain"><b id="csvTitle">2. Kirjaus-CSV</b><span id="csvName">Valitse tai pudota tiedosto</span></label>
   </div>
   <div class="small" id="csvHint" style="margin-top:8px"></div>
+  <div id="projects"></div>
   <details class="rules">
     <summary>Kirjausohje (säännöt) – <span id="rulesWho"></span></summary>
     <p class="small">Muoto: rivi <code>Tilille 4000</code> aloittaa tilin, ja sen alle tulevat <code>* Toimittaja</code> -rivit. Lisäehto kirjoitetaan sanan <code>jos</code> perään tai sulkeisiin. Tili, jonka alla ei ole yhtään toimittajaa (esim. 7534 bensiini), tarjotaan vaihtoehdoksi edellisen tilin toimittajille.</p>
@@ -232,6 +236,7 @@ header.top h2{font-size:15px;margin:0;white-space:nowrap}
 <section id="app" class="hidden">
   <header class="top">
     <button class="btn home" id="homeB" title="Takaisin aloitussivulle">⟲ Alkuun</button>
+    <button class="btn home" id="projB">Tallenna projekti</button>
     <h2 id="title">Tositteet</h2>
     <div class="progress"><i id="progBar"></i></div>
     <span id="progText"></span>
@@ -433,7 +438,7 @@ function saveClients(){ store("doccruncher.clients", JSON.stringify(CLIENTS)); }
 /* ---------- State ---------- */
 const S = { view:"browse", noAtt:[], showAllNoAtt:false, naDraft:new Map(),
   coa: loadJson(pk("coa"), null) || DEFAULT_COA.map(x=>({...x})),
-  noAttRules: loadJson(pk("noatt"), []), synthetic:false, all:[], pdf:null, pdfName:"", csvBytes:null, csvName:"", csvLines:[], receipts:[], idx:0, pageCache:new Map(), rules:[] };
+  noAttRules: loadJson(pk("noatt"), []), synthetic:false, all:[], project:null, fileH:{pdf:null,csv:null}, fileMeta:{pdf:null,csv:null}, pdf:null, pdfName:"", csvBytes:null, csvName:"", csvLines:[], receipts:[], idx:0, pageCache:new Map(), rules:[] };
 
 /* ---------- Text normalisation & rules ---------- */
 const STOP = new Set(["oy","oyj","ab","ltd","gmbh","co","kg","bv","b","v","a","s","inc","oyfl","ky","tmi","nl","as","the","and","og"]);
@@ -779,6 +784,7 @@ function reasonFlag(r){
 }
 
 function renderList(){
+  scheduleProject();
   $("#list").innerHTML = S.receipts.map((r,i)=>{
     const chg = r.csv && r.acc && r.acc!==r.csv.acc;
     const cls = [i===S.idx?"cur":"", r.state, !r.csv?"nomatch":""].join(" ");
@@ -871,11 +877,11 @@ function renderSide(){
 }
 function wireEdit(r){
   const upd=()=>{ $("#csvBox").innerHTML = synthRows(r, r.acc||UNASSIGNED).map(t=>`<div class="csvline ${t.startsWith(UNASSIGNED)?"bad":""}">${esc(t)}</div>`).join(""); refreshSelVat(); renderList(); };
-  $("#edDate").oninput=e=>{ const iso=toIso(e.target.value); if(iso){ r.bookDate=r.valueDate=iso; upd(); } };
-  $("#edAmt").oninput=e=>{ const v=parseFloat(e.target.value.replace(/[\s\u00a0]/g,"").replace(",",".")); r.amount = isFinite(v)?Math.round(Math.abs(v)*100):0; $("#side .amt").textContent=(r.dir==="In"?"+":"−")+fmtEur(r.amount); upd(); };
-  $("#edCp").oninput=e=>{ r.counterparty=e.target.value; $("#side .who").textContent=r.counterparty||"(toimittaja puuttuu)"; upd(); };
+  $("#edDate").oninput=e=>{ const iso=toIso(e.target.value); if(iso){ r.bookDate=r.valueDate=iso; r.edited=true; upd(); } };
+  $("#edAmt").oninput=e=>{ const v=parseFloat(e.target.value.replace(/[\s\u00a0]/g,"").replace(",",".")); r.amount = isFinite(v)?Math.round(Math.abs(v)*100):0; r.edited=true; $("#side .amt").textContent=(r.dir==="In"?"+":"−")+fmtEur(r.amount); upd(); };
+  $("#edCp").oninput=e=>{ r.counterparty=e.target.value; r.edited=true; $("#side .who").textContent=r.counterparty||"(toimittaja puuttuu)"; upd(); };
   $("#edCp").onchange=()=>{ const old=r.sug.pick; r.sug=suggest(r); if(r.acc===old||r.acc===UNASSIGNED) r.acc=r.sug.pick; renderSide(); renderList(); };
-  document.querySelectorAll('input[name="edDir"]').forEach(x=>x.onchange=()=>{ r.dir=x.value; renderSide(); renderList(); });
+  document.querySelectorAll('input[name="edDir"]').forEach(x=>x.onchange=()=>{ r.dir=x.value; r.edited=true; renderSide(); renderList(); });
   for(const id of ["#edDate","#edCp","#edAmt"]) $(id).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); e.target.blur(); } if(e.key==="Escape") e.target.blur(); });
   $("#mergeB")?.addEventListener("click",()=>{
     const pv=S.receipts[S.idx-1]; pv.segs.push(...r.segs);
@@ -1216,7 +1222,8 @@ function modal(title, text, actions){
   for(const [label,cls,fn] of actions){ const b=document.createElement("button"); b.className="btn "+(cls||""); b.textContent=label; b.onclick=()=>{ $("#modal").classList.add("hidden"); fn&&fn(); }; box.appendChild(b); }
   $("#modal").classList.remove("hidden"); box.lastChild?.focus();
 }
-function goHome(){
+async function goHome(){
+  if(S.project){ clearTimeout(PJ.t); await saveProject(); S.project=null; } projBtn(); renderProjects();
   renderToken++; S.receipts=[]; S.noAtt=[]; S.idx=0; S.naDraft.clear(); S.coaDraft=null; updateBadges(); S.pageCache.clear(); S.view="browse";
   $("#sheet").innerHTML=""; $("#list").innerHTML="";
   $("#app").classList.add("hidden"); $("#start").classList.remove("hidden");
@@ -1230,7 +1237,8 @@ $("#homeB").onclick=()=>{
   if(done) parts.push(`${done} käsiteltyä tositetta`);
   if(nd) parts.push(`${nd} tallentamatonta tositteettomien muutosta`);
   if(cd) parts.push("tallentamattomat tilikartan muutokset");
-  const text = (parts.length?`Menetät ${parts.join(" ja ")}. `:"")+"Kirjausohje, tilikartta ja tallennetut toimittajasäännöt säilyvät. Tallenna CSV ensin, jos et ole vielä tehnyt sitä.";
+  const text = S.project ? `Projekti "${S.project.name}" on tallennettu, ja voit jatkaa sitä aloitussivulta.`+(nd||cd?" Tallentamattomat tositteettomien tai tilikartan muutokset menetetään, ellet tallenna niitä.":"")
+    : (parts.length?`Menetät ${parts.join(" ja ")} (tallenna projekti, jos haluat jatkaa myöhemmin). `:"")+"Kirjausohje, tilikartta ja tallennetut toimittajasäännöt säilyvät. Tallenna CSV ensin, jos et ole vielä tehnyt sitä.";
   const acts=[["Peruuta","",null]];
   if(nd||cd) acts.push(["Tallenna muutokset ja palaa","",()=>{ saveNaDrafts(); saveCoaDraft(); goHome(); }]);
   acts.push(["Palaa alkuun","primary",goHome]);
@@ -1276,7 +1284,7 @@ function csvHint(){
     if(!nb) $("#csvHint").innerHTML += `<div class="flag warn" style="margin-top:8px">CSV:ssä ei ole yhtään pankkitilin ${esc(bank)} riviä. Tarkista pankkitili kohdasta Asiakkaan asetukset – pankkirivejä ei saa tiliöidä uudelleen.</div>`;
     else $("#csvHint").innerHTML += `<div class="small" style="margin-top:4px">Pankkitilin ${esc(bank)} rivejä ${nb} (pysyvät ennallaan), tiliöitäviä rivejä ${all-nb}${c.defaultAcc?`, joista tilillä ${esc(c.defaultAcc)} ${cnt.get(c.defaultAcc)||0}`:""}.</div>`;
   }
-  $("#csvClear")?.addEventListener("click",()=>{ S.csvBytes=null; S.csvLines=[]; S.csvName=""; $("#csvName").textContent="Valitse tai pudota tiedosto"; $("#dropCsv").classList.remove("done"); $("#csvIn").value=""; csvHint(); ready(); });
+  $("#csvClear")?.addEventListener("click",clearCsv);
 }
 $("#profSel").onchange=e=>{ PID=e.target.value; $("#profForm").classList.add("hidden"); loadClient(); };
 let pfNew=false;
@@ -1314,8 +1322,9 @@ loadClient();
 /* ---------- Settings file in the program folder (Chrome / Edge: File System Access API) ---------- */
 // All clients' settings are kept in <folder>/doccruncher-asetukset.json. The folder is chosen once;
 // its handle is remembered in IndexedDB, and the file is read at every start and written after every change.
-function idb(mode, fn){ return new Promise((res,rej)=>{ const o=indexedDB.open("doccruncher",1); o.onupgradeneeded=()=>o.result.createObjectStore("h"); o.onerror=()=>rej(o.error);
-  o.onsuccess=()=>{ const tx=o.result.transaction("h",mode), rq=fn(tx.objectStore("h")); tx.oncomplete=()=>res(rq&&rq.result); tx.onerror=()=>rej(tx.error); }; }); }
+function idb(mode, fn, name="h"){ return new Promise((res,rej)=>{ const o=indexedDB.open("doccruncher",2);
+  o.onupgradeneeded=()=>{ for(const n of ["h","p"]) if(!o.result.objectStoreNames.contains(n)) o.result.createObjectStore(n); }; o.onerror=()=>rej(o.error);
+  o.onsuccess=()=>{ const tx=o.result.transaction(name,mode), rq=fn(tx.objectStore(name)); tx.oncomplete=()=>{ res(rq&&rq.result); o.result.close(); }; tx.onerror=()=>rej(tx.error); }; }); }
 function collectSettings(){
   const data={};
   for(const c of CLIENTS){ const k=x=>store("doccruncher.p."+c.id+"."+x); data[c.id]={kirjausohje:k("rules"), tilikartta:JSON.parse(k("coa")||"null"), tositteettomat:JSON.parse(k("noatt")||"[]")}; }
@@ -1364,6 +1373,7 @@ const FS = { dir:null, ok:false, applying:false, t:null, last:null, name:"doccru
     if(j && localT>fileT){ this.ok=true; await this.write(); fsInfo(`Selaimen uudemmat muutokset tallennettu: ${this.dir.name}/${this.name}`); }
     else if(j){ applySettings(j); this.ok=true; fsInfo(`Asetukset luettu: ${this.dir.name}/${this.name}`); }
     else { this.ok=true; await this.write(); fsInfo(`Asetukset tallennettu: ${this.dir.name}/${this.name}`); }
+    renderProjects?.();
   },
 };
 window.__fs = FS;
@@ -1384,7 +1394,143 @@ function fsInfo(msg){
 (async()=>{
   if(FS.supported){ try{ FS.dir = await idb("readonly", st=>st.get("dir")) || null; if(FS.dir) await FS.connect(false); }catch(e){ FS.dir=null; FS.ok=false; } }
   if(!FS.ok || !FS.dir) fsInfo();
+  renderProjects();
 })();
+/* ---------- Projects: save the review and continue it later ---------- */
+// A project remembers the client, the PDF and CSV (file handles in IndexedDB + path inside the program folder)
+// and the booking of every receipt. Saved in IndexedDB, and also in <program folder>/projektit/ when connected.
+const rkey = r => r.pageMode ? "p"+r.page : (r.id || "n"+r.no);
+const PJ = { t:null, saving:false };
+function fileRef(kind){
+  const h=S.fileH[kind], f=S.fileMeta[kind]; if(!f) return null;
+  return {name:f.name, size:f.size, lastModified:f.lastModified, handle:h||null, rel:null};
+}
+function projectState(){
+  return S.receipts.map(r=>{
+    const o={k:rkey(r), acc:r.acc, st:r.state};
+    if(r.edited) o.e={d:r.bookDate, c:r.counterparty, a:r.amount, dir:r.dir};
+    if(r.pageMode && r.segs.length>1) o.m=[...new Set(r.segs.map(s=>s.p))];
+    return o;
+  });
+}
+async function saveProject(){
+  if(!S.project) return;
+  if(PJ.saving){ PJ.again=true; return; } PJ.saving=true;
+  try{
+    const p={ id:S.project.id, name:S.project.name, client:PID, clientName:P().name, savedAt:new Date().toISOString(),
+      total:S.receipts.length, done:S.receipts.filter(r=>r.state!=="pending").length, idx:S.idx,
+      pdf:fileRef("pdf"), csv:fileRef("csv"), items:projectState() };
+    for(const k of ["pdf","csv"]) if(p[k] && p[k].handle && FS.ok && FS.dir?.resolve){ try{ p[k].rel = await FS.dir.resolve(p[k].handle); }catch(e){} }
+    await idb("readwrite", st=>st.put(p, p.id), "p");
+    if(FS.ok){
+      try{
+        const d=await FS.dir.getDirectoryHandle("projektit",{create:true}), fh=await d.getFileHandle(p.id+".json",{create:true}), w=await fh.createWritable();
+        const strip=x=>x?{...x, handle:undefined}:null;
+        await w.write(JSON.stringify({...p, pdf:strip(p.pdf), csv:strip(p.csv)},null,1)); await w.close();
+      }catch(e){}
+    }
+    S.project.savedAt=new Date(); projBtn();
+  }catch(e){ toast("Projektin tallennus epäonnistui: "+e.message); }
+  finally{ PJ.saving=false; if(PJ.again){ PJ.again=false; scheduleProject(); } }
+}
+function scheduleProject(){ if(!S.project) return; clearTimeout(PJ.t); PJ.t=setTimeout(saveProject, 800); }
+function projBtn(){
+  const b=$("#projB"); if(!b) return;
+  if(!S.project){ b.textContent="Tallenna projekti"; b.title="Tallenna läpikäynti, niin voit jatkaa sitä myöhemmin"; return; }
+  b.textContent = S.project.savedAt ? "✓ Tallennettu "+S.project.savedAt.toLocaleTimeString("fi-FI",{hour:"2-digit",minute:"2-digit"}) : "Tallennetaan…";
+  b.title = `Projekti "${S.project.name}" tallentuu automaattisesti jokaisen muutoksen jälkeen. Klikkaa nimetäksesi uudelleen.`;
+}
+async function listProjects(){
+  const out=new Map();
+  try{ for(const p of (await idb("readonly", st=>st.getAll(), "p"))||[]) out.set(p.id,p); }catch(e){}
+  if(FS.ok){
+    try{
+      const d=await FS.dir.getDirectoryHandle("projektit");
+      for await (const [n,h] of d.entries()){
+        if(h.kind!=="file" || !/\.json$/.test(n)) continue;
+        try{ const p=JSON.parse(await (await h.getFile()).text()); const o=out.get(p.id);
+          if(!o) out.set(p.id,p); else if((p.savedAt||"")>(o.savedAt||"")) out.set(p.id,{...p, pdf:{...p.pdf, handle:o.pdf?.handle}, csv:p.csv?{...p.csv, handle:o.csv?.handle}:null}); }catch(e){}
+      }
+    }catch(e){}
+  }
+  return [...out.values()].sort((a,b)=>(b.savedAt||"").localeCompare(a.savedAt||""));
+}
+async function renderProjects(){
+  const el=$("#projects"); if(!el) return;
+  const ps=await listProjects();
+  if(!ps.length){ el.innerHTML=""; return; }
+  el.innerHTML = `<div class="projbox"><b>Jatka tallennettua projektia</b>${ps.map(p=>`
+    <div class="prow"><div style="min-width:0"><div class="pn">${esc(p.name)}</div>
+      <div class="small">${esc(p.clientName||p.client)} · ${p.done}/${p.total} käsitelty · tallennettu ${new Date(p.savedAt).toLocaleString("fi-FI",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})} · ${esc(p.pdf?.name||"")}${p.csv?" + "+esc(p.csv.name):""}</div></div>
+      <button class="btn primary" data-popen="${esc(p.id)}">Jatka</button><button class="x" data-pdel="${esc(p.id)}" title="Poista projekti (tiedostoja ei poisteta)">×</button></div>`).join("")}</div>`;
+  el.querySelectorAll("[data-popen]").forEach(b=>b.onclick=()=>resumeProject(ps.find(p=>p.id===b.dataset.popen)));
+  el.querySelectorAll("[data-pdel]").forEach(b=>b.onclick=()=>{
+    const p=ps.find(x=>x.id===b.dataset.pdel);
+    modal("Poistetaanko projekti?", `${p.name}: tallennetut tiliöinnit poistetaan. PDF- ja CSV-tiedostot säilyvät.`, [["Peruuta","",null],["Poista","primary",async()=>{
+      try{ await idb("readwrite", st=>st.delete(p.id), "p"); }catch(e){}
+      if(FS.ok){ try{ const d=await FS.dir.getDirectoryHandle("projektit"); await d.removeEntry(p.id+".json"); }catch(e){} }
+      renderProjects();
+    }]]);
+  });
+}
+// open a saved file: remembered handle -> same path inside the program folder -> ask the user
+async function fileFromRef(ref, ask){
+  if(ref.handle){
+    try{ let s=await ref.handle.queryPermission({mode:"read"}); if(s!=="granted" && ask) s=await ref.handle.requestPermission({mode:"read"}); if(s==="granted") return {file:await ref.handle.getFile(), handle:ref.handle}; }catch(e){}
+  }
+  if(ref.rel && ref.rel.length && FS.ok){
+    try{ let d=FS.dir; for(const part of ref.rel.slice(0,-1)) d=await d.getDirectoryHandle(part); const h=await d.getFileHandle(ref.rel[ref.rel.length-1]); return {file:await h.getFile(), handle:h}; }catch(e){}
+  }
+  return null;
+}
+async function pickFile(kind){
+  if(window.showOpenFilePicker){
+    const [h]=await window.showOpenFilePicker({id:"dc-"+kind, types:[kind==="pdf"?{description:"PDF",accept:{"application/pdf":[".pdf"]}}:{description:"CSV",accept:{"text/csv":[".csv",".txt"]}}]});
+    return {file:await h.getFile(), handle:h};
+  }
+  return new Promise((res,rej)=>{ const i=document.createElement("input"); i.type="file"; i.accept=kind==="pdf"?".pdf,application/pdf":".csv,text/csv,text/plain"; i.onchange=()=>i.files[0]?res({file:i.files[0], handle:null}):rej(new DOMException("","AbortError")); i.click(); });
+}
+function askFile(ref, kind){
+  return new Promise(res=>{
+    modal(kind==="pdf"?"Tositekooste":"Kirjaus-CSV", `Tiedostoa ${ref.name} ei voitu avata automaattisesti (siirretty, nimetty uudelleen tai lupa puuttuu). Salli pääsy tai valitse tiedosto.`, [
+      ["Peruuta","",()=>res(null)],
+      ...(ref.handle?[["Salli pääsy","",async()=>res(await fileFromRef(ref,true) || await askFile(ref,kind))]]:[]),
+      ["Valitse tiedosto…","primary",async()=>{ try{ res(await pickFile(kind)); }catch(e){ res(null); } }],
+    ]);
+  });
+}
+async function getProjectFile(ref, kind){
+  const got = await fileFromRef(ref, true) || await askFile(ref, kind);
+  if(got && got.file.name!==ref.name) toast(`Huom: valittu ${got.file.name}, projektissa ${ref.name}.`);
+  return got;
+}
+async function resumeProject(p){
+  const msg=$("#startMsg");
+  if(!CLIENTS.some(c=>c.id===p.client)){ msg.textContent=`Projektin asiakasta (${p.clientName||p.client}) ei ole enää.`; return; }
+  PID=p.client; loadClient();
+  msg.textContent="Avataan projektin tiedostoja…";
+  const pdf=await getProjectFile(p.pdf,"pdf"); if(!pdf){ msg.textContent="Projektin avaus keskeytettiin."; return; }
+  let csv=null; if(p.csv){ csv=await getProjectFile(p.csv,"csv"); if(!csv){ msg.textContent="Projektin avaus keskeytettiin."; return; } }
+  await takePdf(pdf.file, pdf.handle);
+  if(csv) await takeCsv(csv.file, csv.handle); else clearCsv();
+  if(!S.pdf){ msg.textContent="PDF:n avaus epäonnistui."; return; }
+  S.project={id:p.id, name:p.name, savedAt:new Date(p.savedAt)};
+  await startReview(p);
+}
+function applyProject(p){
+  const by=new Map(S.receipts.map(r=>[rkey(r),r]));
+  let miss=0;
+  for(const o of p.items||[]){
+    if(o.m && o.m.length>1){ const first=by.get("p"+o.m[0]); if(first) for(const q of o.m.slice(1)){ const x=by.get("p"+q); if(x && x!==first){ first.segs.push(...x.segs); S.receipts=S.receipts.filter(r=>r!==x); S.all=S.all.filter(r=>r!==x); by.delete("p"+q); } } }
+  }
+  for(const o of p.items||[]){
+    const r=by.get(o.k); if(!r){ miss++; continue; }
+    if(o.e){ r.bookDate=r.valueDate=o.e.d; r.counterparty=o.e.c; r.amount=o.e.a; r.dir=o.e.dir; r.edited=true; r.sug=suggest(r); if(r.state==="pending") r.acc=r.sug.pick; }
+    if(o.st && o.st!=="pending"){ r.state=o.st; r.acc=o.acc; }
+  }
+  return miss;
+}
+
 $("#settingsIn").onchange=async e=>{
   const f=e.target.files[0]; if(!f) return;
   try{
@@ -1397,7 +1543,8 @@ $("#settingsIn").onchange=async e=>{
   }catch(err){ $("#rulesInfo").textContent="Asetustiedoston luku epäonnistui: "+err.message; }
 };
 
-async function takePdf(f){
+async function takePdf(f, h=null){
+  S.fileH.pdf=h; S.fileMeta.pdf={name:f.name, size:f.size, lastModified:f.lastModified}; S.pageCache.clear();
   $("#pdfName").textContent="Luetaan…";
   try{
     const buf = new Uint8Array(await f.arrayBuffer());
@@ -1406,12 +1553,14 @@ async function takePdf(f){
   }catch(err){ S.pdf=null; $("#pdfName").textContent="PDF:n avaus epäonnistui: "+err.message; }
   ready();
 }
-async function takeCsv(f){
+async function takeCsv(f, h=null){
+  S.fileH.csv=h; S.fileMeta.csv={name:f.name, size:f.size, lastModified:f.lastModified};
   S.csvBytes = new Uint8Array(await f.arrayBuffer()); S.csvName=f.name; S.csvLines=parseCsv(S.csvBytes);
   S.csvNl = S.csvBytes.indexOf(13)>=0 ? "\r\n" : "\n";
   $("#csvName").textContent=`${f.name} · ${S.csvLines.filter(l=>l.acc).length} riviä`; $("#dropCsv").classList.add("done");
   csvHint(); ready();
 }
+function clearCsv(){ S.csvBytes=null; S.csvLines=[]; S.csvName=""; S.fileH.csv=null; S.fileMeta.csv=null; $("#csvName").textContent="Valitse tai pudota tiedosto"; $("#dropCsv").classList.remove("done"); $("#csvIn").value=""; csvHint(); ready(); }
 function ready(){ $("#go").disabled = !(S.pdf && (S.csvBytes || P().counterAcc)); }
 $("#pdfIn").onchange=e=>e.target.files[0]&&takePdf(e.target.files[0]);
 $("#csvIn").onchange=e=>e.target.files[0]&&takeCsv(e.target.files[0]);
@@ -1419,16 +1568,25 @@ for(const [id,fn] of [["#dropPdf",takePdf],["#dropCsv",takeCsv]]){
   const d=$(id);
   d.addEventListener("dragover",e=>{e.preventDefault();d.classList.add("over");});
   d.addEventListener("dragleave",()=>d.classList.remove("over"));
-  d.addEventListener("drop",e=>{e.preventDefault();d.classList.remove("over");const f=e.dataTransfer.files[0]; if(f) fn(f);});
+  d.addEventListener("drop",async e=>{ e.preventDefault(); d.classList.remove("over");
+    const it=[...e.dataTransfer.items].find(i=>i.kind==="file"), hp=it?.getAsFileSystemHandle ? it.getAsFileSystemHandle() : null, f=e.dataTransfer.files[0];
+    if(!f) return; let h=null; try{ h=hp ? await hp : null; }catch(err){} fn(f, h&&h.kind==="file"?h:null); });
+  // with a file picker the file handle is remembered, so a saved project can reopen the file later
+  d.addEventListener("click",async e=>{
+    if(!window.showOpenFilePicker) return; e.preventDefault();
+    try{ const {file,handle}=await pickFile(id==="#dropPdf"?"pdf":"csv"); fn(file, handle); }catch(err){ if(err.name!=="AbortError") toast(err.message); }
+  });
 }
 // dropping both files anywhere on the start screen
 $("#start").addEventListener("dragover",e=>e.preventDefault());
 $("#start").addEventListener("drop",e=>{
   if(e.target.closest(".drop")) return; e.preventDefault();
-  for(const f of e.dataTransfer.files){ if(/\.pdf$/i.test(f.name)) takePdf(f); else takeCsv(f); }
+  const hs=[...e.dataTransfer.items].filter(i=>i.kind==="file").map(i=>i.getAsFileSystemHandle ? i.getAsFileSystemHandle().catch(()=>null) : Promise.resolve(null)), fs=[...e.dataTransfer.files];
+  Promise.all(hs).then(H=>fs.forEach((f,k)=>{ const h=H[k]&&H[k].kind==="file"?H[k]:null; if(/\.pdf$/i.test(f.name)) takePdf(f,h); else takeCsv(f,h); }));
 });
 
-$("#go").onclick=async()=>{
+$("#go").onclick=()=>{ S.project=null; startReview(null); };
+async function startReview(proj){
   const msg=$("#startMsg"); $("#go").disabled=true; msg.textContent="Luetaan tositteita…";
   try{
     S.rules = parseRules(rulesTxt.value);
@@ -1444,11 +1602,21 @@ $("#go").onclick=async()=>{
     S.receipts = sorted.filter(r=>r.hasAtt);
     S.noAtt = sorted.filter(r=>!r.hasAtt);
     for(const r of S.receipts){ r.sug=suggest(r); r.acc=r.sug.pick; r.state="pending"; }
+    let miss=0; if(proj) miss=applyProject(proj);
     if(!S.receipts.length){ msg.textContent=`PDF:stä löytyi ${all.length} maksua, mutta yhdessäkään ei ollut liitettä.`; $("#go").disabled=false; return; }
     $("#start").classList.add("hidden"); $("#app").classList.remove("hidden");
     $("#title").textContent=`${P().name} · ${S.receipts.length} ${pageMode?"sivua":"kuitillista tositetta ("+all.length+" maksusta)"}${S.synthetic?" · vastatili "+P().counterAcc:""}`;
-    updateBadges(); show(0);
+    updateBadges(); projBtn();
+    show(proj ? Math.min(proj.idx||0, S.receipts.length-1) : 0);
+    if(proj) toast(`Projekti avattu: ${S.receipts.filter(r=>r.state!=="pending").length}/${S.receipts.length} käsitelty`+(miss?` · ${miss} tallennettua tositetta ei löytynyt tiedostosta`:""));
   }catch(err){ console.error(err); msg.textContent="Virhe: "+err.message; $("#go").disabled=false; }
+}
+$("#projB").onclick=async()=>{
+  const def = S.project ? S.project.name : `${P().name} – ${S.pdfName.replace(/\.pdf$/i,"")}`;
+  const name = prompt(S.project?"Projektin nimi:":"Tallenna projekti nimellä:", def); if(name==null) return;
+  if(!S.project) S.project={id:"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)};
+  S.project.name=name.trim()||def; await saveProject();
+  toast(S.fileH.pdf ? "Projekti tallennettu – tallentuu nyt automaattisesti." : "Projekti tallennettu. Tiedostot pitää valita uudelleen avattaessa (valitse ne jatkossa klikkaamalla laatikkoa, niin ohjelma muistaa ne).");
 };
 </script>
 </body>

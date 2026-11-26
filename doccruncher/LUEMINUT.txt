@@ -72,6 +72,19 @@ Asetukset ohjelman kansioon (Chrome / Edge)
   USB-tikulta), asetukset luetaan siitä.
 - Firefox ei tue tätä: siinä asetukset ovat selaimen muistissa.
 
+Projektit – jatka kirjaamista myöhemmin
+- Valitse PDF ja CSV klikkaamalla laatikkoa (tai vedä ne laatikkoon), niin
+  ohjelma muistaa tiedostojen sijainnin.
+- Paina läpikäynnin aikana yläpalkin "Tallenna projekti" ja anna nimi. Sen
+  jälkeen projekti tallentuu automaattisesti jokaisen muutoksen jälkeen.
+- Aloitussivun "Jatka tallennettua projektia" -listasta "Jatka" avaa asiakkaan,
+  PDF:n ja CSV:n entisistä sijainneistaan ja palauttaa tiliöinnit, ohitukset,
+  käsin korjatut tiedot ja yhdistetyt sivut. Selain voi kysyä lukulupaa.
+- Jos tiedosto on siirretty tai nimetty uudelleen, ohjelma pyytää valitsemaan sen.
+- Kun asetukset tallentuvat ohjelman kansioon, projektit tallentuvat myös
+  alikansioon projektit/. Jos PDF ja CSV ovat ohjelman kansiossa (tai sen
+  alikansiossa), projekti löytää ne myös toisella koneella.
+
 Varmuuskopio: yhteenvedon painike "Tallenna asetukset (.json)" tallentaa valitun
 asiakkaan asetukset. Ne voi ladata takaisin aloitussivulta, myös toisella koneella.
 
