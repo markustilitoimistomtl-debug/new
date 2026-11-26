@@ -60,6 +60,16 @@ Valmis asetustiedosto: doccruncher-mirocapital-asetukset.json sisältää Fillar
 kirjausohjeen ja tilikartan Miro Capitalin pohjaksi (valitse Miro Capital Oy ja
 "Lataa asetukset (.json)").
 
+Projektitiedosto .dca
+- "Tallenna .dca" (yläpalkki) tallentaa koko projektin yhdeksi tiedostoksi:
+  PDF, CSV, tiliöinnit, käsin tehdyt korjaukset, yhdistetyt sivut ja asiakkaan
+  asetukset. Ensimmäisellä kerralla valitaan nimi ja kansio, sen jälkeen
+  tallennus menee samaan tiedostoon (Shift+klikkaus = tallenna nimellä).
+- Avaus: aloitussivun "Avaa projektitiedosto (.dca)…" tai pudota .dca sivulle.
+  Toimii millä tahansa koneella ja selaimella. Jos asiakasta ei ole koneella,
+  se lisätään projektitiedoston asetuksilla.
+- .dca on yhtä suuri kuin PDF ja CSV yhteensä.
+
 Asetusten tallennus koneelle
 - Asetukset säilyvät selaimen muistissa.
 - Ruksi aloitussivulla "Tallenna asetukset myös koneelle", niin tiedosto

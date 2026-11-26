@@ -215,6 +215,7 @@ header.top h2{font-size:15px;margin:0;white-space:nowrap}
     <label class="drop" id="dropCsv"><input type="file" id="csvIn" accept=".csv,text/csv,text/plain"><b id="csvTitle">2. Kirjaus-CSV</b><span id="csvName">Valitse tai pudota tiedosto</span></label>
   </div>
   <div class="small" id="csvHint" style="margin-top:8px"></div>
+  <div class="small" style="margin-top:16px"><button class="btn" id="dcaOpenB">Avaa projektitiedosto (.dca)…</button> tai pudota .dca-tiedosto tälle sivulle. Projektitiedostossa ovat mukana PDF, CSV, tiliöinnit ja asiakkaan asetukset.</div>
   <div id="projects"></div>
   <details class="rules">
     <summary>Kirjausohje (säännöt) – <span id="rulesWho"></span></summary>
@@ -237,6 +238,7 @@ header.top h2{font-size:15px;margin:0;white-space:nowrap}
   <header class="top">
     <button class="btn home" id="homeB" title="Takaisin aloitussivulle">⟲ Alkuun</button>
     <button class="btn home" id="projB">Tallenna projekti</button>
+    <button class="btn home" id="dcaB">Tallenna .dca</button>
     <h2 id="title">Tositteet</h2>
     <div class="progress"><i id="progBar"></i></div>
     <span id="progText"></span>
@@ -440,7 +442,7 @@ function saveClients(){ store("doccruncher.clients", JSON.stringify(CLIENTS)); }
 /* ---------- State ---------- */
 const S = { view:"browse", noAtt:[], showAllNoAtt:false, naDraft:new Map(),
   coa: loadJson(pk("coa"), null) || DEFAULT_COA.map(x=>({...x})),
-  noAttRules: loadJson(pk("noatt"), []), synthetic:false, all:[], project:null, fileH:{pdf:null,csv:null}, fileMeta:{pdf:null,csv:null}, pdf:null, pdfName:"", csvBytes:null, csvName:"", csvLines:[], receipts:[], idx:0, pageCache:new Map(), rules:[] };
+  noAttRules: loadJson(pk("noatt"), []), synthetic:false, all:[], project:null, fileH:{pdf:null,csv:null}, fileObj:{pdf:null,csv:null}, fileMeta:{pdf:null,csv:null}, pdf:null, pdfName:"", csvBytes:null, csvName:"", csvLines:[], receipts:[], idx:0, pageCache:new Map(), rules:[] };
 
 /* ---------- Text normalisation & rules ---------- */
 const STOP = new Set(["oy","oyj","ab","ltd","gmbh","co","kg","bv","b","v","a","s","inc","oyfl","ky","tmi","nl","as","the","and","og"]);
@@ -1587,8 +1589,90 @@ $("#settingsIn").onchange=async e=>{
   }catch(err){ $("#rulesInfo").textContent="Asetustiedoston luku epäonnistui: "+err.message; }
 };
 
+
+/* ---------- .dca project file: the PDF, the CSV, the bookings and the client's settings in one file ---------- */
+// Layout: "DCA1" + uint32 (little endian) header length + header JSON (UTF-8) + the files' bytes one after another.
+const DCA_MAGIC = "DCA1";
+function buildProject(){
+  return { id:S.project.id, name:S.project.name, client:PID, clientName:P().name, savedAt:new Date().toISOString(),
+    total:S.receipts.length, done:S.receipts.filter(r=>r.state!=="pending").length, idx:S.idx,
+    pdf:fileRef("pdf"), csv:fileRef("csv"), items:projectState() };
+}
+function ensureProject(){
+  if(S.project) return true;
+  const def=`${P().name} – ${S.pdfName.replace(/\.pdf$/i,"")}`;
+  const name=prompt("Tallenna projekti nimellä:", def); if(name==null) return false;
+  S.project={id:"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), name:name.trim()||def};
+  return true;
+}
+async function saveDca(saveAs){
+  if(!ensureProject()) return;
+  await saveProject();
+  let pdfBuf;
+  try{ pdfBuf = await S.fileObj.pdf.arrayBuffer(); }
+  catch(e){ toast("PDF:ää ei voi lukea tallennusta varten (onko tiedosto siirretty?). Valitse se uudelleen ja tallenna sitten."); return; }
+  const csvBuf = S.csvBytes ? S.csvBytes : null;
+  const p = buildProject(); for(const k of ["pdf","csv"]) if(p[k]) p[k]={...p[k], handle:null};
+  const files=[{kind:"pdf", name:S.fileMeta.pdf.name, lastModified:S.fileMeta.pdf.lastModified, length:pdfBuf.byteLength}];
+  if(csvBuf) files.push({kind:"csv", name:S.fileMeta.csv?.name||S.csvName, lastModified:S.fileMeta.csv?.lastModified||0, length:csvBuf.byteLength});
+  const header = { format:"Doccruncher-projekti", versio:1, ohjelma:"Doccruncher 0.20", tallennettu:p.savedAt, projekti:p,
+    asiakas:{...P()}, asetukset:{kirjausohje:rulesTxt.value, tilikartta:S.coa, tositteettomat:S.noAttRules}, tiedostot:files };
+  const hb = new TextEncoder().encode(JSON.stringify(header)), len = new Uint8Array(4);
+  new DataView(len.buffer).setUint32(0, hb.length, true);
+  const blob = new Blob([DCA_MAGIC, len, hb, pdfBuf, ...(csvBuf?[csvBuf]:[])], {type:"application/octet-stream"});
+  const fname = (S.project.name.replace(/[\\/:*?"<>|]+/g," ").trim()||"projekti")+".dca";
+  try{
+    if(window.showSaveFilePicker){
+      let h = !saveAs && S.project.dcaHandle;
+      if(h && h.queryPermission && await h.queryPermission({mode:"readwrite"})!=="granted") h=null;
+      if(!h) h = await window.showSaveFilePicker({suggestedName:fname, startIn: S.project.dcaHandle || "downloads", id:"dca",
+        types:[{description:"Doccruncher-projekti", accept:{"application/x-doccruncher":[".dca"]}}]});
+      const w=await h.createWritable(); await w.write(blob); await w.close(); S.project.dcaHandle=h;
+      toast(`Projekti tallennettu: ${h.name} (${(blob.size/1048576).toFixed(1)} Mt)`);
+    } else {
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fname; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 10000);
+      toast(`Projekti ladattu: ${fname} (${(blob.size/1048576).toFixed(1)} Mt)`);
+    }
+    dcaBtn();
+  }catch(e){ if(e.name!=="AbortError") toast("Tallennus epäonnistui: "+e.message); }
+}
+function dcaBtn(){ const b=$("#dcaB"); if(b) b.title = S.project?.dcaHandle ? `Tallenna tiedostoon ${S.project.dcaHandle.name} (Shift+klikkaus: tallenna nimellä)` : "Tallenna projekti yhdeksi .dca-tiedostoksi (PDF, CSV, tiliöinnit ja asetukset)"; }
+async function openDca(file){
+  const msg=$("#startMsg"); msg.textContent=`Avataan ${file.name}…`;
+  try{
+    const buf=await file.arrayBuffer(), u8=new Uint8Array(buf);
+    if(new TextDecoder().decode(u8.subarray(0,4))!==DCA_MAGIC) throw new Error("tiedosto ei ole Doccruncher-projekti");
+    const hl=new DataView(buf).getUint32(4,true), header=JSON.parse(new TextDecoder().decode(u8.subarray(8,8+hl)));
+    let off=8+hl; const got={};
+    for(const f of header.tiedostot){ got[f.kind]=new File([u8.subarray(off, off+f.length)], f.name, {lastModified:f.lastModified||Date.now()}); off+=f.length; }
+    const c=header.asiakas, p=header.projekti;
+    let note="";
+    if(!CLIENTS.some(x=>x.id===c.id)){
+      // client not on this computer: created from the project file with its settings
+      CLIENTS.push({id:c.id, name:c.name, counterAcc:c.counterAcc||"", defaultAcc:c.defaultAcc||"", bankAcc:c.bankAcc||"1920"}); saveClients();
+      const k=x=>"doccruncher.p."+c.id+"."+x, a=header.asetukset||{};
+      if(a.kirjausohje!=null) store(k("rules"), a.kirjausohje); if(a.tilikartta) store(k("coa"), JSON.stringify(a.tilikartta)); if(a.tositteettomat) store(k("noatt"), JSON.stringify(a.tositteettomat));
+      note=` · asiakas ${c.name} lisätty asetuksineen`;
+    }
+    PID=c.id; loadClient();
+    await takePdf(got.pdf, null);
+    if(got.csv) await takeCsv(got.csv, null); else clearCsv();
+    if(!S.pdf) throw new Error("PDF:n avaus epäonnistui");
+    S.project={id:p.id, name:p.name, savedAt:new Date(p.savedAt)};
+    if(window.showOpenFilePicker && file.handle) S.project.dcaHandle=file.handle;
+    await startReview(p); dcaBtn();
+    if(note) toast(`Projekti avattu${note}`);
+  }catch(e){ console.error(e); msg.textContent="Projektitiedoston avaus epäonnistui: "+e.message; }
+}
+async function pickDca(){
+  try{
+    if(window.showOpenFilePicker){ const [h]=await window.showOpenFilePicker({id:"dca", types:[{description:"Doccruncher-projekti", accept:{"application/x-doccruncher":[".dca"]}}]}); const f=await h.getFile(); f.handle=h; return openDca(f); }
+    const i=document.createElement("input"); i.type="file"; i.accept=".dca"; i.onchange=()=>i.files[0]&&openDca(i.files[0]); i.click();
+  }catch(e){ if(e.name!=="AbortError") toast(e.message); }
+}
+
 async function takePdf(f, h=null){
-  S.fileH.pdf=h; S.fileMeta.pdf={name:f.name, size:f.size, lastModified:f.lastModified}; S.pageCache.clear();
+  S.fileObj.pdf=f; S.fileH.pdf=h; S.fileMeta.pdf={name:f.name, size:f.size, lastModified:f.lastModified}; S.pageCache.clear();
   $("#pdfName").textContent="Luetaan…";
   try{
     const buf = new Uint8Array(await f.arrayBuffer());
@@ -1598,13 +1682,13 @@ async function takePdf(f, h=null){
   ready();
 }
 async function takeCsv(f, h=null){
-  S.fileH.csv=h; S.fileMeta.csv={name:f.name, size:f.size, lastModified:f.lastModified};
+  S.fileObj.csv=f; S.fileH.csv=h; S.fileMeta.csv={name:f.name, size:f.size, lastModified:f.lastModified};
   S.csvBytes = new Uint8Array(await f.arrayBuffer()); S.csvName=f.name; S.csvLines=parseCsv(S.csvBytes);
   S.csvNl = S.csvBytes.indexOf(13)>=0 ? "\r\n" : "\n";
   $("#csvName").textContent=`${f.name} · ${S.csvLines.filter(l=>l.acc).length} riviä`; $("#dropCsv").classList.add("done");
   csvHint(); ready();
 }
-function clearCsv(){ S.csvBytes=null; S.csvLines=[]; S.csvName=""; S.fileH.csv=null; S.fileMeta.csv=null; $("#csvName").textContent="Valitse tai pudota tiedosto"; $("#dropCsv").classList.remove("done"); $("#csvIn").value=""; csvHint(); ready(); }
+function clearCsv(){ S.csvBytes=null; S.csvLines=[]; S.csvName=""; S.fileH.csv=null; S.fileMeta.csv=null; S.fileObj.csv=null; $("#csvName").textContent="Valitse tai pudota tiedosto"; $("#dropCsv").classList.remove("done"); $("#csvIn").value=""; csvHint(); ready(); }
 function ready(){ $("#go").disabled = !(S.pdf && (S.csvBytes || P().counterAcc)); }
 $("#pdfIn").onchange=e=>e.target.files[0]&&takePdf(e.target.files[0]);
 $("#csvIn").onchange=e=>e.target.files[0]&&takeCsv(e.target.files[0]);
@@ -1614,7 +1698,9 @@ for(const [id,fn] of [["#dropPdf",takePdf],["#dropCsv",takeCsv]]){
   d.addEventListener("dragleave",()=>d.classList.remove("over"));
   d.addEventListener("drop",async e=>{ e.preventDefault(); d.classList.remove("over");
     const it=[...e.dataTransfer.items].find(i=>i.kind==="file"), hp=it?.getAsFileSystemHandle ? it.getAsFileSystemHandle() : null, f=e.dataTransfer.files[0];
-    if(!f) return; let h=null; try{ h=hp ? await hp : null; }catch(err){} fn(f, h&&h.kind==="file"?h:null); });
+    if(!f) return; let h=null; try{ h=hp ? await hp : null; }catch(err){}
+    if(/\.dca$/i.test(f.name)){ if(h) f.handle=h; return openDca(f); }
+    fn(f, h&&h.kind==="file"?h:null); });
   // with a file picker the file handle is remembered, so a saved project can reopen the file later
   d.addEventListener("click",async e=>{
     if(!window.showOpenFilePicker) return; e.preventDefault();
@@ -1626,10 +1712,12 @@ $("#start").addEventListener("dragover",e=>e.preventDefault());
 $("#start").addEventListener("drop",e=>{
   if(e.target.closest(".drop")) return; e.preventDefault();
   const hs=[...e.dataTransfer.items].filter(i=>i.kind==="file").map(i=>i.getAsFileSystemHandle ? i.getAsFileSystemHandle().catch(()=>null) : Promise.resolve(null)), fs=[...e.dataTransfer.files];
-  Promise.all(hs).then(H=>fs.forEach((f,k)=>{ const h=H[k]&&H[k].kind==="file"?H[k]:null; if(/\.pdf$/i.test(f.name)) takePdf(f,h); else takeCsv(f,h); }));
+  Promise.all(hs).then(H=>fs.forEach((f,k)=>{ const h=H[k]&&H[k].kind==="file"?H[k]:null; if(/\.dca$/i.test(f.name)){ if(h) f.handle=h; openDca(f); } else if(/\.pdf$/i.test(f.name)) takePdf(f,h); else takeCsv(f,h); }));
 });
 
 $("#go").onclick=()=>{ S.project=null; startReview(null); };
+$("#dcaB").onclick=e=>saveDca(e.shiftKey);
+$("#dcaOpenB").onclick=pickDca;
 async function startReview(proj){
   const msg=$("#startMsg"); $("#go").disabled=true; msg.textContent="Luetaan tositteita…";
   try{
