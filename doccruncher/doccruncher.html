@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doccruncher 0.20</title>
+<script src="lib/pdf.min.js"></script>
+<script src="lib/pdf.worker.min.js"></script>
+<script>
+if(!window.pdfjsLib){ document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"><\/script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"><\/script>'); }
+</script>
+<style>
+:root{
+  --bg:#f4f3ef; --panel:#fff; --ink:#1d1d1b; --muted:#6d6a63; --line:#e2dfd7;
+  --accent:#1f5f4a; --accent-soft:#e3efe9; --warn:#a4560c; --warn-soft:#fbefe1;
+  --skip:#8a8780; --bad:#a3322a; --bad-soft:#f7e4e2;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+button{font:inherit;cursor:pointer}
+.hidden{display:none!important}
+
+/* --- Start screen --- */
+#start{max-width:760px;margin:0 auto;padding:48px 24px}
+#start h1{font-size:26px;margin:0 0 6px;letter-spacing:-.01em}
+#start p.lead{color:var(--muted);margin:0 0 28px}
+.drops{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.drop{border:1.5px dashed #c9c5ba;border-radius:12px;background:var(--panel);padding:22px 18px;text-align:center;cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop.done{border-style:solid;border-color:var(--accent)}
+.drop b{display:block;font-size:15px;margin-bottom:4px}
+.drop span{color:var(--muted);font-size:13px;word-break:break-all}
+.drop input{display:none}
+details.rules{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+details.rules summary{cursor:pointer;font-weight:600}
+details.rules textarea{width:100%;height:280px;margin-top:10px;font:12.5px/1.45 var(--mono);border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical}
+.rules-actions{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 14px}
+.btn:hover{border-color:#bdb8ac}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.primary:disabled{opacity:.45;cursor:default}
+#go{margin-top:20px;padding:11px 22px;font-size:15px}
+#startMsg{margin-top:12px;color:var(--muted)}
+.profbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.profbar label{font-weight:600;display:flex;gap:8px;align-items:center}
+.profbar select{font:inherit;font-weight:600;padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;min-width:200px}
+.profbar .pinfo{flex-basis:100%;font-size:12.5px;color:var(--muted)}
+#profForm{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;flex-basis:100%;margin-top:6px;padding-top:10px;border-top:1px dashed var(--line)}
+#profForm input{font:inherit;padding:6px 8px;border:1.5px solid var(--line);border-radius:7px;min-width:0}
+#profForm .acts{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.edit{display:grid;grid-template-columns:auto 1fr;gap:5px 8px;align-items:center;font-size:12.5px;margin-top:10px}
+.edit input{font:inherit;padding:5px 7px;border:1.5px solid var(--line);border-radius:7px;min-width:0}
+.edit input:focus{outline:none;border-color:var(--accent)}
+.edit input.mono{font-family:var(--mono);font-weight:600}
+.small{font-size:12.5px;color:var(--muted)}
+
+/* --- Main app --- */
+#app{display:grid;grid-template-columns:290px 1fr 340px;grid-template-rows:auto 1fr;height:100vh}
+header.top{grid-column:1/-1;display:flex;align-items:center;gap:16px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+header.top h2{font-size:15px;margin:0;white-space:nowrap}
+.progress{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;min-width:80px}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+#progText{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+#list{overflow:auto;border-right:1px solid var(--line);background:var(--panel)}
+#list .row{display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid #f0eee8;cursor:pointer}
+#list .row:hover{background:#faf9f6}
+#list .row.cur{background:var(--accent-soft)}
+#list .dot{width:8px;height:8px;border-radius:50%;background:#d4d0c6}
+#list .row.accepted .dot{background:var(--accent)}
+#list .row.skipped .dot{background:var(--skip)}
+#list .row.nomatch .dot{background:var(--bad)}
+#list .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#list .sub{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+#list .acc{font:600 12.5px var(--mono);color:var(--muted)}
+#list .row.accepted .acc{color:var(--accent)}
+#list .acc.chg::before{content:"→ "}
+
+#viewer{overflow:auto;padding:18px;position:relative}
+#viewer .sheet{background:#fff;margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,.12);max-width:900px}
+#viewer{padding-top:0}
+#viewer .sheet{max-width:none}
+#viewer canvas{display:block;width:100%;height:auto;cursor:zoom-in}
+#viewer.big canvas{cursor:zoom-out}
+.zoombar{position:sticky;top:0;left:0;z-index:3;display:flex;gap:6px;align-items:center;justify-content:center;padding:8px 0;margin:0 -18px 12px;background:rgba(244,243,239,.94);backdrop-filter:blur(4px);border-bottom:1px solid var(--line);font-size:13px}
+.zoombar .btn{padding:4px 10px;font-size:13px}
+.zoombar .zv{font:600 13px var(--mono);min-width:54px;text-align:center}
+.zoombar .def{color:var(--muted);margin-left:6px}
+#loading{color:var(--muted);text-align:center;padding:40px}
+
+#side{border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+.meta .who{font-size:17px;font-weight:650;line-height:1.25}
+.meta .amt{font:600 22px var(--mono);margin-top:4px}
+.meta .amt.in{color:var(--accent)}
+.meta dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:10px 0 0;font-size:12.5px}
+.meta dt{color:var(--muted)}
+.meta dd{margin:0;word-break:break-word}
+.box{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.box h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.csvline{font:12px var(--mono);word-break:break-all}
+.csvline.bad{color:var(--bad)}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:grid;grid-template-columns:22px 52px 1fr;gap:8px;align-items:start;text-align:left;border:1.5px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff}
+.opt:hover{border-color:#bdb8ac}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt kbd{font:11px var(--mono);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--muted);background:#faf9f6;text-align:center}
+.opt .a{font:700 14px var(--mono)}
+.opt .d{font-size:12.5px;color:var(--muted)}
+.manual{display:flex;gap:6px;align-items:center}
+.manual input{width:120px;font:600 14px var(--mono);padding:7px 8px;border:1.5px solid var(--line);border-radius:8px}
+.manual input:focus{outline:none;border-color:var(--accent)}
+.flag{font-size:12.5px;border-radius:8px;padding:7px 10px}
+.flag.warn{background:var(--warn-soft);color:var(--warn)}
+.flag.bad{background:var(--bad-soft);color:var(--bad)}
+.flag.ok{background:var(--accent-soft);color:var(--accent)}
+.nav{display:grid;grid-template-columns:auto 1fr;gap:8px;margin-top:auto;padding-top:6px}
+.nav .btn{padding:11px 12px}
+.nav .accept{font-size:15px}
+.nav .skip,.nav .saverule{grid-column:1/-1}
+.nav .saverule{border-color:var(--accent);color:var(--accent);font-weight:600}
+.linkbtn{border:0;background:none;color:var(--accent);padding:6px 0 0;font-size:13px;font-weight:600}
+.linkbtn:hover{text-decoration:underline}
+.ruleform{display:grid;grid-template-columns:auto 1fr;gap:6px 8px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.ruleform input{font:inherit;padding:6px 8px;border:1.5px solid var(--line);border-radius:7px;min-width:0}
+.ruleform input:focus{outline:none;border-color:var(--accent)}
+.ruleform .acts{grid-column:1/-1;display:flex;gap:6px}
+.ruleform .prev{grid-column:1/-1;font:12px var(--mono);color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+#toast.on{opacity:1}
+.keys{font-size:11.5px;color:var(--muted);text-align:center}
+.keys kbd{font:11px var(--mono);border:1px solid var(--line);border-radius:4px;padding:0 4px;background:#faf9f6}
+
+/* --- Summary --- */
+.panel{grid-column:1/-1;grid-row:2;overflow:auto;padding:24px 28px}
+.panel h3{margin:0 0 4px;font-size:20px}
+.panel table{border-collapse:collapse;width:100%;margin-top:14px;background:var(--panel);font-size:13px}
+.panel th,.panel td{border-bottom:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:middle}
+.panel th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.panel td.n{font-family:var(--mono);text-align:right}
+.panel td.acc{font-family:var(--mono);font-weight:600}
+.panel input.cell{font:inherit;padding:5px 7px;border:1.5px solid var(--line);border-radius:6px;width:100%;min-width:0}
+.panel input.cell.mono{font-family:var(--mono);font-weight:600}
+.panel input.cell:focus{outline:none;border-color:var(--accent)}
+.panel .wrap{max-width:1000px}
+.chip{display:inline-block;border:1px solid var(--line);background:#faf9f6;border-radius:999px;padding:2px 9px;margin:2px 4px 2px 0;font:600 12px var(--mono);cursor:pointer}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.x{border:0;background:none;color:var(--muted);font-size:16px;padding:2px 6px}
+.x:hover{color:var(--bad)}
+.tabs{display:flex;gap:4px}
+.tabs button{border:1px solid transparent;background:none;border-radius:8px;padding:7px 12px;color:var(--muted);font-weight:600;white-space:nowrap}
+.tabs button:hover{color:var(--ink)}
+.tabs button.on{background:var(--accent-soft);color:var(--accent);border-color:#cfe2d8}
+.tabs .badge{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--line);color:var(--ink);font-size:11px;margin-left:4px}
+#vatInfo{font-size:12.5px;color:var(--muted);margin-top:6px}
+.savebar{position:sticky;top:-24px;z-index:2;display:flex;gap:10px;align-items:center;background:var(--bg);padding:10px 0;margin-top:6px}
+.savebar.dirty{background:var(--warn-soft);margin-left:-28px;margin-right:-28px;padding:10px 28px;border-bottom:1px solid #efd9bd}
+.savebar .cnt{font-weight:600;color:var(--warn)}
+.panel tr.chg td{background:#fffaf2}
+.panel tr.chg input.cell{border-color:var(--warn)}
+#modal{position:fixed;inset:0;background:rgba(20,20,18,.38);display:flex;align-items:center;justify-content:center;z-index:10}
+#modal .dlg{background:var(--panel);border-radius:14px;padding:22px 24px;max-width:460px;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+#modal h3{margin:0 0 8px;font-size:18px}
+#modal p{margin:0 0 16px;color:var(--muted)}
+#modal .acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.btn.home{white-space:nowrap}
+#summary h3{margin:0 0 4px;font-size:20px}
+#summary table{border-collapse:collapse;width:100%;margin-top:14px;background:var(--panel);font-size:13px}
+
+#summary th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+#summary td.n{font-family:var(--mono);text-align:right}
+#summary td.acc{font-family:var(--mono);font-weight:600}
+#summary .actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;align-items:center}
+#summary textarea{width:100%;height:160px;font:12px var(--mono);margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:8px}
+#saveMsg{color:var(--muted)}
+
+@media (max-width:1000px){
+  #app{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto;height:auto;min-height:100vh}
+  #list{max-height:180px;border-right:0;border-bottom:1px solid var(--line)}
+  #side{border-left:0;border-top:1px solid var(--line)}
+  #summary,#noatt,#coa{grid-column:1}
+}
+</style>
+</head>
+<body>
+
+<section id="start">
+  <h1>Doccruncher <span style="color:var(--muted);font-weight:500">0.20</span></h1>
+  <p class="lead">Lataa tositekooste (PDF) ja halutessasi tiliotteen kirjaus-CSV. Sovellus poimii tositteet, joissa on liite, järjestää ne päivämäärän mukaan ja ehdottaa tiliöinnin kirjausohjeen perusteella. Ilman CSV:tä viennit muodostetaan suoraan PDF:stä asiakkaan vastatilille.</p>
+  <div class="profbar">
+    <label>Asiakas <select id="profSel"></select></label>
+    <button class="btn" id="profEditB">Asiakkaan asetukset</button>
+    <button class="btn" id="profNewB">+ Uusi asiakas</button>
+    <div class="pinfo" id="profInfo"></div>
+    <div id="profForm" class="hidden">
+      <span class="small">Nimi</span><input id="pfName">
+      <span class="small">Vastatili</span><input id="pfCounter" inputmode="numeric" maxlength="6" placeholder="esim. 2880 – tyhjä = CSV pakollinen">
+      <span class="small">CSV:n oletustili</span><input id="pfDefault" inputmode="numeric" maxlength="6" placeholder="esim. 2350">
+      <div class="small" style="grid-column:1/-1">Vastatili: kun kirjaus-CSV:tä ei ladata, jokaisesta tositteesta tehdään kaksi vientiä: kulutili ja vastatili (esim. 2880 Ostovelat). CSV:n oletustili: ladatun CSV:n rivit, joita oletuksena tiliöidään uudelleen (esim. 2350). Jokaisella asiakkaalla on oma kirjausohje, tilikartta ja toimittajasäännöt.</div>
+      <div class="acts"><button class="btn primary" id="pfSave">Tallenna</button><button class="btn" id="pfCancel">Peruuta</button><button class="btn" id="pfDel" style="margin-left:auto;color:var(--bad)">Poista asiakas</button></div>
+    </div>
+  </div>
+  <div class="drops">
+    <label class="drop" id="dropPdf"><input type="file" id="pdfIn" accept="application/pdf,.pdf"><b>1. Tositekooste (PDF)</b><span id="pdfName">Valitse tai pudota tiedosto</span></label>
+    <label class="drop" id="dropCsv"><input type="file" id="csvIn" accept=".csv,text/csv,text/plain"><b id="csvTitle">2. Kirjaus-CSV</b><span id="csvName">Valitse tai pudota tiedosto</span></label>
+  </div>
+  <div class="small" id="csvHint" style="margin-top:8px"></div>
+  <details class="rules">
+    <summary>Kirjausohje (säännöt) – <span id="rulesWho"></span></summary>
+    <p class="small">Muoto: rivi <code>Tilille 4000</code> aloittaa tilin, ja sen alle tulevat <code>* Toimittaja</code> -rivit. Lisäehto kirjoitetaan sanan <code>jos</code> perään tai sulkeisiin. Tili, jonka alla ei ole yhtään toimittajaa (esim. 7534 bensiini), tarjotaan vaihtoehdoksi edellisen tilin toimittajille.</p>
+    <textarea id="rulesTxt" spellcheck="false"></textarea>
+    <div class="rules-actions">
+      <label class="btn">Lataa ohje .txt-tiedostosta<input type="file" id="rulesIn" accept=".txt,text/plain" class="hidden"></label>
+      <button class="btn" id="rulesReset">Palauta oletusohje</button>
+      <label class="btn">Lataa asetukset (.json)<input type="file" id="settingsIn" accept=".json,application/json" class="hidden"></label>
+      <span class="small" id="rulesInfo"></span>
+    </div>
+  </details>
+  <button class="btn primary" id="go" disabled>Aloita läpikäynti</button>
+  <div id="startMsg"></div>
+</section>
+
+<div id="toast"></div>
+<div id="modal" class="hidden"><div class="dlg"><h3 id="mTitle"></h3><p id="mText"></p><div class="acts" id="mActs"></div></div></div>
+<section id="app" class="hidden">
+  <header class="top">
+    <button class="btn home" id="homeB" title="Takaisin aloitussivulle">⟲ Alkuun</button>
+    <h2 id="title">Tositteet</h2>
+    <div class="progress"><i id="progBar"></i></div>
+    <span id="progText"></span>
+    <nav class="tabs">
+      <button data-v="browse">Tositteet</button>
+      <button data-v="noatt">Tositteettomat<span class="badge" id="noattN"></span></button>
+      <button data-v="coa">Tilikartta<span class="badge hidden" id="coaN">•</span></button>
+      <button data-v="summary">Yhteenveto ja CSV</button>
+    </nav>
+  </header>
+  <nav id="list"></nav>
+  <main id="viewer"><div class="zoombar">
+    <button class="btn" id="zOut" title="Pienennä (−)">−</button><span class="zv" id="zVal">120 %</span><button class="btn" id="zIn" title="Suurenna (+)">+</button>
+    <button class="btn" id="zFit" title="Normaalikoko 100 %">100 %</button>
+    <button class="btn" id="zDef" title="Käytä tätä zoomausta jokaisen tositteen avautuessa">Aseta oletukseksi</button>
+    <span class="def" id="zDefTxt"></span></div>
+  <div id="loading">Ladataan…</div><div class="sheet" id="sheet"></div></main>
+  <aside id="side"></aside>
+  <section id="summary" class="panel hidden"></section>
+  <section id="noatt" class="panel hidden"></section>
+  <section id="coa" class="panel hidden"></section>
+</section>
+
+<script>
+"use strict";
+const DEFAULT_RULES = `Tilille 4000:
+* CLAS OHLSON (pyörän osat yms)
+* Classic Bike Stadion
+* Cycle Service Nordic OY
+* Duell Bike-Center Oy
+* Foxcomp Finland Oy
+* Haagan Pyörähuolto
+* Hogu Industries OY
+* IKH KONALA
+* Ju-Ka Trading Oy
+* Kevra Oy
+* Kilon Osuus-Auto
+* KORJA-KUMI OY
+* Kristian Salikoski OP
+* Laakeri-Center Oy
+* MOTONET OY jos pyörän osia yms
+* Nordic Sports Brands Oy
+* Orelo Oy
+* Oy Duell Bike-Center Ab
+* Oy Velotrade Finland Ltd
+* Parmax Oy
+* PTL*Bikeimport Finland
+* Puuilo Espoo
+* Puuilo Nummela
+* Shimano Nordic AB
+* SMHJ Investment Oy
+* Suomi Trading Oy
+* Tarmin Oy
+* Verkkokauppa.com Oyj
+* VFI*Kevra Oy
+* Viabar Oy
+
+Tilille 4004
+* Tarmin Oy / Fun Bowling
+* Cycle Service Nordic OY
+
+Tilille 4110
+* BAFANG (POLAND)
+* BAFANG
+* BV. Vlechtservice.nl
+* Shimano Nordic AB
+* Hebie GmbH & Co. KG
+* Promovec A/S
+* KidsCab BV
+* Alligt b.v.
+* Ebikesets B.V.
+* VanMoof Netherlands B.V.
+* Additive Sportartikel GmbH
+
+Tilille 4490
+* Hogu Industries Oy
+
+Tilille 6100
+* Ilmarinen YEL
+
+Tilille 6130
+* Ilmarinen TyEL
+
+Tilille 1805
+* Fennia jos tapaturma- ryhmähenkivakuutus
+
+Tilille 7390
+* Helen Oy
+
+Tilille 7530 (jos polttoainekuluja, ei bensiini)
+* Neste
+* ST1
+...ja muut huoltoasemat
+
+Tilille 7534 bensiini
+
+Tilile 7540
+* E-Autohuolto/Eskeli Momentum OyFl
+* Motonet, jos auton osia tai huoltotarvikkeita
+
+Tilille 7564
+* Traficom
+
+Tilille 7574
+* Fennia jos autovakuutus
+
+Tilille 7750
+* CLAS OHLSON (muut tarvikkeet)
+* Motonet, jos muut tarvikkeet
+
+Tilille 7844
+* Fennia jos matkavakuutus
+
+Tilille 7850
+* Itä-pasilan pysäköinti
+
+Tilille 8380
+* Tilitoimisto MTL Oy
+
+Tilille 8484
+* Enviolo
+
+Tilille 8500
+* DNA Oyj
+
+Tilille 7844
+* Fennia jos yritys
+
+Tilille 7844
+* Fennia jos matkavakuutus/vastuuvakuutus
+
+Muut tililtä maksut jäävät tilille 2350
+Muut tilille tulleet maksut jäävät tilille 1700`;
+
+const DEFAULT_COA = [
+  ["4000","Ostot (pyörän osat ja tarvikkeet)","25,5"],
+  ["4004","Ostot","25,5"],
+  ["4110","EU-ostot",""],
+  ["4490","Ostot (Hogu)",""],
+  ["6100","YEL-vakuutusmaksut","0"],
+  ["6130","TyEL-vakuutusmaksut","0"],
+  ["7390","Sähkö","25,5"],
+  ["7530","Polttoaineet (ei bensiini)","25,5"],
+  ["7534","Bensiini","25,5"],
+  ["7540","Auton huolto ja osat","25,5"],
+  ["7564","Ajoneuvovero (Traficom)","0"],
+  ["7574","Autovakuutukset","0"],
+  ["7750","Pientarvikkeet","25,5"],
+  ["7844","Vakuutukset","0"],
+  ["7850","Pysäköinti","25,5"],
+  ["8380","Kirjanpito","25,5"],
+  ["8484","Enviolo",""],
+  ["8500","Puhelin ja tietoliikenne","25,5"],
+].map(([acc,name,vat])=>({acc,name,vat}));
+const UNASSIGNED = "????"; // account of a generated entry that has not been booked yet
+let DEFAULT_ACC = "2350"; // only these lines are changed by default (per client, set at start)
+const NEW_RULES = `# Kirjausohje laaditaan kirjattaessa.
+# Valitse tositteelle tili ja paina S (tallenna sääntö ja seuraava),
+# niin toimittaja lisätään tänne ja seuraavat saman toimittajan tositteet saavat ehdotuksen.
+`;
+const CLIENTS_DEF = [
+  {id:"fillarivelho", name:"Fillarivelho Tmi", counterAcc:"", defaultAcc:"2350"},
+  {id:"mirocapital", name:"Miro Capital Oy", counterAcc:"2880", defaultAcc:"2350"},
+];
+const defaultRulesFor = id => id==="fillarivelho" ? DEFAULT_RULES : NEW_RULES;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtEur = c => (c/100).toLocaleString("fi-FI",{minimumFractionDigits:2,maximumFractionDigits:2}) + " €";
+
+function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v);}catch(e){ return null; } }
+
+function loadJson(k, def){ try{ const v=store(k); return v? JSON.parse(v) : def; }catch(e){ return def; } }
+/* ---------- Clients (profiles): each has its own rules, chart of accounts and supplier rules ---------- */
+function migrateOld(){
+  if(store("doccruncher.clients")) return;
+  store("doccruncher.clients", JSON.stringify(CLIENTS_DEF));
+  // data of the old Tositeselain belongs to Fillarivelho
+  for(const k of ["rules","coa","noatt"]){ const v=store("tositeselain."+k); if(v) store("doccruncher.p.fillarivelho."+k, v); }
+  const z=store("tositeselain.zoom"); if(z) store("doccruncher.zoom", z);
+}
+migrateOld();
+let CLIENTS = loadJson("doccruncher.clients", null) || CLIENTS_DEF.map(c=>({...c}));
+for(const d of CLIENTS_DEF) if(!CLIENTS.some(c=>c.id===d.id) && !(loadJson("doccruncher.removed",[])).includes(d.id)) CLIENTS.push({...d});
+let PID = store("doccruncher.active"); if(!CLIENTS.some(c=>c.id===PID)) PID=CLIENTS[0].id;
+const P = () => CLIENTS.find(c=>c.id===PID) || CLIENTS[0];
+const pk = k => "doccruncher.p."+PID+"."+k;
+// a client without its own chart of accounts gets a copy of Fillarivelho's (then edited separately)
+const baseCoa = () => loadJson("doccruncher.p.fillarivelho.coa", null) || DEFAULT_COA.map(x=>({...x}));
+function saveClients(){ store("doccruncher.clients", JSON.stringify(CLIENTS)); }
+/* ---------- State ---------- */
+const S = { view:"browse", noAtt:[], showAllNoAtt:false, naDraft:new Map(),
+  coa: loadJson(pk("coa"), null) || DEFAULT_COA.map(x=>({...x})),
+  noAttRules: loadJson(pk("noatt"), []), synthetic:false, all:[], pdf:null, pdfName:"", csvBytes:null, csvName:"", csvLines:[], receipts:[], idx:0, pageCache:new Map(), rules:[] };
+
+/* ---------- Text normalisation & rules ---------- */
+const STOP = new Set(["oy","oyj","ab","ltd","gmbh","co","kg","bv","b","v","a","s","inc","oyfl","ky","tmi","nl","as","the","and","og"]);
+function norm(s){ return String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim(); }
+function core(s){ return norm(s).split(" ").filter(w => w && !STOP.has(w)).join(" "); }
+
+function parseRules(txt){
+  const groups=[]; let cur=null;
+  for(const raw of txt.split(/\r?\n/)){
+    const l = raw.trim(); if(!l) continue;
+    let m = l.match(/^til+ill?e\s+(\d{3,5})\s*:?\s*(.*)$/i);
+    if(m){ cur={acc:m[1], note:m[2].replace(/^[(\s:]+|[)\s]+$/g,""), items:[]}; groups.push(cur); continue; }
+    m = l.match(/^[*\-•]\s*(.+)$/);
+    if(m && cur){
+      let t=m[1].trim(), name=t, cond="";
+      const pm = t.match(/^(.*?)\s*\((.*)\)\s*$/); if(pm){ name=pm[1]; cond=pm[2]; }
+      const jm = name.match(/^(.*?)(?:\s*,\s*|\s+)jos\s+(.*)$/i); if(jm){ name=jm[1]; cond=(jm[2]+" "+cond).trim(); }
+      for(const alt of name.split("/")){
+        const c = core(alt); if(!c) continue;
+        cur.items.push({name:alt.trim(), full:t, cond, core:c});
+      }
+    }
+  }
+  // accounts with no suppliers become alternatives of the previous account that has suppliers
+  for(let i=0;i<groups.length;i++){
+    if(!groups[i].items.length){
+      for(let j=i-1;j>=0;j--) if(groups[j].items.length){ groups[i].linkTo=groups[j].acc; break; }
+    }
+  }
+  return groups;
+}
+
+function matchStrength(item, cpCore){
+  const c = " "+cpCore+" ", ic=item.core;
+  if(c.includes(" "+ic+" ")) return 2;
+  if(cpCore.length>=8 && ic.startsWith(cpCore)) return 2;
+  const first = ic.split(" ")[0];
+  if(first.length>=5 && c.includes(" "+first+" ")) return 1;
+  return 0;
+}
+
+function holviCatAccHint(r){
+  const t = norm(r.category+" "+r.details);
+  return {
+    abroad: /ulkomail/.test(t) || (r.vat0 && r.foreign),
+    parts: /varaosa/.test(t),
+    fuel: /polttoain|diesel/.test(t),
+    petrol: /bensiin|\b95e10\b|\b98e5\b|\bpetrol\b/.test(t),
+  };
+}
+
+function suggest(r){
+  const cp = core(r.counterparty);
+  let hits=[];
+  for(const g of S.rules) for(const it of g.items){
+    const s = matchStrength(it, cp); if(s) hits.push({acc:g.acc, note:g.note, item:it, s});
+  }
+  const strong = hits.filter(h=>h.s===2);
+  hits = strong.length ? strong : hits;
+  // group per account
+  const byAcc = new Map();
+  for(const h of hits){
+    if(!byAcc.has(h.acc)) byAcc.set(h.acc,{acc:h.acc, notes:new Set(), conds:[], items:[]});
+    const o=byAcc.get(h.acc);
+    if(h.item.cond) o.notes.add("jos "+h.item.cond); else if(h.note) o.notes.add(h.note);
+    o.conds.push(h.item.cond+" "+h.note); o.items.push(h.item);
+  }
+  // linked accounts (e.g. 7534 bensiini after 7530)
+  for(const g of S.rules) if(g.linkTo && byAcc.has(g.linkTo) && !byAcc.has(g.acc)){
+    byAcc.set(g.acc,{acc:g.acc, notes:new Set([g.note||""]), conds:[g.note||""], items:[], linked:true});
+  }
+  let opts=[...byAcc.values()].map(o=>({acc:o.acc, desc:[...o.notes].filter(Boolean).join("; ") || "kirjausohjeen mukaan", conds:o.conds, items:o.items}));
+
+  // score
+  const h = holviCatAccHint(r), text = norm(r.category+" "+r.details);
+  for(const o of opts){
+    let sc=0;
+    if(o.acc==="4110" && h.abroad) sc+=5;
+    if(o.acc==="4000" && h.parts && !h.abroad) sc+=3;
+    if(o.acc==="7530" && h.fuel && !h.petrol) sc+=3;
+    if(o.acc==="7534" && h.petrol) sc+=5;
+    for(const c of o.conds){ for(const w of norm(c).split(" ")) if(w.length>=5 && text.includes(w)) sc+=1; }
+    { const rc=core(ruleName(r)); for(const it of o.items){ if(it.core===rc) sc+=4; } }
+    for(const it of o.items){ const toks = it.core.split(" ").slice(1); for(const w of toks) if(w.length>=3 && (" "+text+" ").includes(" "+w+" ")) sc+=2; }
+    o.score=sc;
+  }
+  const order = opts.map((o,i)=>[o,i]).sort((a,b)=> b[0].score-a[0].score || a[1]-b[1]).map(x=>x[0]);
+  const cur = r.csv ? r.csv.acc : null;
+  // current account always available as an option
+  if(cur && cur!==UNASSIGNED && !opts.some(o=>o.acc===cur)) opts.push({acc:cur, desc:"nykyinen tili (ei muutosta)", conds:[], items:[], current:true});
+  else if(cur && cur!==UNASSIGNED){ const o=opts.find(o=>o.acc===cur); o.desc += " · nykyinen"; }
+
+  let pick, reason;
+  if(!r.csv){ pick = order[0]?.acc || null; reason="nomatch"; }
+  else if(cur!==DEFAULT_ACC){ pick=cur; reason = order.length ? "already" : "none"; }
+  else if(r.dir==="In" && !S.synthetic){ pick=cur; reason="incoming"; }
+  else if(order.length){ pick=order[0].acc; reason = order.length>1 ? "ambiguous" : "rule"; }
+  else { pick=cur; reason="none"; }
+  return {opts, pick, reason};
+}
+
+/* ---------- CSV ---------- */
+function parseCsv(bytes){
+  const lines=[]; let start=0;
+  const dec = new TextDecoder("windows-1252");
+  for(let i=0;i<=bytes.length;i++){
+    if(i===bytes.length || bytes[i]===10){
+      let end=i; if(end>start && bytes[end-1]===13) end--;
+      const text = dec.decode(bytes.subarray(start,end));
+      const parts = text.split(";");
+      const L = {i:lines.length, start, end, text, acc:null};
+      if(parts.length>=3){
+        L.acc=parts[0].trim(); L.desc=parts[1]; L.amt=Math.round(parseFloat(parts[2].replace(/\s/g,"").replace(",","."))*100);
+        const dm = L.desc.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$/);
+        L.date = dm ? `${dm[3]}-${dm[2].padStart(2,"0")}-${dm[1].padStart(2,"0")}` : null;
+        L.name = L.desc.replace(/\s{2,}.*$/,"");
+      }
+      lines.push(L); start=i+1;
+    }
+  }
+  return lines;
+}
+function saveCoa(){ store(pk("coa"), JSON.stringify(S.coa)); }
+function saveNoAtt(){ store(pk("noatt"), JSON.stringify(S.noAttRules)); }
+function vatFor(acc){
+  const row = S.coa.find(c=>c.acc===String(acc).trim());
+  const v = row ? String(row.vat||"").trim() : "";
+  return v ? v.replace(".",",").replace(/\s*%$/,"") : "";
+}
+function vatPct(acc){ const v=vatFor(acc); const n=v?parseFloat(v.replace(",",".")):0; return isFinite(n)?n:0; }
+function netOf(gross, acc){ const p=vatPct(acc); return p ? Math.round(gross/(1+p/100)*100)/100 : gross; }
+function fmtAmt(n){ return (Math.round(n*100)/100).toFixed(2).replace(".",","); }
+function isExpense(acc){ const n=+String(acc).trim(); return /^\d+$/.test(String(acc).trim()) && n>=4000 && n<=9999; }
+function noAttKey(r){ return core(ruleName(r)); }
+function noAttRule(r){ const k=noAttKey(r); return S.noAttRules.find(x=>core(x.name)===k); }
+function finalChanges(){
+  const changes = new Map();
+  for(const r of S.receipts) if(r.state==="accepted" && r.csv && r.acc && r.acc!==r.csv.acc) changes.set(r.csv.i, r.acc);
+  for(const r of S.noAtt){ const ru=noAttRule(r); if(ru && r.csv && ru.acc && ru.acc!==r.csv.acc && !changes.has(r.csv.i)) changes.set(r.csv.i, ru.acc); }
+  return changes;
+}
+let REV=null;
+function enc1252(str){
+  if(!REV){ REV=new Map(); const d=new TextDecoder("windows-1252"); for(let b=0;b<256;b++) REV.set(d.decode(new Uint8Array([b])), b); }
+  const out=new Uint8Array(str.length); let i=0;
+  for(const ch of str){ out[i++] = REV.has(ch) ? REV.get(ch) : 63; }
+  return out.subarray(0,i);
+}
+function synthDesc(r){
+  return (`${r.counterparty||"Tosite "+r.no}${r.ref?" "+r.ref:""}`.replace(/;/g,",").trim()+"  "+fiDate(r.bookDate)).trim();
+}
+// Generated entries (no CSV): expense account (net, VAT in F) and the client's counter account (gross)
+function synthRows(r, acc){
+  const g = (r.dir==="In"?-1:1)*r.amount/100, d=synthDesc(r), ca=P().counterAcc||"";
+  return [
+    [acc, d, fmtAmt(vatPct(acc)?netOf(g,acc):g), "", "", vatFor(acc), isExpense(acc)?"P":""].join(";"),
+    [ca, d, fmtAmt(-g), "", "", vatFor(ca), isExpense(ca)?"P":""].join(";"),
+  ];
+}
+function synthAcc(r, changes){ return (changes||finalChanges()).get(r.csv.i) || r.csv.acc; }
+function buildCsv(){
+  const changes = finalChanges();
+  if(S.synthetic){
+    const out=[]; for(const r of S.all) if(r.csv) out.push(...synthRows(r, synthAcc(r, changes)));
+    return {bytes:enc1252(out.join("\r\n")+"\r\n"), count:changes.size, changes};
+  }
+  const lines = S.csvLines.map(L=>{
+    if(!L.acc) return L.text;
+    const f = L.text.split(";");
+    if(changes.has(L.i)) f[0]=changes.get(L.i);
+    while(f.length<7) f.push("");
+    const acc=f[0].trim();
+    f[5]=vatFor(acc); f[6]=isExpense(acc)?"P":"";
+    // Net amount in column C when the account has a non-zero VAT rule
+    if(vatPct(acc)){ const g=parseFloat(String(f[2]).replace(/\s/g,"").replace(",",".")); if(isFinite(g)) f[2]=fmtAmt(netOf(g, acc)); }
+    return f.join(";");
+  });
+  return {bytes:enc1252(lines.join(S.csvNl||"\r\n")), count:changes.size, changes};
+}
+function matchCsv(r, used){
+  const cands = S.csvLines.filter(L => L.acc && L.acc!=="1920" && !used.has(L.i) && Math.abs(L.amt)===r.amount);
+  const nm = norm(r.counterparty).slice(0,6);
+  const dist = L => L.date && r.bookDate ? Math.abs((new Date(L.date)-new Date(r.bookDate))/864e5) : 99;
+  let best=null, bs=1e9;
+  for(const L of cands){
+    const d = Math.min(dist(L), r.valueDate && L.date ? Math.abs((new Date(L.date)-new Date(r.valueDate))/864e5) : 99);
+    if(d>4) continue;
+    const sc = d*10 + (norm(L.name).startsWith(nm.slice(0,4)) ? 0 : 5);
+    if(sc<bs){ bs=sc; best=L; }
+  }
+  if(best) used.add(best.i);
+  return best;
+}
+
+/* ---------- PDF parsing ---------- */
+const LABELS = ["Maksutunniste","Arvopäivä","Kirjauspäivä","Summa","Maksun suunta","Maksutapa","Vastapuoli","Viite","Luokittelu","Kuitin numero","Rivitiedot","Liitteet","Viesti"];
+function toIso(d){ const m=String(d).match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/); return m?`${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`:null; }
+function fiDate(iso){ if(!iso) return ""; const [y,m,d]=iso.split("-"); return `${+d}.${+m}.${y}`; }
+
+async function parsePdf(){
+  const pdf=S.pdf, pages=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page = await pdf.getPage(p);
+    const vp = page.getViewport({scale:1});
+    const tc = await page.getTextContent();
+    const items = tc.items.filter(it=>it.str && it.str.trim()).map(it=>({s:it.str, x:it.transform[4], y:vp.height-it.transform[5], h:Math.abs(it.transform[3])||9}));
+    // group into lines
+    items.sort((a,b)=>a.y-b.y || a.x-b.x);
+    const lines=[];
+    for(const it of items){
+      const L = lines.find(l=>Math.abs(l.y-it.y)<2.5);
+      if(L) L.items.push(it); else lines.push({y:it.y, items:[it]});
+    }
+    lines.forEach(l=>l.items.sort((a,b)=>a.x-b.x));
+    const footer = lines.find(l=>l.items.some(i=>/^LUOTTAMUKSELLINEN/.test(i.s.trim())));
+    pages.push({p, H:vp.height, W:vp.width, lines, footerTop: footer ? footer.y-14 : vp.height-10});
+  }
+  // block starts
+  const starts=[];
+  for(const pg of pages) for(const l of pg.lines){
+    if(l.items[0].s.trim()==="Maksutunniste") starts.push({p:pg.p, y:l.y, top:Math.max(0,l.y-16)});
+  }
+  const HEADER = 58;
+  const receipts=[];
+  if(!starts.length) return {all:pageReceipts(pages), pages, pageMode:true};
+  starts.forEach((s,k)=>{
+    const n = starts[k+1];
+    const segs=[], textLines=[];
+    const pageOf = p => pages[p-1];
+    const addSeg=(p,top,bottom)=>{ if(bottom-top>12){ segs.push({p,top,bottom}); for(const l of pageOf(p).lines) if(l.y>=top && l.y<bottom) textLines.push(l); } };
+    if(n && n.p===s.p) addSeg(s.p, s.top, n.top-2);
+    else{
+      addSeg(s.p, s.top, pageOf(s.p).footerTop);
+      const last = n ? n.p-1 : pages.length;
+      for(let q=s.p+1;q<=last;q++) addSeg(q, HEADER, pageOf(q).footerTop);
+      if(n && n.top-HEADER>90) addSeg(n.p, HEADER, n.top-2);
+    }
+    // fields
+    const f={}; let curLab=null;
+    for(const l of textLines){
+      const first=l.items[0].s.trim();
+      const lab = LABELS.find(L=>first===L || first.startsWith(L+" "));
+      let rest = l.items.map(i=>i.s).join(" ").replace(/\s+/g," ").trim();
+      if(lab){ curLab=lab; rest = rest.slice(lab.length).trim(); f[lab] = f[lab] ? f[lab]+" "+rest : rest; }
+      else if(curLab==="Luokittelu"||curLab==="Rivitiedot"){ f[curLab] = (f[curLab]||"")+" "+rest; }
+      else { f._extra = (f._extra||"")+" "+rest; }
+    }
+    const numM = (f["Maksutunniste"]||"").match(/(\d+)\s*\/\s*(\d+)/);
+    const cpFull = (f["Vastapuoli"]||"").trim();
+    const iban = (cpFull.match(/\b([A-Z]{2}\d{2}[A-Z0-9]{8,})\b/)||[])[1]||"";
+    const amt = Math.round(parseFloat((f["Summa"]||"0").replace(/[^\d,.-]/g,"").replace(/\./g,"").replace(",","."))*100);
+    const lk = ((f._extra||"")+" "+(f["Luokittelu"]||"")).trim();
+    const r = {
+      id:(f["Maksutunniste"]||"").split(" ")[0], no:numM?+numM[1]:k+1,
+      valueDate:toIso(f["Arvopäivä"]), bookDate:toIso(f["Kirjauspäivä"]),
+      amount:Math.abs(amt), dir:/in/i.test(f["Maksun suunta"]||"")&&!/out/i.test(f["Maksun suunta"]||"")?"In":"Out",
+      method:(f["Maksutapa"]||"").trim(), counterparty:cpFull.replace(/\s+-\s+[A-Z]{2}\d{2}[A-Z0-9 ]+$/,"").trim(), iban,
+      ref:(f["Viite"]||"").trim(), category:lk.replace(/\s\d[\d\s]*,\d{2}\s*EUR.*$/,"").trim(), details:(lk+" "+(f["Rivitiedot"]||"")).trim(),
+      hasAtt: "Liitteet" in f, segs, page:s.p,
+    };
+    r.vat0 = !/ALV\s*\d/.test(r.details) || /ALV\s*0[,.]?0*\s*%/.test(r.details);
+    r.foreign = !!iban && !/^FI/.test(iban);
+    receipts.push(r);
+  });
+  return {all:receipts, pages};
+}
+
+// PDF that is not a Holvi summary: every page is a document, fields guessed from the text layer (if any)
+function pageReceipts(pages){
+  return pages.map(pg=>{
+    const lines = pg.lines.map(l=>l.items.map(i=>i.s).join(" ").replace(/\s+/g," ").trim()).filter(Boolean);
+    const txt = lines.join("\n");
+    const dm = txt.match(/(?:päiväys|päivämäärä|laskun\s*pvm|laskupäivä|pvm|date)[^\d]{0,20}(\d{1,2}\.\d{1,2}\.\d{4})/i) || txt.match(/\b(\d{1,2}\.\d{1,2}\.20\d{2})\b/);
+    const toC = v => Math.round(parseFloat(v.replace(/[\s\u00a0]/g,"").replace(/\.(?=\d{3}\b)/g,"").replace(",","."))*100);
+    let amt=0;
+    const tm = [...txt.matchAll(/(?:yhteensä|maksettava|loppusumma|total|summa)[^\d\n]{0,30}(\d{1,3}(?:[\s\u00a0.]?\d{3})*,\d{2})/gi)];
+    if(tm.length) amt = toC(tm[tm.length-1][1]);
+    else { const all=[...txt.matchAll(/\b(\d{1,3}(?:[\s\u00a0.]?\d{3})*,\d{2})\b/g)].map(m=>toC(m[1])).filter(n=>isFinite(n)); if(all.length) amt=Math.max(...all); }
+    const comp = lines.find(l=>/\b(oy|oyj|ab|ky|tmi|ltd|gmbh|inc|ry|osk)\b/i.test(l) && l.length<60 && !/miro\s*capital/i.test(l));
+    return { id:"s"+pg.p, no:pg.p, valueDate:dm?toIso(dm[1]):null, bookDate:dm?toIso(dm[1]):null, amount:isFinite(amt)?Math.abs(amt):0, dir:"Out",
+      method:"", counterparty:comp||"", iban:"", ref:"", category:"", details:lines.slice(0,3).join(" · ").slice(0,160), hasAtt:true,
+      segs:[{p:pg.p, top:0, bottom:pg.H}], page:pg.p, pageMode:true, vat0:false, foreign:false };
+  });
+}
+
+/* ---------- Page rendering ---------- */
+const SCALE = 2;
+async function pageCanvas(p){
+  if(S.pageCache.has(p)){ const c=S.pageCache.get(p); S.pageCache.delete(p); S.pageCache.set(p,c); return c; }
+  const page = await S.pdf.getPage(p);
+  const vp = page.getViewport({scale:SCALE});
+  const c = document.createElement("canvas"); c.width=vp.width; c.height=vp.height;
+  await page.render({canvasContext:c.getContext("2d"), viewport:vp}).promise;
+  S.pageCache.set(p,c);
+  while(S.pageCache.size>10) S.pageCache.delete(S.pageCache.keys().next().value);
+  return c;
+}
+let renderToken=0;
+async function renderReceipt(r){
+  const tok=++renderToken;
+  const sheet=$("#sheet"); $("#loading").classList.remove("hidden"); sheet.innerHTML="";
+  for(const sg of r.segs){
+    const pc = await pageCanvas(sg.p); if(tok!==renderToken) return;
+    const top=Math.round(sg.top*SCALE), h=Math.round((sg.bottom-sg.top)*SCALE);
+    const c=document.createElement("canvas"); c.width=pc.width; c.height=h;
+    c.getContext("2d").drawImage(pc,0,top,pc.width,h,0,0,pc.width,h);
+    sheet.appendChild(c);
+  }
+  $("#loading").classList.add("hidden");
+  $("#viewer").scrollTop=0; $("#viewer").scrollLeft=0;
+  // prefetch next
+  const nx = S.receipts[S.idx+1]; if(nx) nx.segs.forEach(sg=>pageCanvas(sg.p));
+}
+
+/* ---------- UI ---------- */
+function reasonFlag(r){
+  const m = {
+    rule:["ok","Ehdotus kirjausohjeen mukaan."],
+    ambiguous:["warn","Ohjeessa on useita tilejä tälle toimittajalle – tarkista kuitista ja valitse."],
+    already:["ok",`Rivi on jo tiliöity tilille ${r.csv?.acc}. Oletuksena ei muutosta.`],
+    incoming:["ok","Saapuva maksu – jää nykyiselle tilille, ellei toisin valita."],
+    none: S.synthetic ? ["warn","Toimittajaa ei löydy vielä kirjausohjeesta – valitse tili (T) ja tallenna se sääntönä (S), niin seuraavat saman toimittajan tositteet saavat ehdotuksen."]
+      : ["warn","Toimittajaa ei löydy kirjausohjeesta – jää tilille "+(r.csv?.acc||DEFAULT_ACC)+", ellei toisin valita."],
+    nomatch:["bad","Vastaavaa riviä ei löytynyt CSV:stä (päivä + summa). Tiliöintiä ei voi viedä."],
+  }[r.sug.reason];
+  return m ? `<div class="flag ${m[0]}">${esc(m[1])}</div>` : "";
+}
+
+function renderList(){
+  $("#list").innerHTML = S.receipts.map((r,i)=>{
+    const chg = r.csv && r.acc && r.acc!==r.csv.acc;
+    const cls = [i===S.idx?"cur":"", r.state, !r.csv?"nomatch":""].join(" ");
+    return `<div class="row ${cls}" data-i="${i}"><span class="dot"></span>
+      <div style="min-width:0"><div class="nm">${esc(r.counterparty)}</div><div class="sub">${fiDate(r.bookDate)} · ${r.dir==="In"?"+":"−"}${fmtEur(r.amount)}</div></div>
+      <span class="acc ${chg?"chg":""}">${esc(r.acc||"–")}</span></div>`;
+  }).join("");
+  const done = S.receipts.filter(r=>r.state!=="pending").length;
+  $("#progBar").style.width = (100*done/S.receipts.length)+"%";
+  $("#progText").textContent = `${done} / ${S.receipts.length} käsitelty`;
+  const cur=$("#list .row.cur"); if(cur) cur.scrollIntoView({block:"nearest"});
+}
+
+function renderSide(){
+  const r=S.receipts[S.idx];
+  const csv = S.synthetic ? synthRows(r, r.acc||UNASSIGNED).map(t=>`<div class="csvline ${t.startsWith(UNASSIGNED)?"bad":""}">${esc(t)}</div>`).join("")
+    : r.csv ? `<div class="csvline">${esc(r.csv.text)}</div>` : `<div class="csvline bad">Ei vastaavaa CSV-riviä</div>`;
+  const editBox = S.synthetic ? `<div class="edit">
+      <span class="small">Päivämäärä</span><input id="edDate" class="mono" placeholder="pp.kk.vvvv" value="${esc(fiDate(r.bookDate))}">
+      <span class="small">Toimittaja</span><input id="edCp" value="${esc(r.counterparty)}" placeholder="toimittajan nimi">
+      <span class="small">Summa €</span><input id="edAmt" class="mono" inputmode="decimal" value="${r.amount?esc(fmtAmt(r.amount/100)):""}" placeholder="0,00">
+      <span class="small">Tyyppi</span><span><label><input type="radio" name="edDir" value="Out" ${r.dir!=="In"?"checked":""}> ostolasku / kulu</label> <label><input type="radio" name="edDir" value="In" ${r.dir==="In"?"checked":""}> hyvitys</label></span>
+    </div>${r.pageMode && S.idx>0 ? `<button class="linkbtn" id="mergeB">⤒ Tämä sivu kuuluu edelliseen tositteeseen</button>` : ""}` : "";
+  const opts = r.sug.opts.map((o,i)=>`<button class="opt ${o.acc===r.acc?"sel":""}" data-acc="${esc(o.acc)}"><kbd>${i+1}</kbd><span class="a">${esc(o.acc)}</span><span class="d">${esc(o.desc)}</span></button>`).join("");
+  $("#side").innerHTML = `
+    <div class="meta">
+      <div class="small">${r.pageMode?"Sivu "+r.segs.map(x=>x.p).join(", "):"Tosite "+r.no} · ${S.idx+1}/${S.receipts.length}</div>
+      <div class="who">${esc(r.counterparty||"(toimittaja puuttuu)")}</div>
+      <div class="amt ${r.dir==="In"?"in":""}">${r.dir==="In"?"+":"−"}${fmtEur(r.amount)}</div>
+      <dl>
+        <dt>Kirjauspäivä</dt><dd>${fiDate(r.bookDate)}${r.valueDate!==r.bookDate?` (arvopäivä ${fiDate(r.valueDate)})`:""}</dd>
+        ${r.method?`<dt>Maksutapa</dt><dd>${esc(r.method)}</dd>`:""}
+        ${r.ref?`<dt>Viite</dt><dd>${esc(r.ref)}</dd>`:""}
+        ${r.details?`<dt>${r.pageMode?"Teksti":"Holvi"}</dt><dd>${esc(r.details)}</dd>`:""}
+      </dl>
+      ${editBox}
+    </div>
+    <div class="box"><h4>${S.synthetic?"Viennit (vastatili "+esc(P().counterAcc)+")":"CSV-rivi"}</h4><div id="csvBox">${csv}</div></div>
+    ${reasonFlag(r)}
+    <div class="box"><h4>Tiliöinti</h4>
+      <div class="opts">${opts || '<span class="small">Ei ehdotusta – kirjoita tili alle.</span>'}</div>
+      <div class="manual" style="margin-top:10px"><span class="small"><b>Oma tili</b> (<kbd>T</kbd>):</span><input id="manAcc" inputmode="numeric" maxlength="6" placeholder="esim. 7750" value="${r.sug.opts.some(o=>o.acc===r.acc)||r.acc===UNASSIGNED?"":esc(r.acc||"")}"></div>
+      <div id="vatInfo"></div>
+      <button class="linkbtn" id="ruleOpenB">+ Lisää toimittaja kirjausohjeeseen…</button>
+      <div class="ruleform hidden" id="ruleForm">
+        ${existingAccs(r).length?`<div class="prev" style="color:var(--ink)">Toimittajalla on jo ohjeessa tili(t): <b>${existingAccs(r).map(o=>esc(o.acc)).join(", ")}</b>. Uusi tili lisätään valittavien joukkoon.</div>`:`<div class="prev" style="color:var(--ink)">Uusi toimittaja – lisätään ohjeeseen.</div>`}
+        <span class="small">Toimittaja</span><input id="rfName" value="${esc(ruleNameFor(r))}">
+        <span class="small">Tili</span><input id="rfAcc" inputmode="numeric" maxlength="6" value="${esc(r.acc||"")}">
+        <span class="small">Ehto</span><input id="rfCond" placeholder="valinnainen, esim. polttoaineet">
+        <div class="prev" id="rfPrev"></div>
+        <div class="acts"><button class="btn primary" id="rfSave">Tallenna sääntö</button><button class="btn" id="rfCancel">Peruuta</button></div>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="btn" id="prevB" title="Edellinen (←)">←</button>
+      <button class="btn primary accept" id="accB" ${r.csv?"":"disabled"}>Hyväksy ${esc(r.acc||"")} →</button>
+      <button class="btn saverule" id="ruleNextB" ${r.csv?"":"disabled"}>Tallenna sääntö ja seuraava (S)</button>
+      <button class="btn skip" id="skipB">Ohita – pidä tili ${esc(r.csv?.acc||"")} (↓)</button>
+    </div>
+    <div class="keys"><kbd>→</kbd> hyväksy · <kbd>←</kbd> edellinen · <kbd>S</kbd> tallenna sääntö ja seuraava · <kbd>↓</kbd> ohita · <kbd>1</kbd>–<kbd>9</kbd> valitse tili · <kbd>T</kbd> kirjoita oma tili · <kbd>+</kbd>/<kbd>−</kbd> zoomaus · klikkaa kuvaa suurentaaksesi</div>`;
+  $("#side").querySelectorAll(".opt").forEach(b=>b.onclick=()=>setAcc(b.dataset.acc));
+  const mi=$("#manAcc");
+  mi.oninput=()=>{ const v=mi.value.replace(/\D/g,""); mi.value=v; if(v.length>=3){ r.acc=v; } else if(!v){ r.acc=r.sug.pick; } refreshSel(); };
+  mi.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); mi.blur(); accept(); } if(e.key==="Escape") mi.blur(); };
+  $("#prevB").onclick=prev; $("#accB").onclick=accept; $("#skipB").onclick=skip;
+  $("#ruleNextB").onclick=saveRuleAndNext;
+  if(S.synthetic) wireEdit(r);
+  refreshSelVat();
+  const form=$("#ruleForm"), upd=()=>{ $("#rfPrev").textContent = `Tilille ${$("#rfAcc").value||"?"}  →  * ${$("#rfName").value.trim()}${$("#rfCond").value.trim()?" jos "+$("#rfCond").value.trim():""}`; };
+  $("#ruleOpenB").onclick=()=>{ $("#rfAcc").value=r.acc||""; if(!$("#rfCond").value) $("#rfCond").value=autoCond(r, r.acc); form.classList.toggle("hidden"); upd(); if(!form.classList.contains("hidden")) $("#rfName").focus(); };
+  ["#rfName","#rfAcc","#rfCond"].forEach(id=>{ $(id).oninput=upd; $(id).onkeydown=e=>{ if(e.key==="Enter"){e.preventDefault();$("#rfSave").click();} if(e.key==="Escape") $("#rfCancel").click(); }; });
+  $("#rfCancel").onclick=()=>form.classList.add("hidden");
+  $("#rfSave").onclick=()=>{
+    const acc=$("#rfAcc").value.replace(/\D/g,""), name=$("#rfName").value.trim(), cond=$("#rfCond").value.trim();
+    if(!acc||!name){ toast("Anna toimittaja ja tili."); return; }
+    const res=addRule(name,acc,cond); r.sug=suggest(r); r.acc=acc; toast(res); renderSide(); renderList();
+  };
+}
+function wireEdit(r){
+  const upd=()=>{ $("#csvBox").innerHTML = synthRows(r, r.acc||UNASSIGNED).map(t=>`<div class="csvline ${t.startsWith(UNASSIGNED)?"bad":""}">${esc(t)}</div>`).join(""); refreshSelVat(); renderList(); };
+  $("#edDate").oninput=e=>{ const iso=toIso(e.target.value); if(iso){ r.bookDate=r.valueDate=iso; upd(); } };
+  $("#edAmt").oninput=e=>{ const v=parseFloat(e.target.value.replace(/[\s\u00a0]/g,"").replace(",",".")); r.amount = isFinite(v)?Math.round(Math.abs(v)*100):0; $("#side .amt").textContent=(r.dir==="In"?"+":"−")+fmtEur(r.amount); upd(); };
+  $("#edCp").oninput=e=>{ r.counterparty=e.target.value; $("#side .who").textContent=r.counterparty||"(toimittaja puuttuu)"; upd(); };
+  $("#edCp").onchange=()=>{ const old=r.sug.pick; r.sug=suggest(r); if(r.acc===old||r.acc===UNASSIGNED) r.acc=r.sug.pick; renderSide(); renderList(); };
+  document.querySelectorAll('input[name="edDir"]').forEach(x=>x.onchange=()=>{ r.dir=x.value; renderSide(); renderList(); });
+  for(const id of ["#edDate","#edCp","#edAmt"]) $(id).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); e.target.blur(); } if(e.key==="Escape") e.target.blur(); });
+  $("#mergeB")?.addEventListener("click",()=>{
+    const pv=S.receipts[S.idx-1]; pv.segs.push(...r.segs);
+    S.receipts.splice(S.idx,1); S.all=S.all.filter(x=>x!==r);
+    toast("Sivu liitetty edelliseen tositteeseen."); show(S.idx-1);
+  });
+}
+function existingAccs(r){ return r.sug.opts.filter(o=>o.items && o.items.length); }
+function ruleNameFor(r){
+  const items = existingAccs(r).flatMap(o=>o.items);
+  if(items.length) return items.map(i=>i.name).sort((a,b)=>a.length-b.length)[0];
+  return ruleName(r);
+}
+function autoCond(r, acc){
+  const others = existingAccs(r).filter(o=>o.acc!==acc);
+  if(!others.length) return "";
+  return (r.category||"").replace(/\s*-\s*VAT.*$/i,"").trim().toLowerCase();
+}
+function ruleName(r){
+  return r.counterparty.replace(/\s+-\s+\d+\s*$/,"").replace(/^\d+\s+/,"").replace(/(\s+\d+)+\s*$/,"").replace(/\s+(AUTOMA|AUTOMAATTI)$/i,"").trim();
+}
+function addRule(name, acc, cond){
+  const line = "* "+name+(cond?" jos "+cond:"");
+  const L = rulesTxt.value.split(/\r?\n/);
+  const hdr = l => { const m=l.trim().match(/^til+ill?e\s+(\d{3,5})/i); return m?m[1]:null; };
+  let h = L.findIndex(l=>hdr(l)===acc);
+  if(h>=0){
+    let end=h;
+    for(let i=h+1;i<L.length;i++){ if(hdr(L[i])||/^muut\s/i.test(L[i].trim())) break; if(/^[*\-•]/.test(L[i].trim())) end=i; }
+    for(let i=h+1;i<=end;i++) if(core(L[i].replace(/^[*\-•]\s*/,""))===core(line.slice(2))) return "Sääntö on jo ohjeessa tilillä "+acc+".";
+    L.splice(end+1,0,line);
+  }else{
+    const mi = L.findIndex(l=>/^muut\s/i.test(l.trim()));
+    const block=["Tilille "+acc, line, ""];
+    if(mi>=0) L.splice(mi,0,...block); else L.push("", ...block);
+  }
+  rulesTxt.value=L.join("\n"); store(pk("rules"), rulesTxt.value); rulesInfo();
+  S.rules=parseRules(rulesTxt.value);
+  // refresh suggestions for receipts not handled yet
+  let n=0;
+  for(const x of S.receipts){ const old=x.acc; x.sug=suggest(x); if(x.state==="pending" && x!==S.receipts[S.idx]){ x.acc=x.sug.pick; if(x.acc!==old) n++; } }
+  return `Lisätty kirjausohjeeseen: Tilille ${acc} ${line}`+(n?` · ${n} muuta tositetta sai uuden ehdotuksen`:"");
+}
+function saveRuleAndNext(){
+  const r=S.receipts[S.idx]; if(!r.csv||!r.acc) return;
+  const msg=addRule(ruleNameFor(r), r.acc, autoCond(r, r.acc)); toast(msg); accept();
+}
+let toastT; function toast(t){ const el=$("#toast"); el.textContent=t; el.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("on"),3200); }
+function refreshSel(){
+  const r=S.receipts[S.idx];
+  $("#side").querySelectorAll(".opt").forEach(b=>b.classList.toggle("sel", b.dataset.acc===r.acc));
+  const a=$("#accB"); if(a) a.textContent=`Hyväksy ${r.acc||""} →`;
+  const vi=$("#vatInfo"); if(vi) vi.textContent = r.acc ? `Tili ${r.acc}: ALV ${vatFor(r.acc)?vatFor(r.acc)+" %":"– (ei sääntöä tilikartassa)"}${vatPct(r.acc)?` · netto ${fmtAmt(netOf(r.amount/100, r.acc))} €`:""}${isExpense(r.acc)?" · tyyppi P":""}` : "";
+  renderList();
+}
+function refreshSelVat(){ const r=S.receipts[S.idx], vi=$("#vatInfo"); if(vi) vi.textContent = r.acc ? `Tili ${r.acc}: ALV ${vatFor(r.acc)?vatFor(r.acc)+" %":"– (ei sääntöä tilikartassa)"}${vatPct(r.acc)?` · netto ${fmtAmt(netOf(r.amount/100, r.acc))} €`:""}${isExpense(r.acc)?" · tyyppi P":""}` : ""; }
+function setAcc(acc){ const r=S.receipts[S.idx]; r.acc=acc; const mi=$("#manAcc"); if(mi) mi.value=""; refreshSel(); }
+
+function setView(v){
+  S.view=v;
+  ["#list","#viewer","#side"].forEach(x=>$(x).classList.toggle("hidden", v!=="browse"));
+  ["summary","noatt","coa"].forEach(x=>$("#"+x).classList.toggle("hidden", v!==x));
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on", b.dataset.v===v));
+}
+function show(i){
+  setView("browse");
+  S.idx=Math.max(0,Math.min(S.receipts.length-1,i));
+  Z.cur=Z.def; applyZoom();
+  renderList(); renderSide(); renderReceipt(S.receipts[S.idx]);
+}
+function next(){ if(S.idx<S.receipts.length-1) show(S.idx+1); else showSummary(); }
+function prev(){ if(S.view!=="browse") return show(S.view==="summary"?S.receipts.length-1:S.idx); if(S.idx>0) show(S.idx-1); }
+function accept(){ const r=S.receipts[S.idx]; if(!r.csv) return next(); r.state="accepted"; next(); }
+function skip(){ const r=S.receipts[S.idx]; r.state="skipped"; r.acc=r.csv?r.csv.acc:r.acc; next(); }
+
+function showSummary(){
+  setView("summary"); renderList();
+  const sm=$("#summary");
+  const pend = S.receipts.filter(r=>r.state==="pending").length;
+  const rows = S.receipts.map((r,i)=>{
+    const chg = r.state==="accepted" && r.csv && r.acc!==r.csv.acc;
+    const st = r.state==="accepted" ? (chg?"Muutetaan":"Hyväksytty, ei muutosta") : r.state==="skipped" ? "Ohitettu" : "Käsittelemättä";
+    return `<tr data-i="${i}" style="cursor:pointer;${chg?"":"color:var(--muted)"}"><td>${fiDate(r.bookDate)}</td><td>${esc(r.counterparty)}</td><td class="n">${r.dir==="In"?"+":"−"}${fmtEur(r.amount)}</td><td class="acc">${esc(r.csv?.acc||"–")}</td><td class="acc">${chg?esc(r.acc):""}</td><td>${st}</td></tr>`;
+  }).join("");
+  const {count} = buildCsv();
+  const naRows = S.noAtt.map(r=>{ const ru=noAttRule(r); return (ru && r.csv && ru.acc!==r.csv.acc) ? `<tr style="cursor:pointer" data-na="1"><td>${fiDate(r.bookDate)}</td><td>${esc(r.counterparty)}</td><td class="n">${r.dir==="In"?"+":"−"}${fmtEur(r.amount)}</td><td class="acc">${esc(r.csv.acc)}</td><td class="acc">${esc(ru.acc)}</td><td>Tositteeton, toimittajasääntö</td></tr>` : ""; }).join("");
+  const unb = S.synthetic ? S.all.filter(r=>r.csv && synthAcc(r)===UNASSIGNED).length : 0;
+  const noAmt = S.synthetic ? S.all.filter(r=>!r.amount || !r.bookDate).length : 0;
+  const noVat = [...new Set([...S.csvLines.filter(L=>L.acc).map(L=>buildAccOf(L)), ...S.receipts.map(r=>r.acc)].filter(a=>isExpense(a) && !vatFor(a)))].sort();
+  sm.innerHTML = `<div class="wrap"><h3>Yhteenveto</h3>
+    <div class="small">${S.synthetic?`${count} tositetta tiliöity, ${S.all.length} tositteesta muodostetaan ${S.all.length*2} vientiriviä`:`${count} riviä muutetaan CSV-tiedostossa`}${pend?` · <b style="color:var(--warn)">${pend} tositetta käsittelemättä</b> (niihin ei tehdä muutoksia)`:""}.
+    ${S.synthetic?`Viennit muodostetaan PDF:n tositteista: kulutili (netto) ja vastatili ${esc(P().counterAcc)} (brutto, vastakkainen etumerkki). Tiedosto on samaa muotoa kuin kirjaus-CSV (tili;selite;summa;;;ALV;P). `:""}Sarakkeeseen F tulee tilin ALV-prosentti tilikartasta ja sarakkeeseen G tunnus P kulutileille 4000–9999. Jos prosentti on muu kuin 0, rivin summa (C) muutetaan nettosummaksi (esim. 125,50 € / 1,255 = 100,00 €). Pankkitilin rivit jäävät bruttosummiksi.</div>
+    ${S.naDraft.size?`<div class="flag warn" style="margin-top:10px">Tositteettomissa on ${S.naDraft.size} tallentamatonta muutosta, eivätkä ne ole mukana CSV:ssä. <button class="btn" id="saveDraftsB" style="margin-left:8px">Tallenna ne nyt</button></div>`:""}
+    ${coaDirty()?`<div class="flag warn" style="margin-top:10px">Tilikartassa on tallentamattomia muutoksia, eivätkä ne ole mukana CSV:ssä. <button class="btn" id="saveCoaB" style="margin-left:8px">Tallenna tilikartta nyt</button></div>`:""}
+    ${unb?`<div class="flag bad" style="margin-top:10px"><b>${unb}</b> tositetta on vielä tiliöimättä – niiden kulutiliksi tulee ${UNASSIGNED}. Hyväksy tositteet tai anna tositteettomille toimittajasääntö.</div>`:""}
+    ${noAmt?`<div class="flag warn" style="margin-top:10px"><b>${noAmt}</b> tositteelta puuttuu summa tai päivämäärä – täydennä ne tositteen tiedoista.</div>`:""}
+    ${noVat.length?`<div class="flag warn" style="margin-top:10px">Näillä kulutileillä ei ole ALV-sääntöä, joten F jää tyhjäksi: <b>${noVat.join(", ")}</b>. Lisää tarvittaessa Tilikartta-välilehdellä.</div>`:""}
+    <div class="actions">
+      <button class="btn primary" id="saveB">Tallenna CSV</button>
+      <button class="btn" id="copyB">Kopioi CSV leikepöydälle</button>
+      <button class="btn" id="saveRulesB">Tallenna kirjausohje (.txt)</button>
+      <button class="btn" id="saveSetB">Tallenna asetukset (.json)</button>
+      <button class="btn" id="backB">← Takaisin tositteisiin</button>
+      <span id="saveMsg"></span>
+    </div>
+    <table><thead><tr><th>Pvm</th><th>Vastapuoli</th><th style="text-align:right">Summa</th><th>Tili nyt</th><th>Uusi tili</th><th>Tila</th></tr></thead><tbody>${rows}${naRows}</tbody></table>
+    <textarea id="csvOut" readonly class="hidden"></textarea></div>`;
+  sm.querySelectorAll("tr[data-i]").forEach(tr=>tr.onclick=()=>show(+tr.dataset.i));
+  sm.querySelectorAll("tr[data-na]").forEach(tr=>tr.onclick=showNoAtt);
+  $("#saveCoaB")?.addEventListener("click",()=>{ saveCoaDraft(); toast("Tilikartta tallennettu."); showSummary(); });
+  $("#saveDraftsB")?.addEventListener("click",()=>{ const n=saveNaDrafts(); toast(`${n} toimittajasääntöä tallennettu.`); showSummary(); });
+  $("#saveSetB").onclick=()=>saveFile("doccruncher-"+PID+"-asetukset.json", new Blob([JSON.stringify({asiakas:P(), kirjausohje:rulesTxt.value, tilikartta:S.coa, tositteettomat:S.noAttRules},null,2)],{type:"application/json"}));
+  $("#backB").onclick=()=>show(S.idx);
+  $("#saveB").onclick=saveCsv;
+  $("#saveRulesB").onclick=()=>saveFile("kirjausohje-"+PID+".txt", new Blob([rulesTxt.value],{type:"text/plain"}));
+  $("#copyB").onclick=async()=>{
+    const txt = new TextDecoder("windows-1252").decode(buildCsv().bytes);
+    try{ await navigator.clipboard.writeText(txt); $("#saveMsg").textContent="Kopioitu."; }
+    catch(e){ const ta=$("#csvOut"); ta.value=txt; ta.classList.remove("hidden"); ta.select(); $("#saveMsg").textContent="Kopioi alla olevasta kentästä (Ctrl+C)."; }
+  };
+}
+
+function buildAccOf(L){ const ch=finalChanges(); return ch.has(L.i)?ch.get(L.i):L.acc; }
+
+function naCurrent(k){ if(S.naDraft.has(k)) return S.naDraft.get(k).acc; const ru=S.noAttRules.find(x=>core(x.name)===k); return ru?ru.acc:""; }
+function naSaved(k){ const ru=S.noAttRules.find(x=>core(x.name)===k); return ru?ru.acc:""; }
+function setDraft(k,name,acc){ if(acc===naSaved(k)) S.naDraft.delete(k); else S.naDraft.set(k,{name,acc}); }
+function saveNaDrafts(){
+  const n=S.naDraft.size; if(!n) return 0;
+  for(const [k,d] of S.naDraft){
+    S.noAttRules = S.noAttRules.filter(x=>core(x.name)!==k);
+    if(d.acc) S.noAttRules.push({name:d.name, acc:d.acc});
+  }
+  S.naDraft.clear(); saveNoAtt(); updateBadges(); return n;
+}
+function saveBarHtml(){
+  const n=S.naDraft.size;
+  return `<div class="savebar ${n?"dirty":""}" >
+    <button class="btn primary" data-act="save" ${n?"":"disabled"}>Tallenna muutokset</button>
+    <button class="btn" data-act="discard" ${n?"":"disabled"}>Peruuta muutokset</button>
+    <span class="${n?"cnt":"small"}">${n?`${n} tallentamatonta muutosta`:"Ei tallentamattomia muutoksia"}</span></div>`;
+}
+function refreshSaveBars(){
+  $("#noatt").querySelectorAll(".savebar").forEach(b=>b.outerHTML=saveBarHtml());
+  wireSaveBars(); updateBadges();
+}
+function wireSaveBars(){
+  $("#noatt").querySelectorAll('[data-act="save"]').forEach(b=>b.onclick=()=>{ const n=saveNaDrafts(); toast(`${n} toimittajasääntöä tallennettu.`); showNoAtt(); });
+  $("#noatt").querySelectorAll('[data-act="discard"]').forEach(b=>b.onclick=()=>{ S.naDraft.clear(); updateBadges(); showNoAtt(); });
+}
+
+function showNoAtt(){
+  setView("noatt");
+  const groups=new Map();
+  for(const r of S.noAtt){ if(!r.csv) continue; const k=noAttKey(r); if(!groups.has(k)) groups.set(k,{key:k, name:ruleName(r), items:[]}); groups.get(k).items.push(r); }
+  let list=[...groups.values()];
+  const visible = g => S.showAllNoAtt || g.items.some(r=>r.csv.acc===DEFAULT_ACC) || naSaved(g.key) || S.naDraft.has(g.key);
+  const hidden = list.filter(g=>!visible(g)).length;
+  list = list.filter(visible).sort((a,b)=>a.name.localeCompare(b.name,"fi"));
+  const rows = list.map(g=>{
+    const r0=g.items[0], val=naCurrent(g.key);
+    const cur=[...new Set(g.items.map(r=>r.csv.acc))].join(", ");
+    const tot=g.items.reduce((n,r)=>n+(r.dir==="In"?r.amount:-r.amount),0);
+    const sug = suggest(r0).opts.filter(o=>o.items && o.items.length).map(o=>`<span class="chip" data-k="${esc(g.key)}" data-acc="${esc(o.acc)}" title="${esc(o.desc)}">${esc(o.acc)}</span>`).join("");
+    const fin = val||cur;
+    return `<tr data-row="${esc(g.key)}" class="${S.naDraft.has(g.key)?"chg":""}"><td><b>${esc(g.name)}</b><div class="small">${g.items.map(r=>fiDate(r.bookDate)).join(", ")}</div></td>
+      <td class="n">${g.items.length}</td><td class="n">${fmtEur(tot)}</td><td class="acc">${esc(cur)}</td>
+      <td style="width:130px"><input class="cell mono" data-k="${esc(g.key)}" data-name="${esc(g.name)}" inputmode="numeric" maxlength="6" placeholder="${esc(cur)}" value="${esc(val)}"></td>
+      <td>${sug||'<span class="small">–</span>'}</td>
+      <td class="small vat">${vatFor(fin)?esc(vatFor(fin))+" %":"–"}</td></tr>`;
+  }).join("");
+  $("#noatt").innerHTML = `<div class="wrap"><h3>Tositteettomat</h3>
+    <div class="small">Maksut, joiden mukana ei ole liitettä. Ne eivät tule selailuun, ja oletuksena ne ${S.synthetic?"jäävät tiliöimättä ("+DEFAULT_ACC+")":"jäävät nykyiselle tilille ("+DEFAULT_ACC+")"}.
+    Kirjoita toimittajalle tili ja paina <b>Tallenna muutokset</b>: tili tallentuu toimittajasääntönä, kirjautuu CSV:hen ja on voimassa myös seuraavissa aineistoissa. Tyhjennä kenttä poistaaksesi säännön.
+    Kirjausohjeen ehdotuksen saat käyttöön klikkaamalla tilinumeroa.</div>
+    <label class="small" style="display:block;margin-top:10px"><input type="checkbox" id="naAll" ${S.showAllNoAtt?"checked":""}> Näytä myös saapuvat ja jo tiliöidyt (${hidden} piilossa)</label>
+    ${saveBarHtml()}
+    <table><thead><tr><th>Toimittaja</th><th style="text-align:right">Maksuja</th><th style="text-align:right">Yhteensä</th><th>Tili nyt</th><th>Uusi tili</th><th>Ohjeen ehdotus</th><th>ALV</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="7" class="small">Ei tositteettomia maksuja.</td></tr>'}</tbody></table>
+    ${S.noAttRules.length?`<p class="small" style="margin-top:16px">Tallennetut toimittajasäännöt (${S.noAttRules.length}): ${S.noAttRules.map(x=>esc(x.name)+" → "+esc(x.acc)).join(" · ")}</p>`:""}</div>`;
+  $("#naAll").onchange=e=>{ S.showAllNoAtt=e.target.checked; showNoAtt(); };
+  wireSaveBars();
+  $("#noatt").querySelectorAll("input.cell").forEach(inp=>{
+    inp.oninput=()=>{
+      inp.value=inp.value.replace(/\D/g,"");
+      const k=inp.dataset.k; setDraft(k, inp.dataset.name, inp.value);
+      const tr=inp.closest("tr"); tr.classList.toggle("chg", S.naDraft.has(k));
+      const fin=inp.value||inp.placeholder; tr.querySelector(".vat").textContent = vatFor(fin)?vatFor(fin)+" %":"–";
+      refreshSaveBars();
+    };
+    inp.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); const n=saveNaDrafts(); if(n) toast(`${n} toimittajasääntöä tallennettu.`); showNoAtt(); } };
+  });
+  $("#noatt").querySelectorAll(".chip").forEach(c=>c.onclick=()=>{ const inp=$(`#noatt input.cell[data-k="${CSS.escape(c.dataset.k)}"]`); setDraft(c.dataset.k, inp.dataset.name, c.dataset.acc); showNoAtt(); });
+}
+
+function coaDirty(){ return !!S.coaDraft && JSON.stringify(S.coaDraft)!==JSON.stringify(S.coa); }
+function saveCoaDraft(){ if(!coaDirty()) return false; S.coa=S.coaDraft.filter(c=>c.acc||c.name||c.vat).map(c=>({...c})); S.coaDraft=null; saveCoa(); updateBadges(); return true; }
+function coaBarHtml(){
+  const d=coaDirty();
+  return `<div class="savebar ${d?"dirty":""}">
+    <button class="btn primary" data-cact="save" ${d?"":"disabled"}>Tallenna tilikartta</button>
+    <button class="btn" data-cact="discard" ${d?"":"disabled"}>Peruuta muutokset</button>
+    <span class="${d?"cnt":"small"}">${d?"Tallentamattomia muutoksia":"Kaikki muutokset tallennettu"}</span></div>`;
+}
+function refreshCoaBars(){
+  $("#coa").querySelectorAll(".savebar").forEach(b=>b.outerHTML=coaBarHtml());
+  wireCoaBars(); updateBadges();
+}
+function wireCoaBars(){
+  $("#coa").querySelectorAll('[data-cact="save"]').forEach(b=>b.onclick=()=>{ saveCoaDraft(); toast("Tilikartta tallennettu."); showCoa(); });
+  $("#coa").querySelectorAll('[data-cact="discard"]').forEach(b=>b.onclick=()=>{ S.coaDraft=null; updateBadges(); showCoa(); });
+}
+function showCoa(){
+  setView("coa");
+  if(!S.coaDraft) S.coaDraft=S.coa.map(c=>({...c}));
+  const D=S.coaDraft;
+  const used = new Set([...S.rules.map(g=>g.acc), ...S.csvLines.filter(L=>L.acc).map(L=>L.acc), ...S.receipts.map(r=>r.acc), ...S.noAttRules.map(x=>x.acc)].filter(a=>a && isExpense(a)));
+  const missing=[...used].filter(a=>!D.some(c=>c.acc===a)).sort();
+  const saved = acc => S.coa.find(c=>c.acc===acc);
+  $("#coa").innerHTML = `<div class="wrap" style="max-width:720px"><h3>Tilikartta – ALV-säännöt</h3>
+    <div class="small">Tilin ALV-prosentti kirjoitetaan CSV:n sarakkeeseen F, ja jos se on muu kuin 0, rivin summa muutetaan nettosummaksi. Jos prosenttikenttä on tyhjä, F jää tyhjäksi eikä summaa muuteta. Muutokset tulevat käyttöön, kun painat <b>Tallenna tilikartta</b>.</div>
+    ${missing.length?`<div class="flag warn" style="margin-top:10px">Käytössä olevia kulutilejä, joita ei ole tilikartassa: ${missing.map(a=>`<span class="chip" data-add="${a}">+ ${a}</span>`).join("")}</div>`:""}
+    ${coaBarHtml()}
+    <table><thead><tr><th style="width:110px">Tili</th><th>Nimi</th><th style="width:110px">ALV %</th><th style="width:40px"></th></tr></thead><tbody>
+    ${D.map((c,i)=>{ const sv=saved(c.acc); const chg=!sv||sv.name!==c.name||sv.vat!==c.vat; return `<tr class="${chg?"chg":""}"><td><input class="cell mono" data-i="${i}" data-f="acc" value="${esc(c.acc)}" inputmode="numeric"></td><td><input class="cell" data-i="${i}" data-f="name" value="${esc(c.name)}"></td><td><input class="cell mono" data-i="${i}" data-f="vat" value="${esc(c.vat)}" placeholder="–"></td><td><button class="x" data-del="${i}" title="Poista">×</button></td></tr>`; }).join("")}
+    </tbody></table>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="coaAdd">+ Lisää tili</button><button class="btn" id="coaReset">Palauta oletukset</button></div>
+    ${coaBarHtml()}</div>`;
+  wireCoaBars();
+  $("#coa").querySelectorAll("input.cell").forEach(inp=>{
+    inp.oninput=()=>{
+      let v=inp.value; if(inp.dataset.f==="acc") v=inp.value=v.replace(/\D/g,""); if(inp.dataset.f==="vat") v=inp.value=v.replace(/[^\d,.]/g,"");
+      const c=D[+inp.dataset.i]; c[inp.dataset.f]=v;
+      const sv=saved(c.acc); inp.closest("tr").classList.toggle("chg", !sv||sv.name!==c.name||sv.vat!==c.vat);
+      refreshCoaBars();
+    };
+    inp.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); if(saveCoaDraft()) toast("Tilikartta tallennettu."); showCoa(); } };
+  });
+  $("#coa").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ D.splice(+b.dataset.del,1); showCoa(); });
+  $("#coa").querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{ D.push({acc:b.dataset.add,name:"",vat:""}); D.sort((a,b)=>(a.acc||"9999").localeCompare(b.acc||"9999")); showCoa(); });
+  $("#coaAdd").onclick=()=>{ D.unshift({acc:"",name:"",vat:""}); showCoa(); $("#coa").querySelector('input[data-f="acc"]')?.focus(); };
+  $("#coaReset").onclick=()=>{ S.coaDraft=DEFAULT_COA.map(x=>({...x})); showCoa(); toast("Oletukset palautettu – tallenna, jos haluat ottaa ne käyttöön."); };
+}
+function updateBadges(){ const cb=$("#coaN"); if(cb){ cb.classList.toggle("hidden", !coaDirty()); cb.style.background="var(--warn-soft)"; cb.title="Tallentamattomia muutoksia"; } const n=S.noAtt.filter(r=>r.csv && r.csv.acc===DEFAULT_ACC && !noAttRule(r)).length; const b=$("#noattN"); b.textContent=(n||"")+(S.naDraft.size?" •":""); b.title=S.naDraft.size?"Tallentamattomia muutoksia":""; b.style.background=S.naDraft.size?"var(--warn-soft)":""; }
+
+async function saveCsv(){ const {bytes}=buildCsv(); return saveFile(S.csvName || ("viennit-"+PID+".csv"), new Blob([bytes],{type:"text/csv"})); }
+async function saveFile(name, blob){
+  const msg=$("#saveMsg"); msg.textContent="";
+  let dl=null;
+  try{ dl = window.claude?.use ? await window.claude.use("downloads") : null; }catch(e){ dl=null; }
+  if(dl){
+    try{ await dl.save({filename:name, data:blob}); msg.textContent="Tallennettu: "+name; }
+    catch(e){ msg.textContent = e?.code==="declined" ? "Tallennus peruttiin." : "Tallennus ei onnistunut tässä näkymässä – käytä Kopioi-painiketta."; }
+    return;
+  }
+  // Plain browser (file opened locally)
+  try{
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click(); a.remove(); msg.textContent="Lataus käynnistetty: "+name;
+  }catch(e){ msg.textContent="Lataus ei onnistunut – käytä Kopioi-painiketta."; }
+}
+
+/* ---------- Keyboard ---------- */
+document.addEventListener("keydown",e=>{
+  if($("#app").classList.contains("hidden") || !$("#modal").classList.contains("hidden")) return;
+  if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA") return;
+  if(e.metaKey||e.ctrlKey||e.altKey) return;
+  const inSummary = S.view!=="browse";
+  if(inSummary && e.key!=="ArrowLeft") return;
+  if(e.key==="ArrowRight"||e.key==="Enter"){ if(!inSummary){ e.preventDefault(); accept(); } }
+  else if(e.key==="ArrowLeft"){ e.preventDefault(); prev(); }
+  else if(e.key==="ArrowDown"){ if(!inSummary){ e.preventDefault(); skip(); } }
+  else if((e.key==="+"||e.key==="=") && !inSummary){ e.preventDefault(); setZoom(Z.cur+10); }
+  else if((e.key==="-"||e.key==="_") && !inSummary){ e.preventDefault(); setZoom(Z.cur-10); }
+  else if((e.key==="s"||e.key==="S") && !inSummary){ e.preventDefault(); saveRuleAndNext(); }
+  else if((e.key==="t"||e.key==="T") && !inSummary){ e.preventDefault(); $("#manAcc")?.focus(); }
+  else if(/^[1-9]$/.test(e.key) && !inSummary){ const o=S.receipts[S.idx].sug.opts[+e.key-1]; if(o) setAcc(o.acc); }
+});
+// Zoom: only the receipt image scales; 100 % = fit to viewer width (max 900 px)
+const Z = { def: +(store("doccruncher.zoom")||120) || 120, cur: 0 };
+Z.cur = Z.def;
+function applyZoom(){
+  const v=$("#viewer"), avail=Math.max(200, v.clientWidth-36), base=Math.min(avail, 900);
+  $("#sheet").style.width = Math.round(base*Z.cur/100)+"px";
+  $("#sheet").style.margin = base*Z.cur/100 > avail ? "0" : "0 auto";
+  $("#zVal").textContent = Z.cur+" %";
+  $("#zDefTxt").textContent = "oletus "+Z.def+" %";
+  $("#zDef").disabled = Z.cur===Z.def;
+  v.classList.toggle("big", Z.cur>Z.def);
+}
+function setZoom(z){ Z.cur=Math.max(50, Math.min(400, Math.round(z/10)*10)); applyZoom(); }
+$("#zIn").onclick=()=>setZoom(Z.cur+10);
+$("#zOut").onclick=()=>setZoom(Z.cur-10);
+$("#zFit").onclick=()=>setZoom(100);
+$("#zDef").onclick=()=>{ Z.def=Z.cur; store("doccruncher.zoom", String(Z.def)); applyZoom(); toast("Oletuszoomaus: "+Z.def+" %"); };
+$("#viewer").addEventListener("click",e=>{ if(e.target.tagName==="CANVAS") setZoom(Z.cur>Z.def ? Z.def : Z.def*2); });
+try{ new ResizeObserver(()=>{ if(S.view==="browse") applyZoom(); }).observe($("#viewer")); }catch(e){ window.addEventListener("resize",applyZoom); }
+$("#list").addEventListener("click",e=>{ const row=e.target.closest(".row"); if(row) show(+row.dataset.i); });
+function modal(title, text, actions){
+  $("#mTitle").textContent=title; $("#mText").textContent=text;
+  const box=$("#mActs"); box.innerHTML="";
+  for(const [label,cls,fn] of actions){ const b=document.createElement("button"); b.className="btn "+(cls||""); b.textContent=label; b.onclick=()=>{ $("#modal").classList.add("hidden"); fn&&fn(); }; box.appendChild(b); }
+  $("#modal").classList.remove("hidden"); box.lastChild?.focus();
+}
+function goHome(){
+  renderToken++; S.receipts=[]; S.noAtt=[]; S.idx=0; S.naDraft.clear(); S.coaDraft=null; updateBadges(); S.pageCache.clear(); S.view="browse";
+  $("#sheet").innerHTML=""; $("#list").innerHTML="";
+  $("#app").classList.add("hidden"); $("#start").classList.remove("hidden");
+  $("#startMsg").textContent = (S.pdf&&S.csvBytes) ? "Edelliset tiedostot ovat yhä ladattuina. Voit aloittaa läpikäynnin alusta tai valita uudet tiedostot." : "";
+  ["#pdfIn","#csvIn"].forEach(id=>$(id).value="");
+  ready(); window.scrollTo(0,0);
+}
+$("#homeB").onclick=()=>{
+  const done=S.receipts.filter(r=>r.state!=="pending").length, nd=S.naDraft.size, cd=coaDirty();
+  const parts=[];
+  if(done) parts.push(`${done} käsiteltyä tositetta`);
+  if(nd) parts.push(`${nd} tallentamatonta tositteettomien muutosta`);
+  if(cd) parts.push("tallentamattomat tilikartan muutokset");
+  const text = (parts.length?`Menetät ${parts.join(" ja ")}. `:"")+"Kirjausohje, tilikartta ja tallennetut toimittajasäännöt säilyvät. Tallenna CSV ensin, jos et ole vielä tehnyt sitä.";
+  const acts=[["Peruuta","",null]];
+  if(nd||cd) acts.push(["Tallenna muutokset ja palaa","",()=>{ saveNaDrafts(); saveCoaDraft(); goHome(); }]);
+  acts.push(["Palaa alkuun","primary",goHome]);
+  modal("Palataanko alkuun?", text, acts);
+};
+$("#modal").addEventListener("click",e=>{ if(e.target.id==="modal") $("#modal").classList.add("hidden"); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("#modal").classList.contains("hidden")) $("#modal").classList.add("hidden"); }, true);
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  const v=b.dataset.v; if(v==="browse") show(S.idx); else if(v==="summary") showSummary(); else if(v==="noatt") showNoAtt(); else showCoa();
+});
+
+/* ---------- Start screen ---------- */
+const rulesTxt=$("#rulesTxt");
+function rulesInfo(){ const g=parseRules(rulesTxt.value); $("#rulesInfo").textContent = `${g.length} tiliä, ${g.reduce((n,x)=>n+x.items.length,0)} toimittajariviä`; }
+rulesTxt.oninput=()=>{ store(pk("rules"), rulesTxt.value); rulesInfo(); };
+$("#rulesReset").onclick=()=>{ const d=defaultRulesFor(PID); rulesTxt.value=d; store(pk("rules"), d); rulesInfo(); };
+$("#rulesIn").onchange=async e=>{ const f=e.target.files[0]; if(!f) return; rulesTxt.value=await f.text(); store(pk("rules"), rulesTxt.value); rulesInfo(); };
+
+/* ---------- Client selection ---------- */
+function loadClient(){
+  store("doccruncher.active", PID);
+  rulesTxt.value = store(pk("rules")) ?? defaultRulesFor(PID);
+  if(!store(pk("coa")) && PID!=="fillarivelho") store(pk("coa"), JSON.stringify(baseCoa()));
+  S.coa = loadJson(pk("coa"), null) || DEFAULT_COA.map(x=>({...x})); S.coaDraft=null;
+  S.noAttRules = loadJson(pk("noatt"), []); S.naDraft.clear();
+  $("#profSel").innerHTML = CLIENTS.map(c=>`<option value="${esc(c.id)}" ${c.id===PID?"selected":""}>${esc(c.name)}</option>`).join("");
+  const c=P();
+  $("#rulesWho").textContent = c.name;
+  $("#profInfo").textContent = (c.counterAcc ? `Vastatili ${c.counterAcc}: ilman CSV:tä jokaisesta tositteesta tehdään vienti kulutilille ja vastatilille ${c.counterAcc}.` : "Kirjaus-CSV vaaditaan (vastatiliä ei ole asetettu).")
+    + (c.defaultAcc ? ` CSV:n oletustili ${c.defaultAcc}.` : "") + ` Tilikartassa ${S.coa.length} tiliä.`;
+  $("#csvTitle").textContent = c.counterAcc ? "2. Kirjaus-CSV (valinnainen)" : "2. Kirjaus-CSV";
+  rulesInfo(); csvHint(); ready();
+}
+function csvHint(){
+  const c=P();
+  $("#csvHint").innerHTML = S.csvBytes ? `<button class="btn" id="csvClear" style="padding:4px 10px;font-size:12.5px">Poista ladattu CSV</button> ${c.counterAcc?"– ilman CSV:tä viennit muodostetaan PDF:stä vastatilille "+esc(c.counterAcc)+".":""}`
+    : (c.counterAcc ? `Ilman CSV:tä viennit muodostetaan PDF:n tositteista: kulutili / vastatili ${esc(c.counterAcc)}.` : "");
+  $("#csvClear")?.addEventListener("click",()=>{ S.csvBytes=null; S.csvLines=[]; S.csvName=""; $("#csvName").textContent="Valitse tai pudota tiedosto"; $("#dropCsv").classList.remove("done"); $("#csvIn").value=""; csvHint(); ready(); });
+}
+$("#profSel").onchange=e=>{ PID=e.target.value; $("#profForm").classList.add("hidden"); loadClient(); };
+let pfNew=false;
+function openProfForm(isNew){
+  pfNew=isNew; const c=isNew?{name:"",counterAcc:"2880",defaultAcc:"2350"}:P();
+  $("#pfName").value=c.name; $("#pfCounter").value=c.counterAcc||""; $("#pfDefault").value=c.defaultAcc||"";
+  $("#pfDel").style.display = (!isNew && CLIENTS.length>1) ? "" : "none";
+  $("#profForm").classList.remove("hidden"); $("#pfName").focus();
+}
+$("#profEditB").onclick=()=>openProfForm(false);
+$("#profNewB").onclick=()=>openProfForm(true);
+$("#pfCancel").onclick=()=>$("#profForm").classList.add("hidden");
+["#pfCounter","#pfDefault"].forEach(id=>$(id).oninput=e=>e.target.value=e.target.value.replace(/\D/g,""));
+$("#pfSave").onclick=()=>{
+  const name=$("#pfName").value.trim(); if(!name){ $("#pfName").focus(); return; }
+  const data={name, counterAcc:$("#pfCounter").value.trim(), defaultAcc:$("#pfDefault").value.trim()};
+  if(pfNew){
+    let id=norm(name).replace(/ /g,"")||"asiakas"; while(CLIENTS.some(c=>c.id===id)) id+="2";
+    CLIENTS.push({id,...data}); PID=id;
+    // new client starts from the Fillarivelho chart of accounts, can be edited separately
+    store(pk("coa"), JSON.stringify(baseCoa())); store(pk("rules"), NEW_RULES);
+  } else Object.assign(P(), data);
+  saveClients(); $("#profForm").classList.add("hidden"); loadClient(); toast(pfNew?"Asiakas lisätty: "+name:"Asiakkaan asetukset tallennettu.");
+};
+$("#pfDel").onclick=()=>{
+  const c=P();
+  modal("Poistetaanko asiakas?", `${c.name}: asiakkaan kirjausohje, tilikartta ja toimittajasäännöt poistetaan tästä selaimesta. Ota ensin varmuuskopio (Tallenna asetukset .json), jos tarvitset niitä myöhemmin.`, [["Peruuta","",null],["Poista","primary",()=>{
+    for(const k of ["rules","coa","noatt"]) try{ localStorage.removeItem(pk(k)); }catch(e){}
+    if(CLIENTS_DEF.some(d=>d.id===c.id)){ const r=loadJson("doccruncher.removed",[]); r.push(c.id); store("doccruncher.removed", JSON.stringify(r)); }
+    CLIENTS=CLIENTS.filter(x=>x.id!==c.id); PID=CLIENTS[0].id; saveClients(); $("#profForm").classList.add("hidden"); loadClient();
+  }]]);
+};
+loadClient();
+$("#settingsIn").onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{
+    const j=JSON.parse(await f.text());
+    if(j.asiakas && j.asiakas.name && j.asiakas.name!==P().name && !confirm(`Asetustiedosto on asiakkaalta "${j.asiakas.name}", mutta valittuna on "${P().name}". Ladataanko silti valitulle asiakkaalle?`)) return;
+    if(j.kirjausohje){ rulesTxt.value=j.kirjausohje; store(pk("rules"), rulesTxt.value); }
+    if(Array.isArray(j.tilikartta)){ S.coa=j.tilikartta; S.coaDraft=null; saveCoa(); }
+    if(Array.isArray(j.tositteettomat)){ S.noAttRules=j.tositteettomat; saveNoAtt(); }
+    loadClient(); $("#rulesInfo").textContent += ` · asetukset ladattu (${S.coa.length} tiliä tilikartassa, ${S.noAttRules.length} tositteetonta sääntöä)`;
+  }catch(err){ $("#rulesInfo").textContent="Asetustiedoston luku epäonnistui: "+err.message; }
+};
+
+async function takePdf(f){
+  $("#pdfName").textContent="Luetaan…";
+  try{
+    const buf = new Uint8Array(await f.arrayBuffer());
+    S.pdf = await pdfjsLib.getDocument({data:buf}).promise; S.pdfName=f.name;
+    $("#pdfName").textContent=`${f.name} · ${S.pdf.numPages} sivua`; $("#dropPdf").classList.add("done");
+  }catch(err){ S.pdf=null; $("#pdfName").textContent="PDF:n avaus epäonnistui: "+err.message; }
+  ready();
+}
+async function takeCsv(f){
+  S.csvBytes = new Uint8Array(await f.arrayBuffer()); S.csvName=f.name; S.csvLines=parseCsv(S.csvBytes);
+  S.csvNl = S.csvBytes.indexOf(13)>=0 ? "\r\n" : "\n";
+  $("#csvName").textContent=`${f.name} · ${S.csvLines.filter(l=>l.acc).length} riviä`; $("#dropCsv").classList.add("done");
+  csvHint(); ready();
+}
+function ready(){ $("#go").disabled = !(S.pdf && (S.csvBytes || P().counterAcc)); }
+$("#pdfIn").onchange=e=>e.target.files[0]&&takePdf(e.target.files[0]);
+$("#csvIn").onchange=e=>e.target.files[0]&&takeCsv(e.target.files[0]);
+for(const [id,fn] of [["#dropPdf",takePdf],["#dropCsv",takeCsv]]){
+  const d=$(id);
+  d.addEventListener("dragover",e=>{e.preventDefault();d.classList.add("over");});
+  d.addEventListener("dragleave",()=>d.classList.remove("over"));
+  d.addEventListener("drop",e=>{e.preventDefault();d.classList.remove("over");const f=e.dataTransfer.files[0]; if(f) fn(f);});
+}
+// dropping both files anywhere on the start screen
+$("#start").addEventListener("dragover",e=>e.preventDefault());
+$("#start").addEventListener("drop",e=>{
+  if(e.target.closest(".drop")) return; e.preventDefault();
+  for(const f of e.dataTransfer.files){ if(/\.pdf$/i.test(f.name)) takePdf(f); else takeCsv(f); }
+});
+
+$("#go").onclick=async()=>{
+  const msg=$("#startMsg"); $("#go").disabled=true; msg.textContent="Luetaan tositteita…";
+  try{
+    S.rules = parseRules(rulesTxt.value);
+    S.synthetic = !S.csvBytes;
+    DEFAULT_ACC = S.synthetic ? UNASSIGNED : (P().defaultAcc || "2350");
+    const {all, pageMode} = await parsePdf();
+    S.pageMode = !!pageMode;
+    const used=new Set();
+    // match all payments to CSV (so that the attachment ones don't grab another payment's line)
+    const sorted = pageMode ? [...all] : [...all].sort((a,b)=>(a.bookDate||"").localeCompare(b.bookDate||"") || a.no-b.no);
+    sorted.forEach((r,k)=>{ r.csv = S.synthetic ? {i:"s"+k, acc:UNASSIGNED, synthetic:true} : matchCsv(r, used); });
+    S.all = sorted;
+    S.receipts = sorted.filter(r=>r.hasAtt);
+    S.noAtt = sorted.filter(r=>!r.hasAtt);
+    for(const r of S.receipts){ r.sug=suggest(r); r.acc=r.sug.pick; r.state="pending"; }
+    if(!S.receipts.length){ msg.textContent=`PDF:stä löytyi ${all.length} maksua, mutta yhdessäkään ei ollut liitettä.`; $("#go").disabled=false; return; }
+    $("#start").classList.add("hidden"); $("#app").classList.remove("hidden");
+    $("#title").textContent=`${P().name} · ${S.receipts.length} ${pageMode?"sivua":"kuitillista tositetta ("+all.length+" maksusta)"}${S.synthetic?" · vastatili "+P().counterAcc:""}`;
+    updateBadges(); show(0);
+  }catch(err){ console.error(err); msg.textContent="Virhe: "+err.message; $("#go").disabled=false; }
+};
+</script>
+</body>
+</html>

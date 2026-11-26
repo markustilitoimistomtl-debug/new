@@ -1,0 +1,47 @@
+DOCCRUNCHER 0.20  (aiemmin Tositeselain)
+========================================
+
+Käyttö
+1. Pura zip-tiedosto mihin tahansa kansioon.
+2. Avaa doccruncher.html selaimessa (Chrome, Edge tai Firefox).
+3. Valitse asiakas (Fillarivelho Tmi / Miro Capital Oy / oma).
+4. Lataa tositekooste (PDF) ja tarvittaessa kirjaus-CSV, ja paina "Aloita läpikäynti".
+
+Toimii ilman nettiyhteyttä: PDF-kirjasto on mukana lib-kansiossa.
+Pidä lib-kansio samassa kansiossa kuin doccruncher.html.
+
+Asiakkaat (profiilit)
+- Jokaisella asiakkaalla on oma kirjausohje, tilikartta ja tositteettomien
+  toimittajasäännöt. Ne tallentuvat selaimen muistiin asiakaskohtaisesti.
+- Fillarivelho Tmi: toimii kuten Tositeselain – kirjaus-CSV vaaditaan ja sen
+  2350-rivit tiliöidään uudelleen. Vanhan Tositeselaimen asetukset siirtyvät
+  Fillarivelholle automaattisesti, kun ohjelma avataan samassa selaimessa.
+- Miro Capital Oy: vastatili 2880 Ostovelat. Kirjaus-CSV on valinnainen: ilman
+  sitä jokaisesta tositteesta muodostetaan kaksi vientiä
+      <kulutili>;<toimittaja  pvm>;<netto>;;;<ALV>;P
+      2880;<toimittaja  pvm>;-<brutto>;;;;
+  Tiliöimättömän tositteen kulutiliksi jää ????.
+  Kirjausohje laaditaan kirjattaessa: valitse tili ja paina S, niin toimittaja
+  lisätään ohjeeseen ja seuraavat saman toimittajan tositteet saavat ehdotuksen.
+  Tilikartta on aluksi kopio Fillarivelhon tilikartasta, mutta sitä muokataan
+  erikseen.
+- "Asiakkaan asetukset": nimi, vastatili ja CSV:n oletustili. "+ Uusi asiakas"
+  lisää uuden profiilin.
+
+PDF
+- Holvin tositekooste luetaan maksu kerrallaan (Maksutunniste-lohkot).
+- Muu PDF (esim. skannatut laskut) käsitellään sivu kerrallaan: päivämäärä,
+  summa ja toimittaja arvataan tekstistä, ja niitä voi korjata sivupaneelissa.
+  "Tämä sivu kuuluu edelliseen tositteeseen" yhdistää monisivuisen laskun.
+
+Varmuuskopio: yhteenvedon painike "Tallenna asetukset (.json)" tallentaa valitun
+asiakkaan asetukset. Ne voi ladata takaisin aloitussivulta, myös toisella koneella.
+
+Pikanäppäimet selausnäkymässä
+  →  / Enter   hyväksy tiliöinti ja siirry seuraavaan
+  ←            edellinen tosite
+  ↓            ohita (tili pysyy ennallaan)
+  1–9          valitse ehdotettu tili
+  T            kirjoita oma tili
+  S            tallenna sääntö ja siirry seuraavaan
+  + / −        zoomaus
