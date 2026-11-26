@@ -197,6 +197,7 @@ header.top h2{font-size:15px;margin:0;white-space:nowrap}
     <button class="btn" id="profEditB">Asiakkaan asetukset</button>
     <button class="btn" id="profNewB">+ Uusi asiakas</button>
     <div class="pinfo" id="profInfo"></div>
+    <div class="pinfo" id="fsInfo"></div>
     <div id="profForm" class="hidden">
       <span class="small">Nimi</span><input id="pfName">
       <span class="small">Vastatili</span><input id="pfCounter" inputmode="numeric" maxlength="6" placeholder="esim. 2880 – tyhjä = CSV pakollinen">
@@ -404,7 +405,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmtEur = c => (c/100).toLocaleString("fi-FI",{minimumFractionDigits:2,maximumFractionDigits:2}) + " €";
 
-function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v);}catch(e){ return null; } }
+function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); if(/^doccruncher\./.test(k) && window.__fs){ if(!window.__fs.applying) localStorage.setItem("doccruncher.modified", String(Date.now())); window.__fs.schedule(); } }catch(e){ return null; } }
 
 function loadJson(k, def){ try{ const v=store(k); return v? JSON.parse(v) : def; }catch(e){ return def; } }
 /* ---------- Clients (profiles): each has its own rules, chart of accounts and supplier rules ---------- */
@@ -1309,6 +1310,81 @@ $("#pfDel").onclick=()=>{
   }]]);
 };
 loadClient();
+
+/* ---------- Settings file in the program folder (Chrome / Edge: File System Access API) ---------- */
+// All clients' settings are kept in <folder>/doccruncher-asetukset.json. The folder is chosen once;
+// its handle is remembered in IndexedDB, and the file is read at every start and written after every change.
+function idb(mode, fn){ return new Promise((res,rej)=>{ const o=indexedDB.open("doccruncher",1); o.onupgradeneeded=()=>o.result.createObjectStore("h"); o.onerror=()=>rej(o.error);
+  o.onsuccess=()=>{ const tx=o.result.transaction("h",mode), rq=fn(tx.objectStore("h")); tx.oncomplete=()=>res(rq&&rq.result); tx.onerror=()=>rej(tx.error); }; }); }
+function collectSettings(){
+  const data={};
+  for(const c of CLIENTS){ const k=x=>store("doccruncher.p."+c.id+"."+x); data[c.id]={kirjausohje:k("rules"), tilikartta:JSON.parse(k("coa")||"null"), tositteettomat:JSON.parse(k("noatt")||"[]")}; }
+  return {ohjelma:"Doccruncher 0.20", tallennettu:new Date().toISOString(), asiakkaat:CLIENTS, valittu:PID, zoom:Z.def, data};
+}
+function applySettings(j){
+  if(!Array.isArray(j.asiakkaat) || !j.asiakkaat.length) throw new Error("tiedostossa ei ole asiakkaita");
+  FS.applying=true;
+  try{
+    CLIENTS=j.asiakkaat; store("doccruncher.clients", JSON.stringify(CLIENTS)); store("doccruncher.clientsVer","2");
+    for(const c of CLIENTS){
+      const d=(j.data||{})[c.id]; if(!d) continue; const k=x=>"doccruncher.p."+c.id+"."+x;
+      if(d.kirjausohje!=null) store(k("rules"), d.kirjausohje);
+      if(d.tilikartta) store(k("coa"), JSON.stringify(d.tilikartta));
+      if(d.tositteettomat) store(k("noatt"), JSON.stringify(d.tositteettomat));
+    }
+    if(j.zoom){ Z.def=+j.zoom||Z.def; Z.cur=Z.def; store("doccruncher.zoom", String(Z.def)); }
+    PID = CLIENTS.some(c=>c.id===j.valittu) ? j.valittu : CLIENTS[0].id;
+  } finally { FS.applying=false; }
+  loadClient();
+}
+const FS = { dir:null, ok:false, applying:false, t:null, last:null, name:"doccruncher-asetukset.json",
+  supported: typeof window.showDirectoryPicker==="function",
+  schedule(){ if(!this.ok || this.applying) return; clearTimeout(this.t); this.t=setTimeout(()=>this.write(), 600); },
+  async write(){
+    if(!this.ok) return;
+    try{
+      const fh=await this.dir.getFileHandle(this.name,{create:true}); const w=await fh.createWritable();
+      await w.write(JSON.stringify(collectSettings(),null,2)); await w.close(); this.last=new Date(); fsInfo();
+    }catch(e){ this.ok=false; fsInfo("Tallennus kansioon epäonnistui: "+e.message); }
+  },
+  async read(){
+    try{ const fh=await this.dir.getFileHandle(this.name); return JSON.parse(await (await fh.getFile()).text()); }
+    catch(e){ if(e.name==="NotFoundError") return null; throw e; }
+  },
+  async perm(ask){
+    const h=this.dir; if(!h.queryPermission) return true; const o={mode:"readwrite"};
+    if(await h.queryPermission(o)==="granted") return true;
+    return ask ? (await h.requestPermission(o))==="granted" : false;
+  },
+  // connect: the file in the folder wins if there is one; otherwise the current settings are written into it
+  async connect(ask){
+    if(!(await this.perm(ask))){ this.ok=false; fsInfo(); return; }
+    const j=await this.read();
+    const localT=+(localStorage.getItem("doccruncher.modified")||0), fileT=j ? Date.parse(j.tallennettu)||0 : 0;
+    if(j && localT>fileT){ this.ok=true; await this.write(); fsInfo(`Selaimen uudemmat muutokset tallennettu: ${this.dir.name}/${this.name}`); }
+    else if(j){ applySettings(j); this.ok=true; fsInfo(`Asetukset luettu: ${this.dir.name}/${this.name}`); }
+    else { this.ok=true; await this.write(); fsInfo(`Asetukset tallennettu: ${this.dir.name}/${this.name}`); }
+  },
+};
+window.__fs = FS;
+function fsInfo(msg){
+  const el=$("#fsInfo"); if(!el) return;
+  const b=(id,t,cls="")=>`<button class="btn ${cls}" id="${id}" style="padding:3px 10px;margin-left:4px">${t}</button>`;
+  if(!FS.supported) el.innerHTML="Asetukset ovat tämän selaimen muistissa. Tallennus ohjelman kansioon toimii Chromessa ja Edgessä.";
+  else if(!FS.dir) el.innerHTML=`${msg?esc(msg)+" ":""}Asetukset ovat vain selaimen muistissa.${b("fsPick","Tallenna asetukset ohjelman kansioon…")}`;
+  else if(!FS.ok) el.innerHTML=`${msg?esc(msg)+" ":""}Asetustiedosto <b>${esc(FS.dir.name)}/${FS.name}</b> odottaa lupaa.${b("fsGrant","Ota kansion asetukset käyttöön","primary")}${b("fsPick","Vaihda kansio…")}`;
+  else el.innerHTML=`${msg?"<b>"+esc(msg)+"</b> · ":""}Asetukset tallentuvat tiedostoon <b>${esc(FS.dir.name)}/${FS.name}</b>${FS.last?" (viimeksi "+FS.last.toLocaleTimeString("fi-FI")+")":""}.${b("fsPick","Vaihda kansio…")}${b("fsOff","Lopeta kansioon tallennus")}`;
+  $("#fsPick")?.addEventListener("click", async()=>{
+    try{ const d=await window.showDirectoryPicker({id:"doccruncher", mode:"readwrite"}); FS.dir=d; FS.ok=false; await idb("readwrite", st=>st.put(d,"dir")); await FS.connect(true); }
+    catch(e){ if(e.name!=="AbortError") fsInfo("Kansion valinta epäonnistui: "+e.message); }
+  });
+  $("#fsGrant")?.addEventListener("click", ()=>FS.connect(true).catch(e=>fsInfo("Luku epäonnistui: "+e.message)));
+  $("#fsOff")?.addEventListener("click", async()=>{ FS.ok=false; FS.dir=null; try{ await idb("readwrite", st=>st.delete("dir")); }catch(e){} fsInfo(); });
+}
+(async()=>{
+  if(FS.supported){ try{ FS.dir = await idb("readonly", st=>st.get("dir")) || null; if(FS.dir) await FS.connect(false); }catch(e){ FS.dir=null; FS.ok=false; } }
+  if(!FS.ok || !FS.dir) fsInfo();
+})();
 $("#settingsIn").onchange=async e=>{
   const f=e.target.files[0]; if(!f) return;
   try{

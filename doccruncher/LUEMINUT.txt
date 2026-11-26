@@ -60,6 +60,18 @@ Valmis asetustiedosto: doccruncher-mirocapital-asetukset.json sisältää Fillar
 kirjausohjeen ja tilikartan Miro Capitalin pohjaksi (valitse Miro Capital Oy ja
 "Lataa asetukset (.json)").
 
+Asetukset ohjelman kansioon (Chrome / Edge)
+- Paina aloitussivulla "Tallenna asetukset ohjelman kansioon…" ja valitse kansio,
+  jossa doccruncher.html on. Salli selaimen kysymä muokkausoikeus.
+- Kaikkien asiakkaiden asetukset tallentuvat tiedostoon
+  doccruncher-asetukset.json jokaisen muutoksen jälkeen, ja ne luetaan siitä
+  joka käynnistyksellä.
+- Selain voi kysyä luvan uudelleen käynnistettäessä: paina "Ota kansion
+  asetukset käyttöön" (Chromessa voi valita "Salli joka käynnillä").
+- Jos kansiossa on jo doccruncher-asetukset.json (esim. toiselta koneelta tai
+  USB-tikulta), asetukset luetaan siitä.
+- Firefox ei tue tätä: siinä asetukset ovat selaimen muistissa.
+
 Varmuuskopio: yhteenvedon painike "Tallenna asetukset (.json)" tallentaa valitun
 asiakkaan asetukset. Ne voi ladata takaisin aloitussivulta, myös toisella koneella.
 
