@@ -1534,7 +1534,8 @@ async function pickFile(kind){
 }
 function askFile(ref, kind){
   return new Promise(res=>{
-    modal(kind==="pdf"?"Tositekooste":"Kirjaus-CSV", `Tiedostoa ${ref.name} ei voitu avata automaattisesti (siirretty, nimetty uudelleen tai lupa puuttuu). Salli pääsy tai valitse tiedosto.`, [
+    modal(kind==="pdf"?"Tositekooste":"Kirjaus-CSV", ref.handle ? `Tiedostoa ${ref.name} ei voitu avata automaattisesti (siirretty, nimetty uudelleen tai lupa puuttuu). Salli pääsy tai valitse tiedosto.`
+      : `Tämä selain ei vielä tiedä, missä tiedosto ${ref.name} on (projekti on tallennettu toisessa selaimessa tai palautettu asetustiedostosta). Valitse tiedosto – sen jälkeen tämäkin selain muistaa sen.`, [
       ["Peruuta","",()=>res(null)],
       ...(ref.handle?[["Salli pääsy","",async()=>res(await fileFromRef(ref,true) || await askFile(ref,kind))]]:[]),
       ["Valitse tiedosto…","primary",async()=>{ try{ res(await pickFile(kind)); }catch(e){ res(null); } }],
