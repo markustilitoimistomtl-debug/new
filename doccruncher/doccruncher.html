@@ -380,7 +380,8 @@ const DEFAULT_COA = [
   ["8484","Enviolo",""],
   ["8500","Puhelin ja tietoliikenne","25,5"],
 ].map(([acc,name,vat])=>({acc,name,vat}));
-const UNASSIGNED = "????"; // account of a generated entry that has not been booked yet
+const UNASSIGNED = "????";
+const IN_ACC = "1700"; // incoming payments by default (all clients); payer exceptions come from the rules, e.g. Tilille 2935 * Verohallinto // account of a generated entry that has not been booked yet
 let DEFAULT_ACC = "2350"; // only these lines are changed by default (per client, set at start)
 const NEW_RULES = `# Kirjausohje laaditaan kirjattaessa.
 # Valitse tositteelle tili ja paina S (tallenna sääntö ja seuraava),
@@ -515,7 +516,10 @@ function suggest(r){
   let pick, reason;
   if(!r.csv){ pick = order[0]?.acc || null; reason="nomatch"; }
   else if(cur!==DEFAULT_ACC){ pick=cur; reason = order.length ? "already" : "none"; }
-  else if(r.dir==="In" && !S.synthetic){ pick=cur; reason="incoming"; }
+  else if(r.dir==="In"){
+    if(!opts.some(o=>o.acc===IN_ACC)) opts.push({acc:IN_ACC, desc:"saapuvat maksut (oletus)", conds:[], items:[]});
+    if(order.length){ pick=order[0].acc; reason="inRule"; } else { pick=IN_ACC; reason="incoming"; }
+  }
   else if(order.length){ pick=order[0].acc; reason = order.length>1 ? "ambiguous" : "rule"; }
   else { pick=cur; reason="none"; }
   return {opts, pick, reason};
@@ -555,10 +559,13 @@ function fmtAmt(n){ return (Math.round(n*100)/100).toFixed(2).replace(".",","); 
 function isExpense(acc){ const n=+String(acc).trim(); return /^\d+$/.test(String(acc).trim()) && n>=4000 && n<=9999; }
 function noAttKey(r){ return core(ruleName(r)); }
 function noAttRule(r){ const k=noAttKey(r); return S.noAttRules.find(x=>core(x.name)===k); }
+// default account of a payment without attachment: incoming payments go to IN_ACC or to the payer's rule account
+function naDefault(r){ return (r.dir==="In" && r.csv && r.csv.acc===DEFAULT_ACC) ? suggest(r).pick : ""; }
+function naTarget(r){ const ru=noAttRule(r); return (ru && ru.acc) || naDefault(r); }
 function finalChanges(){
   const changes = new Map();
   for(const r of S.receipts) if(r.state==="accepted" && r.csv && r.acc && r.acc!==r.csv.acc) changes.set(r.csv.i, r.acc);
-  for(const r of S.noAtt){ const ru=noAttRule(r); if(ru && r.csv && ru.acc && ru.acc!==r.csv.acc && !changes.has(r.csv.i)) changes.set(r.csv.i, ru.acc); }
+  for(const r of S.noAtt){ const t=naTarget(r); if(t && r.csv && t!==r.csv.acc && !changes.has(r.csv.i)) changes.set(r.csv.i, t); }
   return changes;
 }
 let REV=null;
@@ -740,7 +747,8 @@ function reasonFlag(r){
     rule:["ok","Ehdotus kirjausohjeen mukaan."],
     ambiguous:["warn","Ohjeessa on useita tilejä tälle toimittajalle – tarkista kuitista ja valitse."],
     already:["ok",`Rivi on jo tiliöity tilille ${r.csv?.acc}. Oletuksena ei muutosta.`],
-    incoming:["ok","Saapuva maksu – jää nykyiselle tilille, ellei toisin valita."],
+    incoming:["ok",`Saapuva maksu – oletuksena tilille ${IN_ACC}. Maksajakohtaisen poikkeuksen voi tallentaa sääntönä (S).`],
+    inRule:["ok","Saapuva maksu – maksajan tili kirjausohjeen mukaan."],
     none: S.synthetic ? ["warn","Toimittajaa ei löydy vielä kirjausohjeesta – valitse tili (T) ja tallenna se sääntönä (S), niin seuraavat saman toimittajan tositteet saavat ehdotuksen."]
       : ["warn","Toimittajaa ei löydy kirjausohjeesta – jää tilille "+(r.csv?.acc||DEFAULT_ACC)+", ellei toisin valita."],
     nomatch:["bad","Vastaavaa riviä ei löytynyt CSV:stä (päivä + summa). Tiliöintiä ei voi viedä."],
@@ -847,11 +855,7 @@ function ruleNameFor(r){
   if(items.length) return items.map(i=>i.name).sort((a,b)=>a.length-b.length)[0];
   return ruleName(r);
 }
-function autoCond(r, acc){
-  const others = existingAccs(r).filter(o=>o.acc!==acc);
-  if(!others.length) return "";
-  return (r.category||"").replace(/\s*-\s*VAT.*$/i,"").trim().toLowerCase();
-}
+function autoCond(r, acc){ return ""; } // new supplier rules have no condition by default
 function ruleName(r){
   return r.counterparty.replace(/\s+-\s+\d+\s*$/,"").replace(/^\d+\s+/,"").replace(/(\s+\d+)+\s*$/,"").replace(/\s+(AUTOMA|AUTOMAATTI)$/i,"").trim();
 }
@@ -919,7 +923,7 @@ function showSummary(){
     return `<tr data-i="${i}" style="cursor:pointer;${chg?"":"color:var(--muted)"}"><td>${fiDate(r.bookDate)}</td><td>${esc(r.counterparty)}</td><td class="n">${r.dir==="In"?"+":"−"}${fmtEur(r.amount)}</td><td class="acc">${esc(r.csv?.acc||"–")}</td><td class="acc">${chg?esc(r.acc):""}</td><td>${st}</td></tr>`;
   }).join("");
   const {count} = buildCsv();
-  const naRows = S.noAtt.map(r=>{ const ru=noAttRule(r); return (ru && r.csv && ru.acc!==r.csv.acc) ? `<tr style="cursor:pointer" data-na="1"><td>${fiDate(r.bookDate)}</td><td>${esc(r.counterparty)}</td><td class="n">${r.dir==="In"?"+":"−"}${fmtEur(r.amount)}</td><td class="acc">${esc(r.csv.acc)}</td><td class="acc">${esc(ru.acc)}</td><td>Tositteeton, toimittajasääntö</td></tr>` : ""; }).join("");
+  const naRows = S.noAtt.map(r=>{ const t=naTarget(r), ru=noAttRule(r); return (t && r.csv && t!==r.csv.acc) ? `<tr style="cursor:pointer" data-na="1"><td>${fiDate(r.bookDate)}</td><td>${esc(r.counterparty)}</td><td class="n">${r.dir==="In"?"+":"−"}${fmtEur(r.amount)}</td><td class="acc">${esc(r.csv.acc)}</td><td class="acc">${esc(t)}</td><td>${ru?"Tositteeton, toimittajasääntö":"Tositteeton saapuva, oletus"}</td></tr>` : ""; }).join("");
   const unb = S.synthetic ? S.all.filter(r=>r.csv && synthAcc(r)===UNASSIGNED).length : 0;
   const noAmt = S.synthetic ? S.all.filter(r=>!r.amount || !r.bookDate).length : 0;
   const noVat = [...new Set([...S.csvLines.filter(L=>L.acc).map(L=>buildAccOf(L)), ...S.receipts.map(r=>r.acc)].filter(a=>isExpense(a) && !vatFor(a)))].sort();
@@ -998,10 +1002,10 @@ function showNoAtt(){
     const cur=[...new Set(g.items.map(r=>r.csv.acc))].join(", ");
     const tot=g.items.reduce((n,r)=>n+(r.dir==="In"?r.amount:-r.amount),0);
     const sug = suggest(r0).opts.filter(o=>o.items && o.items.length).map(o=>`<span class="chip" data-k="${esc(g.key)}" data-acc="${esc(o.acc)}" title="${esc(o.desc)}">${esc(o.acc)}</span>`).join("");
-    const fin = val||cur;
+    const def = naDefault(r0), fin = val||def||cur;
     return `<tr data-row="${esc(g.key)}" class="${S.naDraft.has(g.key)?"chg":""}"><td><b>${esc(g.name)}</b><div class="small">${g.items.map(r=>fiDate(r.bookDate)).join(", ")}</div></td>
       <td class="n">${g.items.length}</td><td class="n">${fmtEur(tot)}</td><td class="acc">${esc(cur)}</td>
-      <td style="width:130px"><input class="cell mono" data-k="${esc(g.key)}" data-name="${esc(g.name)}" inputmode="numeric" maxlength="6" placeholder="${esc(cur)}" value="${esc(val)}"></td>
+      <td style="width:130px"><input class="cell mono" data-k="${esc(g.key)}" data-name="${esc(g.name)}" inputmode="numeric" maxlength="6" placeholder="${esc(def||cur)}" value="${esc(val)}"></td>
       <td>${sug||'<span class="small">–</span>'}</td>
       <td class="small vat">${vatFor(fin)?esc(vatFor(fin))+" %":"–"}</td></tr>`;
   }).join("");
@@ -1077,7 +1081,7 @@ function showCoa(){
   $("#coaAdd").onclick=()=>{ D.unshift({acc:"",name:"",vat:""}); showCoa(); $("#coa").querySelector('input[data-f="acc"]')?.focus(); };
   $("#coaReset").onclick=()=>{ S.coaDraft=DEFAULT_COA.map(x=>({...x})); showCoa(); toast("Oletukset palautettu – tallenna, jos haluat ottaa ne käyttöön."); };
 }
-function updateBadges(){ const cb=$("#coaN"); if(cb){ cb.classList.toggle("hidden", !coaDirty()); cb.style.background="var(--warn-soft)"; cb.title="Tallentamattomia muutoksia"; } const n=S.noAtt.filter(r=>r.csv && r.csv.acc===DEFAULT_ACC && !noAttRule(r)).length; const b=$("#noattN"); b.textContent=(n||"")+(S.naDraft.size?" •":""); b.title=S.naDraft.size?"Tallentamattomia muutoksia":""; b.style.background=S.naDraft.size?"var(--warn-soft)":""; }
+function updateBadges(){ const cb=$("#coaN"); if(cb){ cb.classList.toggle("hidden", !coaDirty()); cb.style.background="var(--warn-soft)"; cb.title="Tallentamattomia muutoksia"; } const n=S.noAtt.filter(r=>r.csv && r.csv.acc===DEFAULT_ACC && !naTarget(r)).length; const b=$("#noattN"); b.textContent=(n||"")+(S.naDraft.size?" •":""); b.title=S.naDraft.size?"Tallentamattomia muutoksia":""; b.style.background=S.naDraft.size?"var(--warn-soft)":""; }
 
 async function saveCsv(){ const {bytes}=buildCsv(); return saveFile(S.csvName || ("viennit-"+PID+".csv"), new Blob([bytes],{type:"text/csv"})); }
 async function saveFile(name, blob){

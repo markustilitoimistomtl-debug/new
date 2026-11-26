@@ -28,6 +28,14 @@ Asiakkaat (profiilit)
 - "Asiakkaan asetukset": nimi, vastatili ja CSV:n oletustili. "+ Uusi asiakas"
   lisää uuden profiilin.
 
+Oletukset (molemmat asiakkaat)
+- Uusi toimittajasääntö tallentuu ilman ehtoa. Ehdon voi kirjoittaa itse
+  "+ Lisää toimittaja kirjausohjeeseen…" -lomakkeella.
+- Saapuvat maksut kirjataan oletuksena tilille 1700, myös tositteettomat.
+  Maksajakohtaiset poikkeukset kirjausohjeeseen, esim.
+      Tilille 2935
+      * Verohallinto
+
 PDF
 - Holvin tositekooste luetaan maksu kerrallaan (Maksutunniste-lohkot).
 - Muu PDF (esim. skannatut laskut) käsitellään sivu kerrallaan: päivämäärä,
